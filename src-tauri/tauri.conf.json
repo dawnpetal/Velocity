@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Velocity",
+  "version": "1.0.0",
+  "identifier": "com.velocity.dev",
+  "build": {
+    "frontendDist": "../resources"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "Velocity",
+        "url": "Index.html",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 700,
+        "minHeight": 600,
+        "decorations": true,
+        "transparent": true,
+        "resizable": true,
+        "center": true,
+        "visible": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "devtools": true
+      },
+      {
+        "label": "popover",
+        "title": "",
+        "url": "popover/index.html",
+        "width": 270,
+        "height": 320,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "visible": false,
+        "skipTaskbar": true,
+        "alwaysOnTop": true,
+        "shadow": true,
+        "focus": false
+      }
+    ],
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/app.icns",
+      "icons/app.png"
+    ],
+    "resources": {
+      "../resources/Assets/": "Assets/",
+      "../resources/BaseFiles/": "BaseFiles/",
+      "icons/tray.png": "icons/tray.png"
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.13",
+      "entitlements": null,
+      "signingIdentity": null
+    }
+  }
+}

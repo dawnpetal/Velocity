@@ -1,0 +1,365 @@
+.mi-titlebar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  -webkit-app-region: no-drag;
+}
+
+.mi-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition:
+    background var(--fast),
+    color var(--fast),
+    border-color var(--fast);
+  flex-shrink: 0;
+}
+
+.mi-toggle-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mi-toggle-btn:hover {
+  background: var(--bg3);
+  color: var(--text0);
+  border-color: var(--border);
+}
+
+.mi-toggle-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: rgba(77, 158, 255, 0.25);
+}
+
+.mi-dropdown-wrap {
+  position: relative;
+}
+
+.mi-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text1);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition:
+    background var(--fast),
+    border-color var(--fast);
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+.mi-select-btn:hover {
+  background: var(--bg3);
+  border-color: var(--border-strong);
+}
+
+.mi-select-btn .mi-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mi-select-btn .mi-dot.ok {
+  background: var(--ok);
+  box-shadow: 0 0 4px var(--ok);
+}
+.mi-select-btn .mi-dot.warn {
+  background: var(--warn);
+}
+.mi-select-btn .mi-dot.off {
+  background: var(--text3);
+}
+
+.mi-select-btn .mi-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.mi-select-btn .mi-caret {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  color: var(--text3);
+  transition: transform var(--fast);
+}
+
+.mi-select-btn.open .mi-caret {
+  transform: rotate(180deg);
+}
+
+.mi-popup {
+  position: fixed;
+  min-width: 220px;
+  background: var(--bg2);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  z-index: 100000;
+  overflow: hidden;
+  display: none;
+
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.96) translateY(-4px);
+  transition:
+    opacity 120ms cubic-bezier(0.2, 0, 0, 1),
+    transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.mi-popup.open {
+  display: block;
+}
+
+.mi-popup--visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.mi-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px 5px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--font-ui);
+  border-bottom: 1px solid var(--border);
+}
+
+.mi-popup-empty {
+  padding: 12px 10px;
+  font-size: 11px;
+  color: var(--text2);
+  font-family: var(--font-ui);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.mi-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background var(--fast);
+}
+
+.mi-item:hover {
+  background: var(--bg3);
+}
+.mi-item.selected {
+  background: var(--accent-dim);
+}
+
+.mi-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mi-item-dot.ok {
+  background: var(--ok);
+  box-shadow: 0 0 5px var(--ok);
+}
+.mi-item-dot.warn {
+  background: var(--warn);
+}
+.mi-item-dot.off {
+  background: var(--text3);
+}
+
+.mi-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mi-item-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text0);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mi-item-meta {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: var(--font-mono);
+}
+
+.mi-item-warn {
+  font-size: 9px;
+  color: var(--warn);
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+}
+
+.mi-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+.mi-popup-hint {
+  padding: 4px 10px;
+  font-size: 9px;
+  color: var(--text3);
+  font-family: var(--font-ui);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.3px;
+}
+
+.mi-all-btn {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition:
+    background var(--fast),
+    color var(--fast),
+    border-color var(--fast);
+  white-space: nowrap;
+}
+
+.mi-all-btn:hover {
+  background: var(--bg3);
+  color: var(--text0);
+  border-color: var(--border-strong);
+}
+
+.mi-all-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: rgba(77, 158, 255, 0.25);
+}
+
+.mi-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg1);
+  flex-shrink: 0;
+  transition:
+    background var(--fast),
+    border-color var(--fast);
+  color: var(--accent);
+}
+
+.mi-checkbox svg {
+  width: 9px;
+  height: 9px;
+  stroke: var(--accent);
+}
+
+.mi-checkbox.checked {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.mi-item:hover .mi-checkbox:not(.checked) {
+  border-color: var(--text2);
+  background: var(--bg3);
+}
+
+.mi-popup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.mi-launch-btn {
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition:
+    background var(--fast),
+    color var(--fast),
+    border-color var(--fast);
+  white-space: nowrap;
+}
+
+.mi-launch-btn:hover {
+  background: var(--bg3);
+  color: var(--text0);
+  border-color: var(--border-strong);
+}
+
+.mi-launch-btn:active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: rgba(77, 158, 255, 0.25);
+}

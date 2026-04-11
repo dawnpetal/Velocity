@@ -1,0 +1,467 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap");
+
+:root {
+  --font-ui:
+    "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+
+  --glow-xs: 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent);
+  --glow-sm: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent);
+  --glow-md: 0 0 24px color-mix(in srgb, var(--accent) 20%, transparent);
+  --glow-ok: 0 0 8px color-mix(in srgb, var(--ok) 55%, transparent);
+  --glow-err: 0 0 8px color-mix(in srgb, var(--fail) 55%, transparent);
+
+  --chrome-border: color-mix(in srgb, var(--accent) 10%, var(--border));
+  --chrome-bg: color-mix(in srgb, var(--bg1) 100%, transparent);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px;
+}
+
+.titlebar {
+  height: 30px !important;
+  background: var(--bg1) !important;
+  border-bottom: 1px solid var(--chrome-border) !important;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 2px 12px rgba(0, 0, 0, 0.35) !important;
+  position: relative !important;
+  z-index: 100;
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.activity-bar {
+  background: var(--bg1) !important;
+  border-right: 1px solid var(--chrome-border) !important;
+  padding: 6px 0 !important;
+  gap: 2px !important;
+}
+
+.activity-btn {
+  border-radius: 9px !important;
+  width: 36px !important;
+  height: 36px !important;
+  color: var(--text3) !important;
+
+  transition:
+    color 110ms ease,
+    background 110ms ease,
+    box-shadow 110ms ease !important;
+}
+
+.activity-btn svg {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.activity-btn:hover {
+  color: var(--text1) !important;
+  background: var(--bg3) !important;
+}
+
+.activity-btn:active {
+  background: var(--bg4) !important;
+}
+
+.activity-btn.active {
+  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 11%, var(--bg3)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+
+.sidebar {
+  background: var(--bg1) !important;
+  border-right: 1px solid var(--chrome-border) !important;
+}
+
+.sidebar-header {
+  height: 40px !important;
+  min-height: 40px !important;
+  background: color-mix(in srgb, var(--bg1) 70%, var(--bg0)) !important;
+  border-bottom: 1px solid var(--chrome-border) !important;
+}
+
+.sidebar-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: var(--text2) !important;
+}
+
+.icon-btn {
+  border-radius: 6px !important;
+  transition:
+    color 100ms ease,
+    background 100ms ease !important;
+}
+.icon-btn:hover {
+  color: var(--text0) !important;
+  background: var(--bg3) !important;
+  transform: none !important;
+}
+.icon-btn:active {
+  background: var(--bg4) !important;
+  transform: none !important;
+}
+
+.tab-strip {
+  background: var(--bg1) !important;
+  border-bottom: 1px solid var(--chrome-border) !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 6px !important;
+  gap: 3px !important;
+  scrollbar-width: none !important;
+}
+.tab-strip::-webkit-scrollbar {
+  display: none !important;
+}
+
+.tab {
+  height: 28px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  color: var(--text2) !important;
+  border: none !important;
+  background: transparent !important;
+
+  transition:
+    color 100ms ease,
+    background 100ms ease,
+    box-shadow 100ms ease !important;
+}
+
+.tab:hover {
+  color: var(--text1) !important;
+  background: var(--bg3) !important;
+}
+
+.tab.active {
+  color: var(--text0) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg3)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent) !important;
+}
+
+.tab::before,
+.tab::after {
+  display: none !important;
+}
+
+.editor-container {
+  background: var(--bg2) !important;
+}
+
+.bottom-panel {
+  background: var(--bg1) !important;
+  border-top: 1px solid var(--chrome-border) !important;
+  box-shadow: 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent) !important;
+}
+
+.panel-header {
+  background: color-mix(in srgb, var(--bg1) 70%, var(--bg0)) !important;
+  border-bottom: 1px solid var(--chrome-border) !important;
+}
+
+.panel-tab {
+  color: var(--text3) !important;
+  font-size: 11.5px !important;
+  transition:
+    color 100ms ease,
+    background 100ms ease !important;
+}
+
+.panel-tab:not(.active):hover {
+  color: var(--text1) !important;
+  background: var(--bg3) !important;
+}
+
+.panel-tab.active {
+  color: var(--text0) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg3)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent) !important;
+}
+
+.status-bar {
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg0)) !important;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border)) !important;
+}
+
+.status-item {
+  color: var(--text2) !important;
+}
+.status-item:hover {
+  color: var(--text0) !important;
+  background: var(--bg3) !important;
+}
+
+.status-item.ok .status-dot {
+  background: var(--ok) !important;
+  box-shadow: var(--glow-ok) !important;
+}
+.status-item.fail .status-dot {
+  background: var(--fail) !important;
+  box-shadow: var(--glow-err) !important;
+}
+
+.fab-wrap {
+  bottom: 32px !important;
+  right: 16px !important;
+}
+
+.fab-secondary {
+  background: var(--bg3) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border-strong)) !important;
+  border-right: none !important;
+  border-radius: 13px 0 0 13px !important;
+  height: 46px !important;
+  box-shadow: none !important;
+}
+
+.execute-fab {
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg3)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border-strong)) !important;
+  border-radius: 0 13px 13px 0 !important;
+  height: 46px !important;
+  width: 46px !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    transform 80ms cubic-bezier(0.34, 1.3, 0.64, 1) !important;
+}
+
+.fab-area:not(:hover):not(.open) .execute-fab {
+  border-radius: 13px !important;
+}
+
+.execute-fab:hover {
+  background: color-mix(in srgb, var(--accent) 24%, var(--bg3)) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 70%,
+    var(--border-strong)
+  ) !important;
+  transform: scale(1.05) !important;
+}
+.execute-fab:active {
+  transform: scale(0.92) !important;
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg3)) !important;
+}
+
+.fab-icon-btn {
+  color: var(--text2) !important;
+  transition:
+    color 100ms ease,
+    background 100ms ease !important;
+}
+.fab-icon-btn:hover {
+  color: var(--text0) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  transform: none !important;
+}
+.fab-icon-btn:active {
+  transform: none !important;
+}
+
+.fab-divider {
+  background: color-mix(
+    in srgb,
+    var(--accent) 25%,
+    var(--border-strong)
+  ) !important;
+}
+
+.tree-row {
+  position: relative;
+  transition: background 80ms ease !important;
+}
+.tree-row:hover {
+  background: var(--bg3) !important;
+}
+
+.tree-row.active {
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg3)) !important;
+}
+.tree-row.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+  box-shadow: var(--glow-xs);
+}
+
+.sidebar-resizer {
+  transition: background 100ms ease !important;
+}
+.sidebar-resizer:hover,
+.sidebar-resizer.dragging {
+  background: var(--accent) !important;
+  box-shadow: var(--glow-sm) !important;
+}
+.panel-resizer {
+  transition: background 100ms ease !important;
+}
+.panel-resizer:hover,
+.panel-resizer.dragging {
+  background: var(--accent) !important;
+  box-shadow: var(--glow-sm) !important;
+}
+
+::-webkit-scrollbar {
+  width: 5px !important;
+  height: 5px !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg5) !important;
+  border-radius: 10px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 30%, var(--bg5)) !important;
+}
+
+.panel-ctrl-btn {
+  background: var(--bg3) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 5px !important;
+  color: var(--text2) !important;
+  transition:
+    background 100ms ease,
+    color 100ms ease,
+    border-color 100ms ease !important;
+}
+.panel-ctrl-btn:hover:not(:disabled) {
+  background: var(--bg4) !important;
+  color: var(--text0) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 30%,
+    var(--border-strong)
+  ) !important;
+  transform: none !important;
+}
+.panel-ctrl-btn--stop:not(:disabled):hover {
+  background: color-mix(in srgb, var(--fail) 10%, var(--bg3)) !important;
+  color: var(--fail) !important;
+  border-color: color-mix(in srgb, var(--fail) 35%, transparent) !important;
+}
+
+.modal-text-input {
+  background: var(--bg2) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text0) !important;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease !important;
+}
+.modal-text-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent) !important;
+  outline: none !important;
+}
+
+.open-folder-btn:not(.open-folder-btn--secondary) {
+  background: var(--accent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent) !important;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  transition:
+    filter 130ms ease,
+    box-shadow 130ms ease !important;
+  transform: none !important;
+}
+.open-folder-btn:not(.open-folder-btn--secondary):hover {
+  filter: brightness(1.1) !important;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 42%, transparent) !important;
+  transform: none !important;
+}
+
+.hist-panel {
+  background: var(--bg1) !important;
+  border-left: 1px solid var(--chrome-border) !important;
+  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.55) !important;
+}
+.hist-header {
+  background: color-mix(in srgb, var(--bg1) 70%, var(--bg0)) !important;
+  border-bottom: 1px solid var(--chrome-border) !important;
+}
+.hist-item:hover {
+  background: var(--bg3) !important;
+}
+
+.hist-btn-primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+.hist-btn-primary:hover {
+  filter: brightness(1.1) !important;
+}
+
+.context-menu {
+  background: var(--bg1) !important;
+  border: 1px solid var(--chrome-border) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent) !important;
+}
+
+.placeholder-icon-wrap {
+  background: var(--bg3) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border)) !important;
+}
+.placeholder-icon-wrap svg {
+  color: var(--accent) !important;
+}
+
+.placeholder-shortcuts kbd {
+  background: var(--bg3) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text1) !important;
+  box-shadow: 0 1px 0 var(--border-strong) !important;
+}
+
+.toast {
+  background: var(--bg1) !important;
+  border: 1px solid var(--chrome-border) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5) !important;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--text0);
+}
+
+.ws-picker-item:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border)) !important;
+  background: var(--bg3) !important;
+  transform: none !important;
+}
+
+@keyframes vl-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.app {
+  animation: vl-in 180ms ease forwards;
+}

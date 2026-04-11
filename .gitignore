@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Rust build output
+src-tauri/target/
+
+# Tauri generated files (recreated automatically on build)
+src-tauri/gen/
+
+# Build output
+dist/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local

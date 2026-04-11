@@ -1,0 +1,248 @@
+.msp-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: 7px;
+  color: var(--text3);
+  font-size: 11.5px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition:
+    border-color var(--fast),
+    color var(--fast),
+    background var(--fast);
+}
+
+.msp-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.msp-add-btn svg {
+  flex-shrink: 0;
+}
+
+#msp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#msp-list:empty::after {
+  content: "No scripts yet — click below to add one";
+  display: block;
+  font-size: 11.5px;
+  color: var(--text3);
+  padding: 10px 14px;
+  font-family: var(--font-ui);
+}
+
+.msp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 7px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  transition: border-color var(--fast);
+}
+
+.msp-row:hover {
+  border-color: var(--border-strong);
+}
+
+.msp-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.msp-row-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msp-row-sc {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+.msp-row-actions {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.msp-row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition:
+    background var(--fast),
+    color var(--fast);
+}
+
+.msp-row-btn:hover {
+  background: var(--bg4);
+  color: var(--text1);
+}
+.msp-row-btn.danger:hover {
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--fail);
+}
+
+.msp-editor {
+  display: none;
+  flex-direction: column;
+  margin-top: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.msp-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.msp-editor-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text1);
+}
+
+.msp-editor-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition:
+    background var(--fast),
+    color var(--fast);
+}
+
+.msp-editor-close:hover {
+  background: var(--bg4);
+  color: var(--text1);
+}
+
+.msp-editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.msp-row-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.msp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.msp-input {
+  height: 30px;
+  padding: 0 9px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text0);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  outline: none;
+  transition: border-color var(--fast);
+}
+
+.msp-input:focus {
+  border-color: var(--accent);
+}
+
+.msp-textarea {
+  padding: 8px 9px;
+  height: 96px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text0);
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  line-height: 1.55;
+  outline: none;
+  resize: none;
+  transition: border-color var(--fast);
+}
+
+.msp-textarea:focus {
+  border-color: var(--accent);
+}
+
+.msp-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.msp-save-btn {
+  height: 28px;
+  padding: 0 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: filter var(--fast);
+}
+
+.msp-save-btn:hover {
+  filter: brightness(1.1);
+}

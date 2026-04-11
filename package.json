@@ -1,0 +1,15 @@
+{
+  "name": "velocity",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "cargo tauri dev",
+    "build": "cargo tauri build --bundles app",
+    "release": "bash build/build-mac.sh --release",
+    "check": "cd src-tauri && cargo check",
+    "clean": "cd src-tauri && cargo clean",
+    "build:dmg": "cargo tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

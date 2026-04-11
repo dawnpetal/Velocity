@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="aurora">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Velocity</title>
+  <style>
+    @font-face {
+      font-family: "JetBrains Mono";
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+      src: url("fonts/JetBrainsMono-Regular.woff2") format("woff2");
+    }
+
+    @font-face {
+      font-family: "JetBrains Mono";
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+      src: url("fonts/JetBrainsMono-Medium.woff2") format("woff2");
+    }
+  </style>
+
+  <link rel="stylesheet" href="Css/Global/Theme.css">
+  <link rel="stylesheet" href="Css/Layout/Layout.css">
+  <link rel="stylesheet" href="Css/Components/Components.css">
+  <link rel="stylesheet" href="Css/Features/Cloud.css">
+  <link rel="stylesheet" href="Css/Features/Preview.css">
+  <link rel="stylesheet" href="Css/Features/Timeline.css">
+  <link rel="stylesheet" href="Css/Features/MultiInstance.css">
+  <link rel="stylesheet" href="Css/Features/Guide.css">
+  <link rel="stylesheet" href="Css/Features/MenuScripts.css" />
+  <link rel="stylesheet" href="Css/Global/Enhancements.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <div class="titlebar" id="titlebar" data-tauri-drag-region>
+      <div class="titlebar-traffic-zone"></div>
+      <div class="titlebar-actions" id="titlebarActions"></div>
+    </div>
+
+    <div class="workspace">
+
+      <nav class="activity-bar" id="activityBar" role="navigation" aria-label="Activity bar">
+        <button class="activity-btn active" data-view="explorer" title="Explorer (⌘⇧E)" aria-label="Explorer" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
+        <button class="activity-btn" data-view="search" title="Search (⌘⇧F)" aria-label="Search" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+        <button class="activity-btn" data-view="autoexec" title="Autoexecute" aria-label="Autoexecute" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="4 17 10 11 4 5" />
+            <line x1="12" y1="19" x2="20" y2="19" />
+          </svg>
+        </button>
+        <button class="activity-btn" data-view="pinboard" title="Pinboard" aria-label="Pinboard" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2L9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z" />
+          </svg>
+        </button>
+        <button class="activity-btn" data-view="cloud" title="Cloud Scripts" aria-label="Cloud Scripts" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+            <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />
+          </svg>
+        </button>
+        <div class="activity-spacer" role="none"></div>
+        <button class="activity-btn" id="btnGuide" title="Guide" aria-label="Open guide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </button>
+        <button class="activity-btn" data-view="settings" title="Settings" aria-label="Settings" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+      </nav>
+
+      <aside class="sidebar" id="sidebar" role="complementary" aria-label="Sidebar">
+        <div class="sidebar-header" id="sidebarHeader">
+          <span class="sidebar-label" id="sidebarLabel">Explorer</span>
+          <div class="sidebar-header-actions" id="sidebarHeaderActions" role="group" aria-label="Sidebar actions">
+            <button class="icon-btn" id="btnNewFile" title="New File (⌘N)" aria-label="New file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="15" y2="15" />
+              </svg>
+            </button>
+            <button class="icon-btn" id="btnNewFolder" title="New Folder" aria-label="New folder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <line x1="12" y1="11" x2="12" y2="17" />
+                <line x1="9" y1="14" x2="15" y2="14" />
+              </svg>
+            </button>
+            <button class="icon-btn" id="btnOpenFolder" title="Open Folder" aria-label="Open folder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+            <button class="icon-btn" id="btnRefreshTree" title="Refresh" aria-label="Refresh file tree">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-content">
+          <div class="file-tree" id="fileTree" role="tree" aria-label="File explorer"></div>
+
+          <div id="searchView" class="sidebar-view sidebar-view--search">
+            <div class="search-panel">
+              <div class="search-input-wrap">
+                <input class="search-input" id="searchInput" placeholder="Search" type="search" spellcheck="false" autocomplete="off" aria-label="Search files">
+                <div class="search-toggles" role="group" aria-label="Search options">
+                  <button class="search-toggle" id="toggleCase" title="Match Case (Alt+C)" aria-pressed="false">Aa</button>
+                  <button class="search-toggle" id="toggleWord" title="Whole Word (Alt+W)" aria-pressed="false">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <rect x="2" y="12" width="12" height="1.5" rx="0.75" fill="currentColor" />
+                      <text x="1.5" y="11" font-size="9" font-family="monospace" fill="currentColor" font-weight="700">ab</text>
+                    </svg>
+                  </button>
+                  <button class="search-toggle" id="toggleRegex" title="Regex (Alt+R)" aria-pressed="false">.*</button>
+                </div>
+              </div>
+              <div class="search-filters">
+                <div class="search-filter-row">
+                  <span class="filter-label">include</span>
+                  <input class="filter-input" id="includeInput" placeholder="*.lua, src/**" spellcheck="false" aria-label="Include pattern">
+                </div>
+                <div class="search-filter-row">
+                  <span class="filter-label">exclude</span>
+                  <input class="filter-input" id="excludeInput" placeholder="*.json, dist/**" spellcheck="false" aria-label="Exclude pattern">
+                </div>
+              </div>
+            </div>
+            <div class="search-results file-tree" id="searchResults" role="list" aria-label="Search results"></div>
+          </div>
+
+          <div id="settingsView" class="sidebar-view sidebar-view--settings" style="display:none"></div>
+        </div>
+
+        <div class="sidebar-resizer" id="sidebarResizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar"></div>
+
+        <div class="sidebar-bottom" id="sidebarBottom" style="display:none">
+          <div class="sb-resizer" id="sidebarBottomResizer" role="separator" aria-orientation="horizontal" aria-label="Resize timeline panel"></div>
+          <section class="tl-section" aria-label="Timeline">
+            <div class="tl-header" id="tlHeader" role="button" tabindex="0" aria-expanded="true">
+              <span class="tl-arrow" id="tlArrow" aria-hidden="true">
+                <svg viewBox="0 0 8 8" fill="currentColor">
+                  <path d="M2 1l4 3-4 3V1z" />
+                </svg>
+              </span>
+              <span class="tl-header-label">Timeline</span>
+              <span class="tl-header-file" id="tlHeaderFile"></span>
+            </div>
+            <div class="tl-body" id="tlBody">
+              <div class="tl-list" id="tlList" role="list"></div>
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <main class="editor-area" role="main" aria-label="Editor">
+        <div class="tab-strip" id="tabStrip" role="tablist" aria-label="Open files"></div>
+
+        <div class="breadcrumb-bar" id="breadcrumbBar" aria-label="File breadcrumb"></div>
+        <div class="editor-container" id="editorContainer">
+          <div class="editor-placeholder" id="editorPlaceholder">
+            <div class="placeholder-icon-wrap">
+              <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <rect x="10" y="8" width="36" height="48" rx="3" stroke="currentColor" stroke-width="2" />
+                <path d="M28 8 L28 26 L46 26" stroke="currentColor" stroke-width="2" fill="none" />
+                <line x1="18" y1="36" x2="38" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <line x1="18" y1="43" x2="32" y2="43" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
+            <p class="placeholder-title">No file open</p>
+            <p class="placeholder-hint">Select a file from the explorer or create a new one</p>
+            <div class="placeholder-shortcuts">
+              <span><kbd>⌘N</kbd> New file</span>
+              <span><kbd>⌘⇧E</kbd> Explorer</span>
+            </div>
+          </div>
+          <div id="monacoEditor" class="editor-pane editor-pane--monaco"></div>
+          <div id="diffEditor" class="editor-pane editor-pane--diff"></div>
+          <div id="previewPane"></div>
+        </div>
+
+        <section class="bottom-panel hidden" id="bottomPanel" aria-label="Output panel">
+          <div class="panel-resizer" id="panelResizer" role="separator" aria-orientation="horizontal" aria-label="Resize output panel"></div>
+          <div class="panel-header">
+            <div class="panel-tabs" role="tablist" aria-label="Output panels">
+              <button class="panel-tab active" data-panel="console" role="tab" aria-selected="true">Output</button>
+              <button class="panel-tab" data-panel="roblox" role="tab" aria-selected="false">Console</button>
+            </div>
+            <div class="panel-controls">
+              <div id="stdControls" class="panel-ctrl-group">
+                <button class="icon-btn" id="btnClearConsole" title="Clear output" aria-label="Clear output">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
+                </button>
+              </div>
+              <div id="rbxControls" class="panel-ctrl-group panel-ctrl-group--hidden">
+                <button class="panel-ctrl-btn" id="btnRbxStart" title="Start monitoring">Start</button>
+                <button class="panel-ctrl-btn panel-ctrl-btn--stop" id="btnRbxStop" title="Stop monitoring" disabled>Stop</button>
+                <button class="icon-btn" id="btnClearRoblox" title="Clear console" aria-label="Clear Roblox console">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
+                </button>
+              </div>
+              <button class="icon-btn" id="btnClosePanel" title="Close Panel" aria-label="Close output panel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="panel-body" id="consoleOutput" role="log" aria-live="polite" aria-label="Output log"></div>
+          <div class="panel-body panel-body--hidden" id="robloxOutput" role="log" aria-live="polite" aria-label="Roblox console log"></div>
+        </section>
+
+        <footer class="status-bar" role="status" aria-label="Status bar">
+          <div class="status-left">
+            <span class="status-item" id="statusConnection">
+              <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+              <span id="statusConnText">No server</span>
+            </span>
+            <span class="status-sep" aria-hidden="true"></span>
+            <span class="status-item" id="statusFile" aria-live="polite"></span>
+          </div>
+          <div class="status-right">
+            <span class="status-item status-item--hidden" id="statusFileSize"></span>
+            <span class="status-sep status-item--hidden" id="statusFileSizeSep" aria-hidden="true"></span>
+            <span class="status-item" id="statusCursor" aria-live="polite">Ln 1, Col 1</span>
+            <span class="status-sep" aria-hidden="true"></span>
+            <span class="status-item" id="statusLang" aria-live="polite">Lua</span>
+            <span class="status-sep" aria-hidden="true"></span>
+            <span class="status-item">UTF-8</span>
+          </div>
+        </footer>
+      </main>
+
+      <div id="cloudView" class="workspace-view workspace-view--cloud"></div>
+      <div id="autoexecView" class="workspace-view workspace-view--autoexec"></div>
+      <div id="pinboardView" class="workspace-view workspace-view--pinboard"></div>
+
+      <div id="settingsPanel" class="settings-panel" style="display:none">
+        <nav class="sp-nav" id="spNav">
+          <div class="sp-nav-title">Settings</div>
+          <a class="sp-nav-item active" href="#sp-appearance" data-section="sp-appearance">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="3" />
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4" />
+            </svg>
+            Appearance
+          </a>
+          <a class="sp-nav-item" href="#sp-menubar" data-section="sp-menubar">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="14" height="10" rx="2" />
+              <path d="M5 7l2 2 4-3" />
+            </svg>
+            Menu Bar
+          </a>
+          <a class="sp-nav-item" href="#sp-editor" data-section="sp-editor">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4h12M2 8h8M2 12h10" />
+            </svg>
+            Editor
+          </a>
+          <a class="sp-nav-item" href="#sp-folder" data-section="sp-folder">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 4a1 1 0 0 1 1-1h4l2 2h6a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4z" />
+            </svg>
+            Folder
+          </a>
+          <a class="sp-nav-item" href="#sp-icons" data-section="sp-icons">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="5" height="5" rx="1" />
+              <rect x="9" y="2" width="5" height="5" rx="1" />
+              <rect x="2" y="9" width="5" height="5" rx="1" />
+              <rect x="9" y="9" width="5" height="5" rx="1" />
+            </svg>
+            Icon Themes
+          </a>
+          <a class="sp-nav-item" href="#sp-executor" data-section="sp-executor">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="3,2 13,8 3,14" />
+            </svg>
+            Executor
+          </a>
+          <a class="sp-nav-item" href="#sp-shortcuts" data-section="sp-shortcuts">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="5" height="4" rx="1" />
+              <rect x="9" y="4" width="5" height="4" rx="1" />
+              <rect x="2" y="10" width="5" height="3" rx="1" />
+              <rect x="9" y="10" width="5" height="3" rx="1" />
+            </svg>
+            Shortcuts
+          </a>
+        </nav>
+
+        <div class="sp-body" id="spBody">
+
+          <section class="sp-section" id="sp-appearance">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Appearance</span>
+              <span class="sp-section-desc">Choose a color theme for the interface</span>
+            </div>
+            <div id="themeGrid" class="theme-grid" role="radiogroup" aria-label="Color theme"></div>
+          </section>
+
+          <section class="sp-section" id="sp-menubar">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Menu Bar</span>
+              <span class="sp-section-desc">Scripts that appear in the Velocity menu bar agent for quick execution while in Roblox</span>
+            </div>
+            <div class="sp-rows" id="msp-list"></div>
+            <button class="msp-add-btn" id="msp-topbar-add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+              New script
+            </button>
+            <div class="msp-editor" id="msp-editor">
+              <div class="msp-editor-head">
+                <span class="msp-editor-label" id="msp-editor-title">New script</span>
+                <button class="msp-editor-close" id="msp-editor-close">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div class="msp-editor-fields">
+                <div class="msp-row-fields">
+                  <div class="msp-field">
+                    <label class="sp-row-hint">Name</label>
+                    <input class="msp-input" id="msp-name-input" type="text" placeholder="e.g. Fly" spellcheck="false" />
+                  </div>
+                </div>
+                <div class="msp-field">
+                  <label class="sp-row-hint">Script</label>
+                  <textarea class="msp-textarea" id="msp-content-input" placeholder="-- Lua code here" spellcheck="false"></textarea>
+                </div>
+              </div>
+              <div class="msp-editor-footer">
+                <button class="settings-action-btn settings-action-btn--secondary" id="msp-editor-close-btn">Cancel</button>
+                <button class="msp-save-btn" id="msp-editor-save">Save</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="sp-section" id="sp-editor">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Editor</span>
+              <span class="sp-section-desc">Customize the code editor behavior and appearance</span>
+            </div>
+            <div class="sp-rows">
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <span class="sp-row-label">Font Size</span>
+                  <span class="sp-row-hint">Editor text size in pixels</span>
+                </div>
+                <div class="settings-control">
+                  <input type="range" class="range-slider" id="fontSizeSlider" min="10" max="22" step="1" value="13" aria-label="Font size">
+                  <span class="range-value" id="fontSizeVal" aria-live="polite">13</span>
+                </div>
+              </div>
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <label class="sp-row-label" for="wordWrapToggle">Word Wrap</label>
+                  <span class="sp-row-hint">Wrap long lines to fit the editor width</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="wordWrapToggle">
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </label>
+              </div>
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <label class="sp-row-label" for="minimapToggle">Minimap</label>
+                  <span class="sp-row-hint">Show a miniature code overview on the right</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="minimapToggle" checked>
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </label>
+              </div>
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <label class="sp-row-label" for="lineNumToggle">Line Numbers</label>
+                  <span class="sp-row-hint">Show line numbers in the editor gutter</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="lineNumToggle" checked>
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="sp-section" id="sp-folder">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Folder</span>
+              <span class="sp-section-desc">Manage the currently open folder</span>
+            </div>
+            <div class="sp-rows">
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <span class="sp-row-label">Current Folder</span>
+                  <span class="sp-row-hint" id="settingsWorkDir">No folder open</span>
+                </div>
+                <button class="settings-action-btn" id="btnManageWorkspaces">Open Folder…</button>
+                <button class="settings-action-btn settings-action-btn--secondary" id="btnResetDefault">Restore Default</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="sp-section" id="sp-icons">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Icon Themes</span>
+              <span class="sp-section-desc">Choose a file icon set for the explorer</span>
+            </div>
+            <div id="iconThemeList" class="icon-theme-list"></div>
+          </section>
+
+          <section class="sp-section" id="sp-shortcuts">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Shortcuts</span>
+              <span class="sp-section-desc">Keyboard shortcuts reference</span>
+            </div>
+            <div class="sp-shortcut-grid">
+              <div class="sp-shortcut-row"><kbd>⌘S</kbd><span>Save file</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘N</kbd><span>New file</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘W</kbd><span>Close tab</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘↩</kbd><span>Execute script</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘\`</kbd><span>Toggle console</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘⇧F</kbd><span>Search files</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘⇧E</kbd><span>Focus explorer</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘⇧O</kbd><span>Open folder</span></div>
+              <div class="sp-shortcut-row"><kbd>⌘⇧R</kbd><span>Refresh tree</span></div>
+            </div>
+          </section>
+
+          <section class="sp-section" id="sp-executor">
+            <div class="sp-section-header">
+              <span class="sp-section-title">Executor</span>
+              <span class="sp-section-desc">Choose which executor Velocity will use to inject scripts</span>
+            </div>
+            <div class="sp-rows">
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <label class="sp-row-label" for="executorSelect">Active Executor</label>
+                  <span class="sp-row-hint">Scripts will be sent to the selected executor</span>
+                </div>
+                <div class="settings-control">
+                  <select class="settings-select" id="executorSelect" aria-label="Executor selection">
+                    <option value="hydrogen">Hydrogen</option>
+                    <option value="opium">Opiumware</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sp-row" id="executorStatusRow" style="display:none">
+                <div class="sp-row-info">
+                  <span class="sp-row-label">Connection</span>
+                  <span class="sp-row-hint" id="executorStatusHint">Select an executor to check status</span>
+                </div>
+                <span class="executor-status-badge" id="executorStatusBadge">—</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="ctx-menu" id="ctxMenu" role="menu" aria-label="Context menu"></div>
+  <div class="toast-container" id="toastContainer" role="alert" aria-live="assertive" aria-atomic="false"></div>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <div class="fab-wrap" id="fabWrap">
+    <div class="fab-area" id="fabPill">
+      <div class="fab-secondary">
+        <button class="fab-icon-btn" id="fabOpenRoblox" aria-label="Open Roblox">
+          <span class="fab-icon-img"></span>
+          <span class="fab-tip">Open Roblox</span>
+        </button>
+        <div class="fab-divider" role="none"></div>
+        <button class="fab-icon-btn" id="fabHistory" aria-label="Execution history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.36 2.64L3 8" />
+            <polyline points="3 3 3 8 8 8" />
+            <polyline points="12 7 12 12 15 14" />
+          </svg>
+          <span class="fab-tip">History</span>
+        </button>
+        <div class="fab-divider" role="none"></div>
+        <button class="fab-pin" id="fabChevron" title="Lock open" aria-label="Lock open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="17" x2="12" y2="22" />
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z" />
+          </svg>
+        </button>
+      </div>
+      <button class="execute-fab" id="btnExecute" title="Execute Script (⌘↩)" aria-label="Execute script">
+        <span class="execute-fab-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  <script src="Js/Core/Paths.js"></script>
+  <script src="Js/Core/EventBus.js"></script>
+  <script src="Js/Core/KeyboardManager.js"></script>
+  <script src="Js/Utils/Helpers.js"></script>
+  <script src="Js/Core/State.js"></script>
+  <script src="Js/Core/FileManager.js"></script>
+  <script src="Js/Core/ThemeManager.js"></script>
+  <script src="Js/Core/IconThemeManager.js"></script>
+  <script src="Js/Core/Persist.js"></script>
+  <script src="Js/Core/ExecHistory.js"></script>
+  <script src="Js/Api/Injector.js"></script>
+  <script src="Js/Ui/Explorer/ExplorerOps.js"></script>
+  <script src="Js/Ui/Explorer/ExplorerDnd.js"></script>
+  <script src="Js/Ui/Explorer/ExplorerTree.js"></script>
+  <script src="Js/Ui/Tabs.js"></script>
+  <script src="Js/Utils/FormatHelpers.js"></script>
+  <script src="Js/Utils/DomHelpers.js"></script>
+  <script src="Js/Ui/LangSupport/LangMap.js"></script>
+  <script src="Js/Ui/LangSupport/RobloxAPI.js"></script>
+  <script src="Js/Ui/LangSupport/LuaLanguage.js"></script>
+  <script src="Js/Ui/LangSupport/WebLanguages.js"></script>
+  <script src="Js/Ui/Editor/EditorTheme.js"></script>
+  <script src="Js/Ui/Editor/EditorModels.js"></script>
+  <script src="Js/Ui/Editor/EditorCommands.js"></script>
+  <script src="Js/Ui/Editor/Breadcrumb.js"></script>
+  <script src="Js/Ui/Editor/Preview.js"></script>
+  <script src="Js/Ui/Editor/EditorMount.js"></script>
+  <script src="Js/Features/MultiInstance.js"></script>
+  <script src="Js/Features/MultiInstanceUI.js"></script>
+  <script src="Js/Ui/Editor/Index.js"></script>
+  <script src="Js/Ui/Search.js"></script>
+  <script src="Js/Ui/Cloud/CloudSources.js"></script>
+  <script src="Js/Ui/Cloud/Cloud.js"></script>
+  <script src="Js/Ui/Autoexec/AutoexecEditor.js"></script>
+  <script src="Js/Ui/Autoexec/Autoexec.js"></script>
+  <script src="Js/Ui/Pinboard/PinboardCard.js"></script>
+  <script src="Js/Ui/Pinboard/PinboardOps.js"></script>
+  <script src="Js/Ui/Pinboard/Pinboard.js"></script>
+  <script src="Js/Overlays/Modal.js"></script>
+  <script src="Js/Overlays/Toast.js"></script>
+  <script src="Js/Overlays/Timeline.js"></script>
+  <script src="Js/Overlays/HistoryPanel.js"></script>
+  <script src="Js/Ui/ContextMenu.js"></script>
+  <script src="Js/Controllers/PanelController.js"></script>
+  <script src="Js/Controllers/EditorController.js"></script>
+  <script src="Js/Controllers/WorkspaceController.js"></script>
+  <script src="Js/Ui/Guide.js"></script>
+  <script src="Js/Controllers/AppController.js"></script>
+  <script src="Js/Bootstrap/Main.js"></script>
+  <script src="Js/Features/MenuBar.js"></script>
+  <script src="Js/Ui/MenuScriptsPanel.js"></script>
+  <script src="Js/Core/ExecutorSettings.js"></script>
+</body>
+
+</html>
