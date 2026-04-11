@@ -155,6 +155,11 @@ curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | bash
 \`\`\`
 Or download the zip below and drag **${APP_NAME}.app** to /Applications.
 
+To open the app, you may need to manually remove the gatekeeper restriction via: 
+\`\`\`bash
+xattr -cr ./Applications/${APP_NAME}.app
+\`\`\`
+
 **SHA-256** \`${CHECKSUM}\`"
 
   header "Creating GitHub release v${VERSION}..."
