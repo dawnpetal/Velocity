@@ -5,12 +5,16 @@ const workspaceController = (() => {
     if (!dir) return;
     if (_watcherId !== null) {
       try {
-        await window.__TAURI__.core.invoke("unwatch_path", { id: _watcherId });
+        await window.__TAURI__.core.invoke("unwatch_path", {
+          id: _watcherId,
+        });
       } catch {}
       _watcherId = null;
     }
     try {
-      _watcherId = await window.__TAURI__.core.invoke("watch_path", { path: dir });
+      _watcherId = await window.__TAURI__.core.invoke("watch_path", {
+        path: dir,
+      });
     } catch {}
   }
   async function onWatchEvent(evt) {
@@ -23,7 +27,9 @@ const workspaceController = (() => {
       if (action === "removed" || action === "moved") {
         for (const f of [...state.files]) {
           try {
-            const stat = await window.__TAURI__.core.invoke("stat_path", { path: f.path });
+            const stat = await window.__TAURI__.core.invoke("stat_path", {
+              path: f.path,
+            });
             if (!stat.exists) tabs.closeTab(f.id);
           } catch {
             tabs.closeTab(f.id);
@@ -36,7 +42,9 @@ const workspaceController = (() => {
   async function shutdown() {
     if (_watcherId !== null) {
       try {
-        await window.__TAURI__.core.invoke("unwatch_path", { id: _watcherId });
+        await window.__TAURI__.core.invoke("unwatch_path", {
+          id: _watcherId,
+        });
       } catch {}
       _watcherId = null;
     }
@@ -83,16 +91,22 @@ const workspaceController = (() => {
     editorController.renderEditor();
     await persist.loadTimeline(folderPath);
     timeline.setFile(state.getActive() ?? null);
-    await persist.saveSession({ folders: [folderPath] });
+    await persist.saveSession({
+      folders: [folderPath],
+    });
     _updateTitlebar();
-    eventBus.emit("workspace:loaded", { folderPath });
+    eventBus.emit("workspace:loaded", {
+      folderPath,
+    });
   }
   async function boot() {
     const session = await persist.loadSession();
     const lastFolder = session?.folders?.[0];
     if (lastFolder) {
       try {
-        const stat = await window.__TAURI__.core.invoke("stat_path", { path: lastFolder });
+        const stat = await window.__TAURI__.core.invoke("stat_path", {
+          path: lastFolder,
+        });
         if (stat.exists) {
           await openFolder(lastFolder);
           return;
@@ -103,10 +117,10 @@ const workspaceController = (() => {
   }
   async function resetDefault() {
     const defaultFolder = paths.join(paths.velocityDir, "Default");
-    
-    
     try {
-      await window.__TAURI__.core.invoke("create_dir", { path: defaultFolder });
+      await window.__TAURI__.core.invoke("create_dir", {
+        path: defaultFolder,
+      });
     } catch {}
     await openFolder(defaultFolder);
   }
@@ -136,7 +150,9 @@ const workspaceController = (() => {
         await fileManager.loadFolder(folderPath);
         ExplorerTree.render();
         tabs.render();
-        await persist.saveSession({ folders: state.roots.map((r) => r.path) });
+        await persist.saveSession({
+          folders: state.roots.map((r) => r.path),
+        });
         toast.show(`Added "${name}"`, "ok", 2000);
       } catch (err) {
         toast.show(`Could not add folder: ${err.message ?? err}`, "fail", 3000);

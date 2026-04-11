@@ -2,6 +2,7 @@ const keyboardManager = (() => {
   const _registry = [];
   const _MODIFIERS = new Set(["Meta", "Control", "Alt", "Shift"]);
   let _scope = "explorer";
+  let _paused = false;
   function _parse(keys) {
     const binding = {
       meta: false,
@@ -40,6 +41,7 @@ const keyboardManager = (() => {
     return e.key.toLowerCase() === binding.key;
   }
   function _scopeAllowed(entry) {
+    if (_paused) return false;
     if (entry.scope?.length)
       return entry.scope.includes(_scope) || entry.scope.includes("global");
     if (entry.blacklist?.length) return !entry.blacklist.includes(_scope);
@@ -86,6 +88,7 @@ const keyboardManager = (() => {
   }
   function _dispatch(e) {
     if (_MODIFIERS.has(e.key)) return;
+    if (_paused) return;
     const inMonaco = _monacoFocused();
     const inInput = !inMonaco && _nativeInputFocused();
     for (const entry of _registry) {
@@ -101,10 +104,18 @@ const keyboardManager = (() => {
   function init() {
     document.addEventListener("keydown", _dispatch);
   }
+  function pause() {
+    _paused = true;
+  }
+  function resume() {
+    _paused = false;
+  }
   return {
     init,
     registerShortcut,
     setScope,
     getScope,
+    pause,
+    resume,
   };
 })();

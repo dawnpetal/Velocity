@@ -4,8 +4,8 @@ const editor = (() => {
   let _symbolProviders = null;
   let _settings = {
     fontSize: 13,
-    wordWrap: false,
-    minimap: true,
+    wordWrap: true,
+    minimap: false,
     lineNumbers: true,
   };
   let _ready = false;
@@ -197,7 +197,9 @@ const editor = (() => {
     if (pt === "image") {
       if (!active.binaryData) {
         window.__TAURI__.core
-          .invoke("read_binary_file", { path: active.path })
+          .invoke("read_binary_file", {
+            path: active.path,
+          })
           .then((binaryData) => {
             active.binaryData = binaryData;
             active.previewType = "image";
@@ -220,7 +222,9 @@ const editor = (() => {
     if (pt === "video") {
       if (!active.binaryData) {
         window.__TAURI__.core
-          .invoke("read_binary_file", { path: active.path })
+          .invoke("read_binary_file", {
+            path: active.path,
+          })
           .then((binaryData) => {
             active.binaryData = binaryData;
             active.previewType = "video";

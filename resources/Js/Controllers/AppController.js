@@ -26,12 +26,12 @@ const appController = (() => {
     document
       .getElementById("btnExecute")
       ?.addEventListener("click", () => editorController.executeScript());
-
     const titlebar = document.getElementById("titlebar");
     if (titlebar) {
       titlebar.addEventListener("mousedown", (e) => {
         if (e.button !== 0) return;
-        if (e.target.closest("button, input, select, a, [data-no-drag]")) return;
+        if (e.target.closest("button, input, select, a, [data-no-drag]"))
+          return;
         window.__TAURI__.window.getCurrentWindow().startDragging();
       });
     }
@@ -137,7 +137,9 @@ const appController = (() => {
       }
     }
     keyboardManager.setScope(view);
-    eventBus.emit("ui:view-changed", { view });
+    eventBus.emit("ui:view-changed", {
+      view,
+    });
   }
   function _setupSettings() {
     document
@@ -192,7 +194,9 @@ const appController = (() => {
           item.classList.toggle("active", item.dataset.section === active),
         );
       },
-      { passive: true },
+      {
+        passive: true,
+      },
     );
   }
   function _toggle(id, settingKey) {
@@ -213,7 +217,8 @@ const appController = (() => {
       panel.classList.add("visible");
       panel.classList.remove("hidden");
     }
-    const { fontSize, wordWrap, minimap, lineNumbers, executor } = ui.settings ?? {};
+    const { fontSize, wordWrap, minimap, lineNumbers, executor } =
+      ui.settings ?? {};
     if (typeof executorSettings !== "undefined") {
       executorSettings.init(executor ?? "hydrogen");
     }
@@ -227,10 +232,6 @@ const appController = (() => {
     _restoreToggle("wordWrapToggle", "wordWrap", wordWrap);
     _restoreToggle("minimapToggle", "minimap", minimap);
     _restoreToggle("lineNumToggle", "lineNumbers", lineNumbers);
-    
-    
-    
-    
     _switchView(ui.activeView ?? "explorer");
   }
   function _restoreToggle(id, key, value) {
@@ -242,11 +243,33 @@ const appController = (() => {
     }
   }
   function _setupGlobalShortcuts() {
-    document.addEventListener("keydown", async (e) => {
-      if (e.metaKey && e.key === "q") {
-        e.preventDefault();
+    document.getElementById("tabStrip")?.addEventListener("mousedown", () => {
+      const active = document.querySelector(".activity-btn.active");
+      const view = active?.dataset.view ?? "explorer";
+      keyboardManager.setScope(view);
+    });
+    document
+      .getElementById("editorContainer")
+      ?.addEventListener("mousedown", (e) => {
+        if (e.target.closest(".monaco-editor")) return;
+        const active = document.querySelector(".activity-btn.active");
+        const view = active?.dataset.view ?? "explorer";
+        keyboardManager.setScope(view);
+      });
+    document
+      .getElementById("bottomPanel")
+      ?.addEventListener("mousedown", () => {
+        const active = document.querySelector(".activity-btn.active");
+        const view = active?.dataset.view ?? "explorer";
+        keyboardManager.setScope(view);
+      });
+    keyboardManager.registerShortcut({
+      keys: "Cmd+Q",
+      scope: ["global"],
+      handler: async () => {
         await _shutdown();
-      }
+        await window.__TAURI__.core.invoke("exit_app");
+      },
     });
     keyboardManager.registerShortcut({
       keys: "Cmd+S",
@@ -363,7 +386,9 @@ const appController = (() => {
       await window.__TAURI__.core.invoke("exit_app");
     });
     window.__TAURI__.event.listen("watch-event", (event) =>
-      workspaceController.onWatchEvent({ detail: event.payload }),
+      workspaceController.onWatchEvent({
+        detail: event.payload,
+      }),
     );
     _initBridge();
     await paths.init();
@@ -386,7 +411,8 @@ const appController = (() => {
     if (ui) {
       _restoreUI(ui);
     } else {
-      if (typeof executorSettings !== "undefined") executorSettings.init("hydrogen");
+      if (typeof executorSettings !== "undefined")
+        executorSettings.init("hydrogen");
       _switchView("explorer");
       persist.saveUI().catch(() => {});
     }
@@ -396,5 +422,7 @@ const appController = (() => {
     menuScriptsPanel.mount();
     await menuBar.init();
   }
-  return { init };
+  return {
+    init,
+  };
 })();
