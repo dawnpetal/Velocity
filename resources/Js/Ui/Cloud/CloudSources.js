@@ -104,7 +104,10 @@ const CloudSources = (() => {
       try {
         const text = await window.__TAURI__.core.invoke("http_fetch", {
           url,
-          headers: { Accept: "application/json", "User-Agent": USER_AGENT },
+          headers: {
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+          },
         });
         const data = JSON.parse(text);
         _cacheSet(url, data);
@@ -123,7 +126,9 @@ const CloudSources = (() => {
     if (cached !== null) return cached;
     const text = await window.__TAURI__.core.invoke("http_fetch", {
       url,
-      headers: { "User-Agent": USER_AGENT },
+      headers: {
+        "User-Agent": USER_AGENT,
+      },
     });
     _cacheSet(url, text, RAW_SCRIPT_CACHE_TTL);
     return text;

@@ -16,20 +16,15 @@ const multiInstanceUI = (() => {
   let _popupEl = null;
   let _isRunning = false;
   let _popupOpen = false;
-
-  /* ── Portal positioning ──────────────────────────────────────────────── */
-  // Popup is appended to document.body so it's never trapped inside any
-  // parent overflow:hidden or stacking context (Monaco, pinboard bar, etc.)
   function _positionPopup() {
     if (!_btnEl || !_popupEl) return;
     const r = _btnEl.getBoundingClientRect();
-    _popupEl.style.top = (r.bottom + 6) + "px";
+    _popupEl.style.top = r.bottom + 6 + "px";
     const popW = _popupEl.offsetWidth || 220;
     let left = r.right - popW;
     if (left < 8) left = 8;
     _popupEl.style.left = left + "px";
   }
-
   async function _launchInstance() {
     try {
       await multiInstance.launchInstance();
@@ -38,7 +33,6 @@ const multiInstanceUI = (() => {
       toast.show(`Launch failed: ${err.message}`, "fail", 3000);
     }
   }
-
   function _renderPopup() {
     const clients = multiInstance.getClients();
     const selectedIds = multiInstance.getSelectedIds();
@@ -54,14 +48,18 @@ const multiInstanceUI = (() => {
         </div>
         <div class="mi-popup-empty">Waiting for Roblox instances…<br><span style="font-size:9px;color:var(--text3)">Make sure autoexec ran in-game</span></div>
       `;
-      _popupEl.querySelector("#miLaunchBtn").addEventListener("click", _launchInstance);
+      _popupEl
+        .querySelector("#miLaunchBtn")
+        .addEventListener("click", _launchInstance);
       return;
     }
     const items = clients
       .map((c) => {
         const isChecked = selectedIds.has(c.userId);
         const cls = c.active ? "ok" : "warn";
-        const stale = !c.active ? `<span class="mi-item-warn">⚠ stale</span>` : "";
+        const stale = !c.active
+          ? `<span class="mi-item-warn">⚠ stale</span>`
+          : "";
         return `<div class="mi-item${isChecked ? " selected" : ""}" data-userid="${_esc(c.userId)}" role="option" aria-selected="${isChecked}">
         <span class="mi-item-dot ${cls}"></span>
         <div class="mi-item-info">
@@ -94,7 +92,9 @@ const multiInstanceUI = (() => {
       _renderPopup();
       _renderBtn();
     });
-    _popupEl.querySelector("#miLaunchBtn").addEventListener("click", _launchInstance);
+    _popupEl
+      .querySelector("#miLaunchBtn")
+      .addEventListener("click", _launchInstance);
     _popupEl.querySelectorAll(".mi-item").forEach((el) => {
       el.addEventListener("click", () => {
         multiInstance.toggleSelected(el.dataset.userid);
@@ -103,7 +103,6 @@ const multiInstanceUI = (() => {
       });
     });
   }
-
   function _renderBtn() {
     if (!_isRunning) {
       _btnEl.innerHTML = `<span class="mi-dot off"></span><span class="mi-label">Instances</span><span class="mi-caret">${SVG.caret}</span>`;
@@ -128,16 +127,13 @@ const multiInstanceUI = (() => {
       _btnEl.innerHTML = `<span class="mi-dot ok"></span><span class="mi-label">${allSelected ? "All" : n} instances</span><span class="mi-caret">${SVG.caret}</span>`;
     }
   }
-
   function _openPopup() {
     _popupOpen = true;
     _renderPopup();
     _popupEl.classList.add("open");
     _btnEl.classList.add("open");
-    // Position after display:block so offsetWidth is available
     requestAnimationFrame(() => {
       _positionPopup();
-      // Second frame triggers CSS transition
       requestAnimationFrame(() => {
         _popupEl.classList.add("mi-popup--visible");
       });
@@ -150,13 +146,11 @@ const multiInstanceUI = (() => {
     };
     setTimeout(() => document.addEventListener("mousedown", close), 0);
   }
-
   function _closePopup() {
     _popupOpen = false;
     _popupEl.classList.remove("open", "mi-popup--visible");
     _btnEl.classList.remove("open");
   }
-
   async function _toggle() {
     if (_isRunning) {
       multiInstance.stop();
@@ -177,11 +171,9 @@ const multiInstanceUI = (() => {
       }
     }
   }
-
   function mount() {
     const titlebarActions = document.getElementById("titlebarActions");
     if (!titlebarActions) return;
-
     _wrapEl = document.createElement("div");
     _wrapEl.className = "mi-titlebar-wrap";
     _wrapEl.innerHTML = `
@@ -197,8 +189,6 @@ const multiInstanceUI = (() => {
       </div>
     `;
     titlebarActions.appendChild(_wrapEl);
-
-    // Portal: popup on body so it's never clipped by any ancestor
     _popupEl = document.createElement("div");
     _popupEl.className = "mi-popup";
     _popupEl.id = "miPopup";
@@ -210,20 +200,16 @@ const multiInstanceUI = (() => {
       <div class="mi-popup-empty">Enable multi-instance to begin</div>
     `;
     document.body.appendChild(_popupEl);
-
     _toggleEl = document.getElementById("miToggle");
     _btnEl = document.getElementById("miSelectBtn");
-
     _toggleEl.addEventListener("click", _toggle);
     _btnEl.addEventListener("click", () => {
       if (!_isRunning) return;
       _popupOpen ? _closePopup() : _openPopup();
     });
-
     window.addEventListener("resize", () => {
       if (_popupOpen) _positionPopup();
     });
-
     eventBus.on("multiinstance:clientsChanged", () => {
       _renderBtn();
       if (_popupOpen) _renderPopup();
@@ -233,19 +219,20 @@ const multiInstanceUI = (() => {
       if (_popupOpen) _renderPopup();
     });
   }
-
   function getTargetsForRun() {
     if (!_isRunning) return null;
     const selected = multiInstance.getSelectedClients();
     if (selected.length) return selected;
     return multiInstance.getClients().filter((c) => c.active);
   }
-
   function getTargetForRun() {
     const targets = getTargetsForRun();
     if (!targets || !targets.length) return null;
     return targets[0];
   }
-
-  return { mount, getTargetForRun, getTargetsForRun };
+  return {
+    mount,
+    getTargetForRun,
+    getTargetsForRun,
+  };
 })();

@@ -32,7 +32,6 @@ const PinboardCard = (() => {
     const card = document.createElement("div");
     card.className = "pb-card";
     card.dataset.id = snippet.id;
-
     const header = document.createElement("div");
     header.className = "pb-card-header";
     const dragHandle = DomHelpers.el(
@@ -155,39 +154,37 @@ const PinboardCard = (() => {
     idx: null,
     id: null,
   };
-
   function _attachDragHandlers(card, handle, snippet, context) {
     const { snippets, findIdx, onSave, onRender } = context;
-
     let ghost = null;
     let overCard = null;
     let overBefore = false;
     let startY = 0;
     let startX = 0;
     let origRect = null;
-
     function _cleanup() {
-      if (ghost) { ghost.remove(); ghost = null; }
-      document.querySelectorAll(".pb-drop-before,.pb-drop-after")
-        .forEach(c => c.classList.remove("pb-drop-before","pb-drop-after"));
-      document.querySelectorAll(".pb-dragging")
-        .forEach(c => c.classList.remove("pb-dragging"));
+      if (ghost) {
+        ghost.remove();
+        ghost = null;
+      }
+      document
+        .querySelectorAll(".pb-drop-before,.pb-drop-after")
+        .forEach((c) => c.classList.remove("pb-drop-before", "pb-drop-after"));
+      document
+        .querySelectorAll(".pb-dragging")
+        .forEach((c) => c.classList.remove("pb-dragging"));
       overCard = null;
       _dragState.idx = null;
       _dragState.id = null;
     }
-
     handle.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
-
       startX = e.clientX;
       startY = e.clientY;
       origRect = card.getBoundingClientRect();
-
       _dragState.idx = findIdx(snippet.id);
       _dragState.id = snippet.id;
-
       ghost = card.cloneNode(true);
       ghost.style.cssText = `
         position: fixed;
@@ -204,27 +201,24 @@ const PinboardCard = (() => {
       `;
       document.body.appendChild(ghost);
       card.classList.add("pb-dragging");
-
       function onMove(e) {
         if (_dragState.id !== snippet.id || !ghost) return;
         e.preventDefault();
-
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        ghost.style.left = (origRect.left + dx) + "px";
-        ghost.style.top  = (origRect.top  + dy) + "px";
-
-        document.querySelectorAll(".pb-drop-before,.pb-drop-after")
-          .forEach(c => c.classList.remove("pb-drop-before", "pb-drop-after"));
-
+        ghost.style.left = origRect.left + dx + "px";
+        ghost.style.top = origRect.top + dy + "px";
+        document
+          .querySelectorAll(".pb-drop-before,.pb-drop-after")
+          .forEach((c) =>
+            c.classList.remove("pb-drop-before", "pb-drop-after"),
+          );
         const list = document.querySelector(".pb-list");
         if (!list) return;
-
         let closestCard = null;
         let closestBefore = true;
         let closestDist = Infinity;
-
-        list.querySelectorAll(".pb-card:not(.pb-dragging)").forEach(c => {
+        list.querySelectorAll(".pb-card:not(.pb-dragging)").forEach((c) => {
           const r = c.getBoundingClientRect();
           const midY = r.top + r.height / 2;
           const dist = Math.abs(e.clientY - midY);
@@ -234,26 +228,23 @@ const PinboardCard = (() => {
             closestBefore = e.clientY < midY;
           }
         });
-
         if (closestCard) {
-          closestCard.classList.add(closestBefore ? "pb-drop-before" : "pb-drop-after");
+          closestCard.classList.add(
+            closestBefore ? "pb-drop-before" : "pb-drop-after",
+          );
           overCard = closestCard;
           overBefore = closestBefore;
         }
       }
-
       function onUp() {
         document.removeEventListener("pointermove", onMove);
         document.removeEventListener("pointerup", onUp);
         document.removeEventListener("pointercancel", onUp);
-
         if (_dragState.id !== snippet.id) return;
-
         if (overCard) {
           const targetId = overCard.dataset.id;
           const targetIdx = findIdx(targetId);
           const srcIdx = _dragState.idx;
-
           if (srcIdx !== null && srcIdx !== targetIdx) {
             const moved = snippets.splice(srcIdx, 1)[0];
             const destIdx = findIdx(targetId);
@@ -264,10 +255,8 @@ const PinboardCard = (() => {
             return;
           }
         }
-
         _cleanup();
       }
-
       document.addEventListener("pointermove", onMove);
       document.addEventListener("pointerup", onUp);
       document.addEventListener("pointercancel", onUp);

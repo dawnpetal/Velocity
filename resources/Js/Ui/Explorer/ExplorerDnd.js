@@ -107,7 +107,9 @@ const ExplorerDnd = (() => {
       });
     } else if (entry.isDirectory) {
       await window.__TAURI__.core
-        .invoke("create_dir", { path: destPath })
+        .invoke("create_dir", {
+          path: destPath,
+        })
         .catch(() => {});
       const reader = entry.createReader();
       const children = await new Promise((res, rej) => {

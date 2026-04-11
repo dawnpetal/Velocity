@@ -15,7 +15,9 @@ const autoexec = (() => {
     const home = await _getHome();
     const dir = `${home}/Velocity/internals/autoexec_scripts`;
     try {
-      await window.__TAURI__.core.invoke("create_dir", { path: dir });
+      await window.__TAURI__.core.invoke("create_dir", {
+        path: dir,
+      });
     } catch {}
     return dir;
   }
@@ -25,12 +27,24 @@ const autoexec = (() => {
     let dir;
     if (executor === "opium") {
       dir = `${home}/Opiumware/autoexec`;
-      try { await window.__TAURI__.core.invoke("create_dir", { path: `${home}/Opiumware` }); } catch {}
+      try {
+        await window.__TAURI__.core.invoke("create_dir", {
+          path: `${home}/Opiumware`,
+        });
+      } catch {}
     } else {
       dir = `${home}/Hydrogen/autoexecute`;
-      try { await window.__TAURI__.core.invoke("create_dir", { path: `${home}/Hydrogen` }); } catch {}
+      try {
+        await window.__TAURI__.core.invoke("create_dir", {
+          path: `${home}/Hydrogen`,
+        });
+      } catch {}
     }
-    try { await window.__TAURI__.core.invoke("create_dir", { path: dir }); } catch {}
+    try {
+      await window.__TAURI__.core.invoke("create_dir", {
+        path: dir,
+      });
+    } catch {}
     return dir;
   }
   async function _sync() {
@@ -44,7 +58,9 @@ const autoexec = (() => {
           .filter((e) => e.type === "FILE" && e.entry.endsWith(".lua"))
           .map((e) =>
             window.__TAURI__.core
-              .invoke("remove_path", { path: `${hydroDir}/${e.entry}` })
+              .invoke("remove_path", {
+                path: `${hydroDir}/${e.entry}`,
+              })
               .catch(() => {}),
           ),
       );
@@ -94,7 +110,9 @@ const autoexec = (() => {
       const home = await _getHome();
       const dir = `${home}/Velocity/internals`;
       try {
-        await window.__TAURI__.core.invoke("create_dir", { path: dir });
+        await window.__TAURI__.core.invoke("create_dir", {
+          path: dir,
+        });
       } catch {}
       await window.__TAURI__.core.invoke("write_text_file", {
         path: `${dir}/autoexec_meta.json`,
@@ -151,7 +169,9 @@ const autoexec = (() => {
     );
     if (confirmed !== "Delete") return;
     try {
-      await window.__TAURI__.core.invoke("remove_path", { path: filePath });
+      await window.__TAURI__.core.invoke("remove_path", {
+        path: filePath,
+      });
       if (_currentFile === filePath) {
         _currentFile = null;
         await _saveMeta();
@@ -196,7 +216,9 @@ const autoexec = (() => {
           path: newPath,
           content,
         });
-        await window.__TAURI__.core.invoke("remove_path", { path: filePath });
+        await window.__TAURI__.core.invoke("remove_path", {
+          path: filePath,
+        });
         if (_currentFile === filePath) {
           _currentFile = newPath;
           await _saveMeta();

@@ -106,8 +106,11 @@ const search = (() => {
       row.append(lineNum, text);
       row.onclick = () => {
         const fid = fileId ?? _pathToId(hit.path);
-        if (fid) { editor.jumpToLine(fid, hit.lineNum); }
-        else { _openByPath(hit.path, hit.lineNum); }
+        if (fid) {
+          editor.jumpToLine(fid, hit.lineNum);
+        } else {
+          _openByPath(hit.path, hit.lineNum);
+        }
       };
       frag.appendChild(row);
     }
@@ -123,7 +126,6 @@ const search = (() => {
     const f = state.files.find((f) => f.path === path);
     return f ? f.id : null;
   }
-
   async function _openByPath(path, lineNum) {
     if (!path) return;
     let file = state.files.find((f) => f.path === path);
@@ -181,7 +183,10 @@ const search = (() => {
     for (const match of matches) {
       if (!byFile.has(match.path)) {
         if (totalFiles >= MAX_TOTAL_FILES) continue;
-        byFile.set(match.path, { hits: [], truncated: false });
+        byFile.set(match.path, {
+          hits: [],
+          truncated: false,
+        });
         totalFiles++;
       }
       const entry = byFile.get(match.path);

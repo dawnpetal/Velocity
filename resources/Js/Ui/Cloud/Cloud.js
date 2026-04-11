@@ -33,28 +33,35 @@ const cloud = (() => {
       const maxLen = Math.max(...perSource.map((a) => a.length), 0);
       const merged = [];
       for (let i = 0; i < maxLen; i++)
-        perSource.forEach((arr) => { if (arr[i]) merged.push(arr[i]); });
+        perSource.forEach((arr) => {
+          if (arr[i]) merged.push(arr[i]);
+        });
       return merged;
     }
     const promises = sourceKeys.map((sourceKey, index) => {
       const src = CloudSources.SOURCES[sourceKey];
-      const fetch = _mode === "trending" ? src.fetchTrending(_page, _filters)
-        : _mode === "search" && _query.trim() ? src.fetchSearch(_query, _page, _filters)
-        : src.fetchRecent(_page, _filters);
-      return fetch.then((result) => {
-        if (loadId !== _loadId) return;
-        perSource[index] = CloudSources.sanitize(result.scripts);
-        _total = Math.max(_total, result.totalPages ?? 1);
-        anySuccess = true;
-        settled++;
-        _renderScripts(_merge());
-      }).catch((err) => {
-        if (loadId !== _loadId) return;
-        console_.log(`[cloud] ${sourceKey} failed: ${err?.message}`, "fail");
-        settled++;
-        if (settled === sourceKeys.length && !anySuccess)
-          _renderError(err.message);
-      });
+      const fetch =
+        _mode === "trending"
+          ? src.fetchTrending(_page, _filters)
+          : _mode === "search" && _query.trim()
+            ? src.fetchSearch(_query, _page, _filters)
+            : src.fetchRecent(_page, _filters);
+      return fetch
+        .then((result) => {
+          if (loadId !== _loadId) return;
+          perSource[index] = CloudSources.sanitize(result.scripts);
+          _total = Math.max(_total, result.totalPages ?? 1);
+          anySuccess = true;
+          settled++;
+          _renderScripts(_merge());
+        })
+        .catch((err) => {
+          if (loadId !== _loadId) return;
+          console_.log(`[cloud] ${sourceKey} failed: ${err?.message}`, "fail");
+          settled++;
+          if (settled === sourceKeys.length && !anySuccess)
+            _renderError(err.message);
+        });
     });
     await Promise.allSettled(promises);
     if (loadId === _loadId) _loading = false;
@@ -135,7 +142,8 @@ const cloud = (() => {
     const list = document.getElementById("cloudList");
     if (!list) return;
     if (!scripts.length) {
-      list.innerHTML = '<div class="cloud-empty"><span>No scripts found</span></div>';
+      list.innerHTML =
+        '<div class="cloud-empty"><span>No scripts found</span></div>';
       _renderPagination();
       return;
     }
@@ -158,33 +166,37 @@ const cloud = (() => {
             img.closest(".cloud-card-banner")?.classList.add("no-img");
           });
         }
-        card.querySelector('[data-action="copy"]')?.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const btn = e.currentTarget;
-          btn.classList.add("loading");
-          try {
-            await _openInEditor(script.title, await _getContent(script));
-          } catch {
-            toast.show("Failed to load script", "fail");
-          } finally {
-            btn.classList.remove("loading");
-          }
-        });
-        card.querySelector('[data-action="execute"]')?.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const btn = e.currentTarget;
-          btn.classList.add("loading");
-          try {
-            const result = await injector.execute(await _getContent(script));
-            const port = await injector.getPort();
-            toast.show(port ? `Executed on :${port}` : "Executed", "ok");
-            if (result) console_.log(result, "ok");
-          } catch (err) {
-            toast.show(err.message ?? "Execution failed", "fail", 3000);
-          } finally {
-            btn.classList.remove("loading");
-          }
-        });
+        card
+          .querySelector('[data-action="copy"]')
+          ?.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            btn.classList.add("loading");
+            try {
+              await _openInEditor(script.title, await _getContent(script));
+            } catch {
+              toast.show("Failed to load script", "fail");
+            } finally {
+              btn.classList.remove("loading");
+            }
+          });
+        card
+          .querySelector('[data-action="execute"]')
+          ?.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            btn.classList.add("loading");
+            try {
+              const result = await injector.execute(await _getContent(script));
+              const port = await injector.getPort();
+              toast.show(port ? `Executed on :${port}` : "Executed", "ok");
+              if (result) console_.log(result, "ok");
+            } catch (err) {
+              toast.show(err.message ?? "Execution failed", "fail", 3000);
+            } finally {
+              btn.classList.remove("loading");
+            }
+          });
         frag.appendChild(card);
       }
       list.appendChild(frag);

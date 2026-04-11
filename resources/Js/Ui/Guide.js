@@ -1,68 +1,64 @@
 const guide = (() => {
-  const CHARACTERS_DIR = 'Assets/Characters';
   const BAR_H = 150;
-
   let _characterPool = [];
   let _boundListeners = {};
-
   const CHARACTER_LINES = {
-    'Walter White': {
+    "Walter White": {
       welcome: `I insist you complete this tutorial. Not because you need it, but because I need it. I'm Walter White, and this is my guide to Velocity. Let's get started.`,
       Execute: {
         text: `This is where it happens. Open Roblox, press Execute, and the script runs. No theatrics—just results. If it fails, the script is the problem, not you.`,
-        image: 'Walter_White.png',
+        image: "Walter_White.png",
       },
     },
-
-    'Obama': {
+    Obama: {
       welcome: `Hey. Barack Obama here. Yes, that one. Look, I've dealt with Congress, two terms, a Nobel Prize. Walking you through a script executor? Honestly one of my easier days.`,
       Settings: {
         text: `Let me be clear. You will pick a theme. You will pick one that represents your values, your vision, and frankly the kind of person you want to be. This is not a decision to take lightly. Choose wisely. I believe in you.`,
       },
     },
-
-    'Quandale Dingle': {
+    "Quandale Dingle": {
       welcome: `Aight, it's Quandale Dingle. I'm not gonna waste your time—let’s just get through this.`,
       Output: {
         text: `Green? You're good. Red? Something broke—and yeah, that's on the script. Just check it and try again.`,
       },
     },
-
-    'Chuck Norris': {
+    "Chuck Norris": {
       welcome: `Chuck Norris doesn't use script executors. He stares at Roblox until it does what he wants. But I'll walk you through this anyway, because not everyone is Chuck Norris.`,
       Done: {
         text: `Chuck Norris never finishes tutorials. The tutorial finishes itself out of respect. You're done. The basic flow is open a script, click Execute, it runs in Roblox. Now go. The question mark brings this back if you forget anything.`,
       },
     },
   };
-
   function _getCharacterLine(charName, checkpoint) {
     const entry = CHARACTER_LINES[charName];
     if (!entry || !checkpoint) return null;
     return entry[checkpoint] || null;
   }
-
   function _getCharacterWelcome(charName) {
     const entry = CHARACTER_LINES[charName];
     if (!entry) return null;
     return entry.welcome || null;
   }
-
   async function _loadCharacters() {
     const CHAR_FILES = {
-      'Walter White':   'Assets/Characters/Walter_White.png',
-      'Obama':          'Assets/Characters/Obama.png',
-      'Quandale Dingle':'Assets/Characters/Quandale_Dingle.png',
-      'Chuck Norris':   'Assets/Characters/Chuck_Norris.png',
+      "Walter White": "Assets/Characters/Walter_White.png",
+      Obama: "Assets/Characters/Obama.png",
+      "Quandale Dingle": "Assets/Characters/Quandale_Dingle.png",
+      "Chuck Norris": "Assets/Characters/Chuck_Norris.png",
     };
-    _characterPool = Object.entries(CHAR_FILES).map(([name, url]) => ({ name, url }));
+    _characterPool = Object.entries(CHAR_FILES).map(([name, url]) => ({
+      name,
+      url,
+    }));
   }
-
   function _pickCharacter() {
-    if (_characterPool.length === 0) return { url: '', name: '' };
+    if (_characterPool.length === 0)
+      return {
+        url: "",
+        name: "",
+      };
     return _characterPool[Math.floor(Math.random() * _characterPool.length)];
   }
-
   const STEPS = [
     {
       checkpoint: "Welcome",
@@ -148,7 +144,7 @@ const guide = (() => {
       selector: "#fabWrap",
       padding: 10,
       text: () => {
-        const line = _getCharacterLine(_currentChar.name, 'Execute');
+        const line = _getCharacterLine(_currentChar.name, "Execute");
         if (line) return line.text;
         return "The button in the bottom right runs whatever script you have open and sends it into Roblox. Roblox needs to be open first with your executor's server running. Cmd+Enter does the same thing. The chevron on the left opens a small extra menu.";
       },
@@ -174,7 +170,7 @@ const guide = (() => {
       selector: "#bottomPanel",
       padding: 2,
       text: () => {
-        const line = _getCharacterLine(_currentChar.name, 'Output');
+        const line = _getCharacterLine(_currentChar.name, "Output");
         if (line) return line.text;
         return "After you execute something, results show up here. The Output tab shows what Velocity got back, success messages, print output, or errors. The Console tab watches Roblox's own output log. Cmd+` toggles the panel open and closed. The trash icon clears it.";
       },
@@ -222,7 +218,7 @@ const guide = (() => {
       selector: "#autoexecView",
       padding: 0,
       text: () => {
-        const line = _getCharacterLine(_currentChar.name, 'Autoexecute');
+        const line = _getCharacterLine(_currentChar.name, "Autoexecute");
         if (line) return line.text;
         return "Autoexecute runs scripts automatically every time Roblox launches. The scripts live in ~/Hydrogen/autoexecute on your machine. The left panel is your list of scripts, the right panel is an editor for whichever one you've got selected.";
       },
@@ -320,7 +316,7 @@ const guide = (() => {
       selector: "#sp-appearance",
       padding: 8,
       text: () => {
-        const line = _getCharacterLine(_currentChar.name, 'Settings');
+        const line = _getCharacterLine(_currentChar.name, "Settings");
         if (line) return line.text;
         return "The theme grid shows every available color theme. Click one to apply it instantly. Themes change the whole interface, backgrounds, syntax colors, accents, all of it. Saves automatically.";
       },
@@ -360,37 +356,69 @@ const guide = (() => {
       selector: null,
       padding: 0,
       text: () => {
-        const line = _getCharacterLine(_currentChar.name, 'Done');
+        const line = _getCharacterLine(_currentChar.name, "Done");
         if (line) return line.text;
         return "That's the whole app. The basic flow is: open or paste a script, click Execute, it runs in Roblox. Everything else builds on top of that. Hit the question mark in the activity bar any time to run through this again.";
       },
     },
   ];
-
   const CHECKPOINTS = STEPS.reduce((acc, step, i) => {
-    if (step.checkpoint) acc.push({ index: i, label: step.checkpoint });
+    if (step.checkpoint)
+      acc.push({
+        index: i,
+        label: step.checkpoint,
+      });
     return acc;
   }, []);
-
   let _overlay = null;
-  let _dimTop = null, _dimBottom = null, _dimLeft = null, _dimRight = null;
+  let _dimTop = null,
+    _dimBottom = null,
+    _dimLeft = null,
+    _dimRight = null;
   let _spotlight = null;
-  let _textEl = null, _labelEl = null, _dotStrip = null;
-  let _charImg = null, _appEl = null, _fabWrap = null, _barEl = null;
+  let _textEl = null,
+    _labelEl = null,
+    _dotStrip = null;
+  let _charImg = null,
+    _appEl = null,
+    _fabWrap = null,
+    _barEl = null;
   let _currentStep = 0;
-  let _currentChar = { url: '', name: '' };
-  let _typing = false, _typeTimeout = null;
+  let _currentChar = {
+    url: "",
+    name: "",
+  };
+  let _typing = false,
+    _typeTimeout = null;
   let _active = false;
-  let _prevSize = null, _prevView = null, _panelWasVisible = false;
-  let _barDrag = { active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
-  let _spotCur = { t: 0, l: 0, w: 0, h: 0, on: false };
-  let _spotTgt = { t: 0, l: 0, w: 0, h: 0, on: false };
+  let _prevSize = null,
+    _prevView = null,
+    _panelWasVisible = false;
+  let _barDrag = {
+    active: false,
+    startX: 0,
+    startY: 0,
+    startLeft: 0,
+    startTop: 0,
+  };
+  let _spotCur = {
+    t: 0,
+    l: 0,
+    w: 0,
+    h: 0,
+    on: false,
+  };
+  let _spotTgt = {
+    t: 0,
+    l: 0,
+    w: 0,
+    h: 0,
+    on: false,
+  };
   let _rafId = null;
-
   function _lerp(a, b, t) {
     return a + (b - a) * t;
   }
-
   function _applyDims(t, l, w, h, on) {
     const W = window.innerWidth;
     const H = window.innerHeight - BAR_H;
@@ -405,12 +433,11 @@ const guide = (() => {
     _dimBottom.style.cssText = `top:${t + h}px;left:0;right:0;bottom:0`;
     _dimLeft.style.cssText = `top:${t}px;left:0;width:${l}px;height:${h}px`;
     _dimRight.style.cssText = `top:${t}px;left:${l + w}px;right:0;height:${h}px`;
-    _spotlight.style.top = t + 'px';
-    _spotlight.style.left = l + 'px';
-    _spotlight.style.width = w + 'px';
-    _spotlight.style.height = h + 'px';
+    _spotlight.style.top = t + "px";
+    _spotlight.style.left = l + "px";
+    _spotlight.style.width = w + "px";
+    _spotlight.style.height = h + "px";
   }
-
   function _animateSpot() {
     const S = 0.18;
     _spotCur.t = _lerp(_spotCur.t, _spotTgt.t, S);
@@ -431,20 +458,23 @@ const guide = (() => {
     _applyDims(_spotCur.t, _spotCur.l, _spotCur.w, _spotCur.h, _spotTgt.on);
     _rafId = requestAnimationFrame(_animateSpot);
   }
-
   function _getRect(selector, padding) {
     if (!selector) return null;
     const el = document.querySelector(selector);
     if (!el) return null;
     const r = el.getBoundingClientRect();
     const p = padding || 0;
-    return { top: r.top - p, left: r.left - p, width: r.width + p * 2, height: r.height + p * 2 };
+    return {
+      top: r.top - p,
+      left: r.left - p,
+      width: r.width + p * 2,
+      height: r.height + p * 2,
+    };
   }
-
   function _setTarget(rect) {
     if (!rect) {
       _spotTgt.on = false;
-      _spotlight.classList.remove('visible');
+      _spotlight.classList.remove("visible");
       return;
     }
     _spotTgt.on = true;
@@ -452,35 +482,32 @@ const guide = (() => {
     _spotTgt.l = rect.left;
     _spotTgt.w = rect.width;
     _spotTgt.h = rect.height;
-    _spotlight.classList.add('visible');
+    _spotlight.classList.add("visible");
   }
-
   function _switchView(view) {
     const btn = document.querySelector(`.activity-btn[data-view="${view}"]`);
     if (btn) btn.click();
   }
-
   function _ensurePanelVisible(selector) {
-    if (!selector || selector.startsWith('.')) return;
+    if (!selector || selector.startsWith(".")) return;
     const el = document.querySelector(selector);
     if (!el) return;
-    if (!el.classList.contains('visible')) {
-      el.classList.add('visible');
-      el.classList.remove('hidden');
+    if (!el.classList.contains("visible")) {
+      el.classList.add("visible");
+      el.classList.remove("hidden");
     }
   }
-
   function _typeText(text) {
     clearTimeout(_typeTimeout);
     _typing = true;
-    _textEl.textContent = '';
-    const cursor = document.createElement('span');
-    cursor.className = 'guide-cursor';
+    _textEl.textContent = "";
+    const cursor = document.createElement("span");
+    cursor.className = "guide-cursor";
     _textEl.appendChild(cursor);
     let i = 0;
     function tick() {
       if (i < text.length) {
-        cursor.insertAdjacentText('beforebegin', text[i++]);
+        cursor.insertAdjacentText("beforebegin", text[i++]);
         _typeTimeout = setTimeout(tick, 13);
       } else {
         _typing = false;
@@ -488,99 +515,95 @@ const guide = (() => {
     }
     tick();
   }
-
   function _skipTyping() {
     if (!_typing) return false;
     clearTimeout(_typeTimeout);
     _typing = false;
     const step = STEPS[_currentStep];
-    _textEl.textContent = typeof step.text === 'function' ? step.text() : step.text;
-    const cursor = document.createElement('span');
-    cursor.className = 'guide-cursor';
+    _textEl.textContent =
+      typeof step.text === "function" ? step.text() : step.text;
+    const cursor = document.createElement("span");
+    cursor.className = "guide-cursor";
     _textEl.appendChild(cursor);
     return true;
   }
-
   function _updateDotStrip() {
     if (!_dotStrip) return;
-    _dotStrip.querySelectorAll('.guide-dot').forEach((dot) => {
+    _dotStrip.querySelectorAll(".guide-dot").forEach((dot) => {
       const idx = parseInt(dot.dataset.index);
-      dot.classList.toggle('guide-dot--active', idx === _currentStep);
-      dot.classList.toggle('guide-dot--past', idx < _currentStep);
+      dot.classList.toggle("guide-dot--active", idx === _currentStep);
+      dot.classList.toggle("guide-dot--past", idx < _currentStep);
     });
   }
-
   function _buildDotStrip() {
-    const strip = document.createElement('div');
-    strip.className = 'guide-dot-strip';
+    const strip = document.createElement("div");
+    strip.className = "guide-dot-strip";
     _dotStrip = strip;
     let _dotDrag = false;
     const _dotFromX = (clientX) => {
-      const dots = Array.from(strip.querySelectorAll('.guide-dot'));
-      let closest = 0, closestDist = Infinity;
+      const dots = Array.from(strip.querySelectorAll(".guide-dot"));
+      let closest = 0,
+        closestDist = Infinity;
       dots.forEach((dot, i) => {
         const r = dot.getBoundingClientRect();
         const cx = r.left + r.width / 2;
         const dist = Math.abs(clientX - cx);
-        if (dist < closestDist) { closestDist = dist; closest = i; }
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = i;
+        }
       });
       return closest;
     };
-
     const _dotMouseDown = (e) => {
       if (e.button !== 0) return;
       _dotDrag = true;
       _goToStep(_dotFromX(e.clientX));
       e.preventDefault();
     };
-
     const _dotMouseMove = (e) => {
       if (!_dotDrag) return;
       _goToStep(_dotFromX(e.clientX));
     };
-
     const _dotMouseUp = () => {
       _dotDrag = false;
     };
-
-    strip.addEventListener('mousedown', _dotMouseDown);
-    document.addEventListener('mousemove', _dotMouseMove);
-    document.addEventListener('mouseup', _dotMouseUp);
+    strip.addEventListener("mousedown", _dotMouseDown);
+    document.addEventListener("mousemove", _dotMouseMove);
+    document.addEventListener("mouseup", _dotMouseUp);
     _boundListeners.dotMouseMove = _dotMouseMove;
     _boundListeners.dotMouseUp = _dotMouseUp;
-
     STEPS.forEach((step, i) => {
-      const dot = document.createElement('button');
-      dot.className = 'guide-dot' + (step.checkpoint ? ' guide-dot--checkpoint' : '');
+      const dot = document.createElement("button");
+      dot.className =
+        "guide-dot" + (step.checkpoint ? " guide-dot--checkpoint" : "");
       dot.dataset.index = i;
       dot.title = step.label;
-      dot.addEventListener('click', () => _goToStep(i));
+      dot.addEventListener("click", () => _goToStep(i));
       strip.appendChild(dot);
     });
     return strip;
   }
-
   function _onBarDragStart(e) {
     if (e.button !== 0) return;
-    if (e.target.closest('button, input, select')) return;
+    if (e.target.closest("button, input, select")) return;
     const rect = _barEl.getBoundingClientRect();
-    if (!_barEl.classList.contains('guide-bar--floating')) {
-      _barEl.classList.add('guide-bar--floating');
-      _barEl.style.left = rect.left + 'px';
-      _barEl.style.top = rect.top + 'px';
-      _barEl.style.width = rect.width + 'px';
-      _barEl.style.bottom = '';
-      _barEl.style.right = '';
+    if (!_barEl.classList.contains("guide-bar--floating")) {
+      _barEl.classList.add("guide-bar--floating");
+      _barEl.style.left = rect.left + "px";
+      _barEl.style.top = rect.top + "px";
+      _barEl.style.width = rect.width + "px";
+      _barEl.style.bottom = "";
+      _barEl.style.right = "";
     }
     _barDrag.active = true;
     _barDrag.startX = e.clientX;
     _barDrag.startY = e.clientY;
     _barDrag.startLeft = rect.left;
     _barDrag.startTop = rect.top;
-    _barEl.classList.add('guide-bar--dragging');
+    _barEl.classList.add("guide-bar--dragging");
     e.preventDefault();
   }
-
   function _onBarDragMove(e) {
     if (!_barDrag.active || !_barEl) return;
     const dx = e.clientX - _barDrag.startX;
@@ -591,73 +614,76 @@ const guide = (() => {
     const bh = _barEl.offsetHeight;
     const left = Math.max(0, Math.min(W - bw, _barDrag.startLeft + dx));
     const top = Math.max(0, Math.min(H - bh, _barDrag.startTop + dy));
-    _barEl.style.left = left + 'px';
-    _barEl.style.top = top + 'px';
+    _barEl.style.left = left + "px";
+    _barEl.style.top = top + "px";
   }
-
   function _onBarDragEnd() {
     if (!_barDrag.active) return;
     _barDrag.active = false;
-    _barEl && _barEl.classList.remove('guide-bar--dragging');
+    _barEl && _barEl.classList.remove("guide-bar--dragging");
   }
-
   function _applyCharacterImage(step) {
     if (!_charImg) return;
-    const checkpointLine = (step && step.checkpoint)
-      ? _getCharacterLine(_currentChar.name, step.checkpoint)
-      : null;
+    const checkpointLine =
+      step && step.checkpoint
+        ? _getCharacterLine(_currentChar.name, step.checkpoint)
+        : null;
     if (checkpointLine && checkpointLine.image) {
-      const match = _characterPool.find(c => c.name === _currentChar.name);
+      const match = _characterPool.find((c) => c.name === _currentChar.name);
       _charImg.src = match ? match.url : _currentChar.url;
     } else {
       _charImg.src = _currentChar.url;
     }
   }
-
   function _goToStep(index) {
     clearTimeout(_typeTimeout);
     _typing = false;
     _currentStep = Math.max(0, Math.min(STEPS.length - 1, index));
     const step = STEPS[_currentStep];
-
     _applyCharacterImage(step);
-
     if (step.view) _switchView(step.view);
     _ensurePanelVisible(step.selector);
     requestAnimationFrame(() => {
       _labelEl.textContent = `${_currentStep + 1} / ${STEPS.length}  —  ${step.label}`;
       _updateDotStrip();
       _setTarget(_getRect(step.selector, step.padding));
-      _charImg.classList.remove('bounce');
+      _charImg.classList.remove("bounce");
       void _charImg.offsetWidth;
-      _charImg.classList.add('bounce');
-      _textEl.textContent = '';
-      const text = typeof step.text === 'function' ? step.text() : step.text;
+      _charImg.classList.add("bounce");
+      _textEl.textContent = "";
+      const text = typeof step.text === "function" ? step.text() : step.text;
       _typeText(text);
     });
   }
-
   function _prevStep() {
     if (_currentStep > 0) _goToStep(_currentStep - 1);
   }
-
   function _nextStep() {
     if (_currentStep < STEPS.length - 1) _goToStep(_currentStep + 1);
     else stop();
   }
-
   function _onKey(e) {
     if (!_active) return;
-    if (e.key === 'Escape') { stop(); return; }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); _prevStep(); return; }
-    if (e.key === 'ArrowRight') { e.preventDefault(); _nextStep(); return; }
-    if (e.key === ' ' || e.key === 'Enter') {
+    if (e.key === "Escape") {
+      stop();
+      return;
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      _prevStep();
+      return;
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      _nextStep();
+      return;
+    }
+    if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       if (_skipTyping()) return;
       _nextStep();
     }
   }
-
   function _onResize() {
     if (!_active) return;
     const step = STEPS[_currentStep];
@@ -674,155 +700,183 @@ const guide = (() => {
       _applyDims(_spotCur.t, _spotCur.l, _spotCur.w, _spotCur.h, _spotTgt.on);
     }
   }
-
   async function start() {
     if (_active) return;
     _active = true;
     _boundListeners = {};
-    _prevView = document.querySelector('.activity-btn.active')?.dataset.view ?? 'explorer';
-    const panel = document.getElementById('bottomPanel');
-    _panelWasVisible = panel ? panel.classList.contains('visible') : false;
+    keyboardManager.pause();
+    _prevView =
+      document.querySelector(".activity-btn.active")?.dataset.view ??
+      "explorer";
+    const panel = document.getElementById("bottomPanel");
+    _panelWasVisible = panel ? panel.classList.contains("visible") : false;
     await _loadCharacters();
     try {
       const win = window.__TAURI__.window.getCurrentWindow();
       await win.setFocus();
-    } catch { }
+    } catch {}
     await new Promise((r) => setTimeout(r, 80));
-    _appEl = document.querySelector('.app');
-    if (_appEl) _appEl.classList.add('guide-active');
-    _fabWrap = document.getElementById('fabWrap');
-    if (_fabWrap) _fabWrap.classList.add('guide-active');
-    _overlay = document.createElement('div');
-    _overlay.className = 'guide-overlay guide-entering';
+    _appEl = document.querySelector(".app");
+    if (_appEl) _appEl.classList.add("guide-active");
+    _fabWrap = document.getElementById("fabWrap");
+    if (_fabWrap) _fabWrap.classList.add("guide-active");
+    _overlay = document.createElement("div");
+    _overlay.className = "guide-overlay guide-entering";
     _overlay.tabIndex = -1;
-    const mask = document.createElement('div');
-    mask.className = 'guide-mask';
-    _dimTop = document.createElement('div');
-    _dimTop.className = 'guide-dim';
-    _dimBottom = document.createElement('div');
-    _dimBottom.className = 'guide-dim';
-    _dimLeft = document.createElement('div');
-    _dimLeft.className = 'guide-dim';
-    _dimRight = document.createElement('div');
-    _dimRight.className = 'guide-dim';
+    const mask = document.createElement("div");
+    mask.className = "guide-mask";
+    _dimTop = document.createElement("div");
+    _dimTop.className = "guide-dim";
+    _dimBottom = document.createElement("div");
+    _dimBottom.className = "guide-dim";
+    _dimLeft = document.createElement("div");
+    _dimLeft.className = "guide-dim";
+    _dimRight = document.createElement("div");
+    _dimRight.className = "guide-dim";
     mask.appendChild(_dimTop);
     mask.appendChild(_dimBottom);
     mask.appendChild(_dimLeft);
     mask.appendChild(_dimRight);
     _overlay.appendChild(mask);
-    _spotlight = document.createElement('div');
-    _spotlight.className = 'guide-spotlight';
+    _spotlight = document.createElement("div");
+    _spotlight.className = "guide-spotlight";
     _overlay.appendChild(_spotlight);
-    const bar = document.createElement('div');
-    bar.className = 'guide-bar';
+    const bar = document.createElement("div");
+    bar.className = "guide-bar";
     _barEl = bar;
-    const charWrap = document.createElement('div');
-    charWrap.className = 'guide-character';
-    charWrap.addEventListener('mousedown', _onBarDragStart);
+    const charWrap = document.createElement("div");
+    charWrap.className = "guide-character";
+    charWrap.addEventListener("mousedown", _onBarDragStart);
     _currentChar = _pickCharacter();
-    _charImg = document.createElement('img');
+    _charImg = document.createElement("img");
     _charImg.src = _currentChar.url;
     _charImg.alt = _currentChar.name;
     _charImg.draggable = false;
     charWrap.appendChild(_charImg);
     bar.appendChild(charWrap);
-    const sep = document.createElement('div');
-    sep.className = 'guide-sep';
+    const sep = document.createElement("div");
+    sep.className = "guide-sep";
     bar.appendChild(sep);
-    const dialogue = document.createElement('div');
-    dialogue.className = 'guide-dialogue';
-    _labelEl = document.createElement('div');
-    _labelEl.className = 'guide-step-label';
+    const dialogue = document.createElement("div");
+    dialogue.className = "guide-dialogue";
+    _labelEl = document.createElement("div");
+    _labelEl.className = "guide-step-label";
     dialogue.appendChild(_labelEl);
-    _textEl = document.createElement('div');
-    _textEl.className = 'guide-text';
+    _textEl = document.createElement("div");
+    _textEl.className = "guide-text";
     dialogue.appendChild(_textEl);
-    const footer = document.createElement('div');
-    footer.className = 'guide-footer';
-    const navLeft = document.createElement('button');
-    navLeft.className = 'guide-nav-btn';
+    const footer = document.createElement("div");
+    footer.className = "guide-footer";
+    const navLeft = document.createElement("button");
+    navLeft.className = "guide-nav-btn";
     navLeft.innerHTML = `<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5,1.5 3,5 6.5,8.5"/></svg>`;
-    navLeft.title = 'Previous (←)';
-    navLeft.addEventListener('click', _prevStep);
+    navLeft.title = "Previous (←)";
+    navLeft.addEventListener("click", _prevStep);
     const dotStrip = _buildDotStrip();
-    const navRight = document.createElement('button');
-    navRight.className = 'guide-nav-btn';
+    const navRight = document.createElement("button");
+    navRight.className = "guide-nav-btn";
     navRight.innerHTML = `<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5,1.5 7,5 3.5,8.5"/></svg>`;
-    navRight.title = 'Next (→)';
-    navRight.addEventListener('click', () => { if (_skipTyping()) return; _nextStep(); });
+    navRight.title = "Next (→)";
+    navRight.addEventListener("click", () => {
+      if (_skipTyping()) return;
+      _nextStep();
+    });
     footer.appendChild(navLeft);
     footer.appendChild(dotStrip);
     footer.appendChild(navRight);
     dialogue.appendChild(footer);
     bar.appendChild(dialogue);
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'guide-close';
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "guide-close";
     closeBtn.innerHTML = `<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1.5" y1="1.5" x2="8.5" y2="8.5"/><line x1="8.5" y1="1.5" x2="1.5" y2="8.5"/></svg>Exit`;
-    closeBtn.addEventListener('click', stop);
+    closeBtn.addEventListener("click", stop);
     bar.appendChild(closeBtn);
     _overlay.appendChild(bar);
     document.body.appendChild(_overlay);
-    _overlay.focus({ preventScroll: true });
-    const W = window.innerWidth, H = window.innerHeight - BAR_H;
-    _spotCur = { t: H / 2, l: W / 2, w: 0, h: 0, on: false };
-    _spotTgt = { t: H / 2, l: W / 2, w: 0, h: 0, on: false };
+    _overlay.focus({
+      preventScroll: true,
+    });
+    const W = window.innerWidth,
+      H = window.innerHeight - BAR_H;
+    _spotCur = {
+      t: H / 2,
+      l: W / 2,
+      w: 0,
+      h: 0,
+      on: false,
+    };
+    _spotTgt = {
+      t: H / 2,
+      l: W / 2,
+      w: 0,
+      h: 0,
+      on: false,
+    };
     _applyDims(H / 2, W / 2, 0, 0, false);
     _rafId = requestAnimationFrame(_animateSpot);
-    setTimeout(() => _overlay && _overlay.classList.remove('guide-entering'), 300);
-
+    setTimeout(
+      () => _overlay && _overlay.classList.remove("guide-entering"),
+      300,
+    );
     _boundListeners.onKey = _onKey.bind(null);
     _boundListeners.onBarDragMove = _onBarDragMove.bind(null);
     _boundListeners.onBarDragEnd = _onBarDragEnd.bind(null);
     _boundListeners.onResize = _onResize.bind(null);
-
-    document.addEventListener('keydown', _boundListeners.onKey);
-    document.addEventListener('mousemove', _boundListeners.onBarDragMove);
-    document.addEventListener('mouseup', _boundListeners.onBarDragEnd);
-    window.addEventListener('resize', _boundListeners.onResize);
+    document.addEventListener("keydown", _boundListeners.onKey);
+    document.addEventListener("mousemove", _boundListeners.onBarDragMove);
+    document.addEventListener("mouseup", _boundListeners.onBarDragEnd);
+    window.addEventListener("resize", _boundListeners.onResize);
     _goToStep(0);
   }
-
   async function stop() {
     if (!_active) return;
     _active = false;
     clearTimeout(_typeTimeout);
     _typing = false;
     cancelAnimationFrame(_rafId);
-
-    document.removeEventListener('keydown', _boundListeners.onKey);
-    document.removeEventListener('mousemove', _boundListeners.onBarDragMove);
-    document.removeEventListener('mouseup', _boundListeners.onBarDragEnd);
-    window.removeEventListener('resize', _boundListeners.onResize);
-
+    keyboardManager.resume();
+    document.removeEventListener("keydown", _boundListeners.onKey);
+    document.removeEventListener("mousemove", _boundListeners.onBarDragMove);
+    document.removeEventListener("mouseup", _boundListeners.onBarDragEnd);
+    window.removeEventListener("resize", _boundListeners.onResize);
     if (_boundListeners.dotMouseMove) {
-      document.removeEventListener('mousemove', _boundListeners.dotMouseMove);
+      document.removeEventListener("mousemove", _boundListeners.dotMouseMove);
     }
     if (_boundListeners.dotMouseUp) {
-      document.removeEventListener('mouseup', _boundListeners.dotMouseUp);
+      document.removeEventListener("mouseup", _boundListeners.dotMouseUp);
     }
-
-    if (_appEl) { _appEl.classList.remove('guide-active'); _appEl = null; }
-    if (_fabWrap) { _fabWrap.classList.remove('guide-active'); _fabWrap = null; }
+    if (_appEl) {
+      _appEl.classList.remove("guide-active");
+      _appEl = null;
+    }
+    if (_fabWrap) {
+      _fabWrap.classList.remove("guide-active");
+      _fabWrap = null;
+    }
     _barEl = null;
     _dotStrip = null;
     _boundListeners = {};
-
     if (_prevView) _switchView(_prevView);
-    const panel = document.getElementById('bottomPanel');
+    const panel = document.getElementById("bottomPanel");
     if (panel && !_panelWasVisible) {
-      panel.classList.remove('visible');
-      panel.classList.add('hidden');
+      panel.classList.remove("visible");
+      panel.classList.add("hidden");
     }
     if (_overlay) {
-      _overlay.classList.add('guide-leaving');
-      setTimeout(() => { _overlay && _overlay.remove(); _overlay = null; }, 260);
+      _overlay.classList.add("guide-leaving");
+      setTimeout(() => {
+        _overlay && _overlay.remove();
+        _overlay = null;
+      }, 260);
     }
     try {
       const win = window.__TAURI__.window.getCurrentWindow();
       await win.setFocus();
-    } catch { }
+    } catch {}
     _prevSize = null;
   }
-
-  return { start, stop };
+  return {
+    start,
+    stop,
+  };
 })();

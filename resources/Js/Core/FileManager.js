@@ -10,7 +10,9 @@ const fileManager = (() => {
     return loadFolder(dirPath);
   }
   async function buildTree(dirPath) {
-    const entries = await window.__TAURI__.core.invoke("read_dir", { path: dirPath });
+    const entries = await window.__TAURI__.core.invoke("read_dir", {
+      path: dirPath,
+    });
     const node = {
       id: helpers.uid(),
       name: helpers.basename(dirPath),
@@ -52,7 +54,12 @@ const fileManager = (() => {
     const file = state.getFile(id);
     if (!file || file.content !== null) return;
     try {
-      state.setContent(id, await window.__TAURI__.core.invoke("read_text_file", { path: file.path }));
+      state.setContent(
+        id,
+        await window.__TAURI__.core.invoke("read_text_file", {
+          path: file.path,
+        }),
+      );
     } catch {
       state.setContent(id, "");
     }
@@ -65,11 +72,16 @@ const fileManager = (() => {
       content: file.content,
     });
     state.markSaved(id);
-    eventBus.emit("file:saved", { id, file });
+    eventBus.emit("file:saved", {
+      id,
+      file,
+    });
     return true;
   }
   async function _pathExists(p) {
-    const stat = await window.__TAURI__.core.invoke("stat_path", { path: p });
+    const stat = await window.__TAURI__.core.invoke("stat_path", {
+      path: p,
+    });
     return stat.exists;
   }
   async function _uniqueFilePath(dirPath, name) {
@@ -94,26 +106,45 @@ const fileManager = (() => {
   async function createFile(dirPath, name) {
     const safeName = await _uniqueFilePath(dirPath, name);
     const path = `${dirPath}/${safeName}`;
-    await window.__TAURI__.core.invoke("write_text_file", { path, content: "" });
+    await window.__TAURI__.core.invoke("write_text_file", {
+      path,
+      content: "",
+    });
     const id = helpers.uid();
     state.addFile(id, safeName, path, "");
-    return { id, path };
+    return {
+      id,
+      path,
+    };
   }
   async function createFolder(dirPath, name) {
     const safeName = await _uniqueFolderPath(dirPath, name);
     const path = `${dirPath}/${safeName}`;
-    await window.__TAURI__.core.invoke("create_dir", { path });
+    await window.__TAURI__.core.invoke("create_dir", {
+      path,
+    });
     return path;
   }
   async function rename(oldPath, newPath) {
-    await window.__TAURI__.core.invoke("rename_path", { src: oldPath, dest: newPath });
+    await window.__TAURI__.core.invoke("rename_path", {
+      src: oldPath,
+      dest: newPath,
+    });
   }
   async function remove(path) {
-    await window.__TAURI__.core.invoke("remove_path", { path });
+    await window.__TAURI__.core.invoke("remove_path", {
+      path,
+    });
   }
   async function copyRecursive(src, dest) {
-    await window.__TAURI__.core.invoke("create_dir", { path: dest }).catch(() => {});
-    const entries = await window.__TAURI__.core.invoke("read_dir", { path: src });
+    await window.__TAURI__.core
+      .invoke("create_dir", {
+        path: dest,
+      })
+      .catch(() => {});
+    const entries = await window.__TAURI__.core.invoke("read_dir", {
+      path: src,
+    });
     for (const entry of entries) {
       if (entry.entry === "." || entry.entry === "..") continue;
       const srcPath = `${src}/${entry.entry}`;
@@ -122,11 +153,21 @@ const fileManager = (() => {
         await copyRecursive(srcPath, destPath);
       } else {
         try {
-          const data = await window.__TAURI__.core.invoke("read_binary_file", { path: srcPath });
-          await window.__TAURI__.core.invoke("write_binary_file", { path: destPath, data });
+          const data = await window.__TAURI__.core.invoke("read_binary_file", {
+            path: srcPath,
+          });
+          await window.__TAURI__.core.invoke("write_binary_file", {
+            path: destPath,
+            data,
+          });
         } catch {
-          const content = await window.__TAURI__.core.invoke("read_text_file", { path: srcPath });
-          await window.__TAURI__.core.invoke("write_text_file", { path: destPath, content });
+          const content = await window.__TAURI__.core.invoke("read_text_file", {
+            path: srcPath,
+          });
+          await window.__TAURI__.core.invoke("write_text_file", {
+            path: destPath,
+            content,
+          });
         }
       }
     }

@@ -10,7 +10,9 @@ const persist = (() => {
   }
   async function _ensureDir(dirPath) {
     try {
-      await window.__TAURI__.core.invoke("create_dir", { path: dirPath });
+      await window.__TAURI__.core.invoke("create_dir", {
+        path: dirPath,
+      });
     } catch {}
   }
   async function _write(filePath, data) {
@@ -20,7 +22,9 @@ const persist = (() => {
     });
   }
   async function _read(filePath) {
-    const raw = await window.__TAURI__.core.invoke("read_text_file", { path: filePath });
+    const raw = await window.__TAURI__.core.invoke("read_text_file", {
+      path: filePath,
+    });
     return JSON.parse(raw);
   }
   async function saveTreeState(workDir) {
@@ -57,13 +61,18 @@ const persist = (() => {
     });
     try {
       await _ensureDir(_timelinesDir());
-      await _write(paths.join(_timelinesDir(), `${_key(workDir)}.json`), histories);
+      await _write(
+        paths.join(_timelinesDir(), `${_key(workDir)}.json`),
+        histories,
+      );
     } catch {}
   }
   async function loadTimeline(workDir) {
     if (!workDir) return;
     try {
-      const data = await _read(paths.join(_timelinesDir(), `${_key(workDir)}.json`));
+      const data = await _read(
+        paths.join(_timelinesDir(), `${_key(workDir)}.json`),
+      );
       state.files.forEach((f) => {
         if (data[f.path]?.length) timeline.restoreHistory(f.id, data[f.path]);
       });

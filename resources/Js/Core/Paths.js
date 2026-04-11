@@ -9,7 +9,9 @@ const paths = (() => {
     _internals = `${_velocity}/internals`;
     for (const dir of [_velocity, _internals]) {
       try {
-        await window.__TAURI__.core.invoke("create_dir", { path: dir });
+        await window.__TAURI__.core.invoke("create_dir", {
+          path: dir,
+        });
       } catch {}
     }
   }
@@ -23,9 +25,18 @@ const paths = (() => {
     return name.replace(/[^a-zA-Z0-9_\-. ]/g, "_");
   }
   return {
-    get home() { _require("home"); return _home; },
-    get velocityDir() { _require("velocityDir"); return _velocity; },
-    get internals() { _require("internals"); return _internals; },
+    get home() {
+      _require("home");
+      return _home;
+    },
+    get velocityDir() {
+      _require("velocityDir");
+      return _velocity;
+    },
+    get internals() {
+      _require("internals");
+      return _internals;
+    },
     join,
     sanitize,
     init,

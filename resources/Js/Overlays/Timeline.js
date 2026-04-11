@@ -130,9 +130,10 @@ const timeline = (() => {
         _savedHeight = panel.style.height || panel.offsetHeight + "px";
         body.style.display = "none";
         const headerH = header.offsetHeight;
-        const resizerH = document.getElementById("sidebarBottomResizer")?.offsetHeight ?? 4;
-        panel.style.height = (headerH + resizerH) + "px";
-        panel.style.minHeight = (headerH + resizerH) + "px";
+        const resizerH =
+          document.getElementById("sidebarBottomResizer")?.offsetHeight ?? 4;
+        panel.style.height = headerH + resizerH + "px";
+        panel.style.minHeight = headerH + resizerH + "px";
       }
       arrow.classList.toggle("open", _expanded);
       header.setAttribute("aria-expanded", String(_expanded));

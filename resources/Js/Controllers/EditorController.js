@@ -67,14 +67,19 @@ const editorController = (() => {
       }
       _setConnectionStatus("ok", statusText, "ok");
       await execHistory.push(script, filename);
-      eventBus.emit("script:executed", { filename });
+      eventBus.emit("script:executed", {
+        filename,
+      });
     } catch (err) {
       _setConnectionStatus("fail", "No server", "fail");
       injector.reset();
       const msg = err?.message || String(err);
       if (msg) console_.log(msg, "fail");
       if (msg) toast.show(msg, "fail", 3000);
-      eventBus.emit("script:failed", { error: msg, filename });
+      eventBus.emit("script:failed", {
+        error: msg,
+        filename,
+      });
     }
   }
   async function executeScript() {

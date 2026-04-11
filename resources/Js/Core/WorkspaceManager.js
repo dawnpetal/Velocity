@@ -5,7 +5,9 @@ const workspaceManager = (() => {
   }
   async function list() {
     try {
-      const entries = await window.__TAURI__.core.invoke("read_dir", { path: paths.workspaces });
+      const entries = await window.__TAURI__.core.invoke("read_dir", {
+        path: paths.workspaces,
+      });
       return entries
         .filter((e) => e.entry.endsWith(".json") && !e.entry.startsWith("."))
         .map((e) => e.entry.replace(/\.json$/, ""));
@@ -15,7 +17,9 @@ const workspaceManager = (() => {
   }
   async function load(name) {
     try {
-      const raw = await window.__TAURI__.core.invoke("read_text_file", { path: _wsPath(name) });
+      const raw = await window.__TAURI__.core.invoke("read_text_file", {
+        path: _wsPath(name),
+      });
       _current = JSON.parse(raw);
       return _current;
     } catch {
@@ -30,13 +34,18 @@ const workspaceManager = (() => {
     });
   }
   async function create(name) {
-    const ws = { name, folders: [] };
+    const ws = {
+      name,
+      folders: [],
+    };
     await save(ws);
     return ws;
   }
   async function addFolder(ws, folderPath) {
     if (!ws.folders.some((f) => f.path === folderPath))
-      ws.folders.push({ path: folderPath });
+      ws.folders.push({
+        path: folderPath,
+      });
     await save(ws);
   }
   async function removeFolder(ws, folderPath) {
@@ -45,7 +54,9 @@ const workspaceManager = (() => {
   }
   async function deleteWorkspace(name) {
     try {
-      await window.__TAURI__.core.invoke("remove_path", { path: _wsPath(name) });
+      await window.__TAURI__.core.invoke("remove_path", {
+        path: _wsPath(name),
+      });
     } catch {}
     if (_current?.name === name) _current = null;
   }

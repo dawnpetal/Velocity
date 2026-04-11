@@ -44,7 +44,12 @@ const console_ = (() => {
     const time = line.slice(11, 19);
     let type = TYPE_MAP[level];
     if (type === "rbx" && message.startsWith("Info:")) type = "info";
-    return { time, type, channel, message };
+    return {
+      time,
+      type,
+      channel,
+      message,
+    };
   }
   function _appendLine(output, text, type) {
     if (!output) return;
@@ -112,13 +117,17 @@ const console_ = (() => {
     _errorScanTimer = null;
     let watchPath = _logPath;
     if (!watchPath) {
-      try { watchPath = await _findLatestLog(); } catch {}
+      try {
+        watchPath = await _findLatestLog();
+      } catch {}
     }
     if (!watchPath) return;
     let base = _lastLogSize;
     if (!base) {
       try {
-        const initial = await window.__TAURI__.core.invoke("read_text_file", { path: watchPath });
+        const initial = await window.__TAURI__.core.invoke("read_text_file", {
+          path: watchPath,
+        });
         base = initial.length;
       } catch {}
     }
@@ -126,9 +135,14 @@ const console_ = (() => {
     const deadline = Date.now() + 3000;
     async function poll() {
       try {
-        const content = await window.__TAURI__.core.invoke("read_text_file", { path: watchPath });
+        const content = await window.__TAURI__.core.invoke("read_text_file", {
+          path: watchPath,
+        });
         const newText = content.slice(base);
-        if (newText) { base += newText.length; _scanForErrors(newText); }
+        if (newText) {
+          base += newText.length;
+          _scanForErrors(newText);
+        }
       } catch {}
       if (Date.now() < deadline) _errorScanTimer = setTimeout(poll, POLL_MS);
     }
@@ -176,7 +190,9 @@ const console_ = (() => {
     ];
     for (const logDir of candidates) {
       try {
-        const entries = await window.__TAURI__.core.invoke("read_dir", { path: logDir });
+        const entries = await window.__TAURI__.core.invoke("read_dir", {
+          path: logDir,
+        });
         const logs = entries
           .filter(
             (e) =>
@@ -240,7 +256,9 @@ const console_ = (() => {
       return;
     }
     try {
-      const initial = await window.__TAURI__.core.invoke("read_text_file", { path: _logPath });
+      const initial = await window.__TAURI__.core.invoke("read_text_file", {
+        path: _logPath,
+      });
       _lastLogSize = initial.length;
     } catch {
       _lastLogSize = 0;
@@ -250,7 +268,9 @@ const console_ = (() => {
     _updateControls();
     _pollTimer = setInterval(async () => {
       try {
-        const content = await window.__TAURI__.core.invoke("read_text_file", { path: _logPath });
+        const content = await window.__TAURI__.core.invoke("read_text_file", {
+          path: _logPath,
+        });
         if (content.length <= _lastLogSize) return;
         const newContent = content.slice(_lastLogSize);
         _lastLogSize = content.length;

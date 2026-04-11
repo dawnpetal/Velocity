@@ -1,9 +1,7 @@
 const menuScriptsPanel = (() => {
-  let _scripts    = [];
+  let _scripts = [];
   let _editingIdx = null;
-
   const _el = (id) => document.getElementById(id);
-
   function _render() {
     const list = _el("msp-list");
     if (!list) return;
@@ -33,68 +31,69 @@ const menuScriptsPanel = (() => {
       });
     });
   }
-
   function _showEditor(visible) {
-    const ed  = _el("msp-editor");
+    const ed = _el("msp-editor");
     const add = _el("msp-topbar-add");
-    if (ed)  ed.style.display  = visible ? "flex" : "none";
+    if (ed) ed.style.display = visible ? "flex" : "none";
     if (add) add.style.display = visible ? "none" : "";
   }
-
   function _openEditor(idx = null) {
     _editingIdx = idx;
-    _el("msp-editor-title").textContent = idx !== null ? "Edit script" : "New script";
+    _el("msp-editor-title").textContent =
+      idx !== null ? "Edit script" : "New script";
     const s = idx !== null ? _scripts[idx] : null;
-    _el("msp-name-input").value    = s?.name    ?? "";
+    _el("msp-name-input").value = s?.name ?? "";
     _el("msp-content-input").value = s?.content ?? "";
     _showEditor(true);
     _el("msp-name-input").focus();
   }
-
   function _closeEditor() {
     _editingIdx = null;
-    _recording  = false;
+    _recording = false;
     _showEditor(false);
   }
-
   async function _save() {
-    const name    = _el("msp-name-input").value.trim();
+    const name = _el("msp-name-input").value.trim();
     const content = _el("msp-content-input").value.trim();
-
-    if (!name)    return toast.show("Script needs a name", "warn", 2000);
+    if (!name) return toast.show("Script needs a name", "warn", 2000);
     if (!content) return toast.show("Content is empty", "warn", 2000);
-
-    const entry = { name, content };
-    _editingIdx !== null ? (_scripts[_editingIdx] = entry) : _scripts.push(entry);
+    const entry = {
+      name,
+      content,
+    };
+    _editingIdx !== null
+      ? (_scripts[_editingIdx] = entry)
+      : _scripts.push(entry);
     _closeEditor();
     _render();
     await menuBar.saveScripts(_scripts);
     toast.show("Saved", "ok", 1200);
   }
-
   async function _delete(idx) {
-    const ok = await modal.confirm("Delete script", `Remove "${_scripts[idx]?.name}"?`);
+    const ok = await modal.confirm(
+      "Delete script",
+      `Remove "${_scripts[idx]?.name}"?`,
+    );
     if (!ok) return;
     _scripts.splice(idx, 1);
     _render();
     await menuBar.saveScripts(_scripts);
     toast.show("Deleted", "ok", 1200);
   }
-
   async function show() {
     const list = _el("msp-list");
     _scripts = await menuBar.loadScripts();
     _render();
     _showEditor(false);
   }
-
   function mount() {
     _el("msp-topbar-add")?.addEventListener("click", () => _openEditor(null));
     _el("msp-editor-save")?.addEventListener("click", _save);
     _el("msp-editor-close")?.addEventListener("click", _closeEditor);
     _el("msp-editor-close-btn")?.addEventListener("click", _closeEditor);
-
   }
-
-  return { show, mount };
+  return {
+    show,
+    mount,
+  };
 })();

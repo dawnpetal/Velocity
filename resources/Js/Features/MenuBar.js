@@ -8,10 +8,19 @@ const menuBar = (() => {
     }
   }
   async function saveScripts(scripts) {
-    await window.__TAURI__.core.invoke("save_scripts", { scripts });
-    await window.__TAURI__.core.invoke("reload_tray_scripts", { scripts });
+    await window.__TAURI__.core.invoke("save_scripts", {
+      scripts,
+    });
+    await window.__TAURI__.core.invoke("reload_tray_scripts", {
+      scripts,
+    });
     menuScriptsPanel.show();
   }
   async function init() {}
-  return { init, killAgent, loadScripts, saveScripts };
+  return {
+    init,
+    killAgent,
+    loadScripts,
+    saveScripts,
+  };
 })();

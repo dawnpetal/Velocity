@@ -77,12 +77,12 @@ const EditorMount = (() => {
         return;
       }
       window.MonacoEnvironment = {
-        getWorkerUrl: function(_moduleId, label) {
+        getWorkerUrl: function (_moduleId, label) {
           return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
             self.MonacoEnvironment = { baseUrl: '${MONACO_CDN}/../' };
             importScripts('${MONACO_CDN}/base/worker/workerMain.js');
           `)}`;
-        }
+        },
       };
       const script = document.createElement("script");
       script.src = `${MONACO_CDN}/loader.js`;

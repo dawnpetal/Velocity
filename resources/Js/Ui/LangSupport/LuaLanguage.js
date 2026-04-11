@@ -2755,14 +2755,23 @@ const LuaLanguage = (() => {
           endColumn: word.endColumn,
         };
         const K = monaco.languages.CompletionItemKind;
-        const InsertAsSnippet = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
-        const seen = new Set([...KEYWORDS, ...BUILTINS, ...EXECUTOR_GLOBALS, ...ROBLOX_GLOBALS]);
+        const InsertAsSnippet =
+          monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
+        const seen = new Set([
+          ...KEYWORDS,
+          ...BUILTINS,
+          ...EXECUTOR_GLOBALS,
+          ...ROBLOX_GLOBALS,
+        ]);
         const suggestions = [];
-        const localVarRe = /\blocal\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*(?:=|$)/g;
+        const localVarRe =
+          /\blocal\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*(?:=|$)/g;
         const assignRe = /^([a-zA-Z_]\w*)\s*=/;
-        const localFuncRe = /\blocal\s+function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)/g;
+        const localFuncRe =
+          /\blocal\s+function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)/g;
         const funcRe = /\bfunction\s+([a-zA-Z_][\w.]*)\s*\(([^)]*)\)/g;
-        const forVarRe = /\bfor\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*(?:=|in)\b/g;
+        const forVarRe =
+          /\bfor\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*(?:=|in)\b/g;
         const paramRe = /\bfunction\s*(?:[\w.]*\s*)?\(([^)]*)\)/g;
         let m;
         while ((m = localFuncRe.exec(fullText)) !== null) {
@@ -2796,7 +2805,7 @@ const LuaLanguage = (() => {
           });
         }
         while ((m = localVarRe.exec(fullText)) !== null) {
-          const names = m[1].split(",").map(s => s.trim());
+          const names = m[1].split(",").map((s) => s.trim());
           for (const name of names) {
             if (!name || seen.has(name)) continue;
             seen.add(name);
@@ -2830,7 +2839,7 @@ const LuaLanguage = (() => {
           }
         }
         while ((m = forVarRe.exec(fullText)) !== null) {
-          const names = m[1].split(",").map(s => s.trim());
+          const names = m[1].split(",").map((s) => s.trim());
           for (const name of names) {
             if (!name || seen.has(name)) continue;
             seen.add(name);
@@ -2845,7 +2854,10 @@ const LuaLanguage = (() => {
           }
         }
         while ((m = paramRe.exec(fullText)) !== null) {
-          const params = m[1].split(",").map(s => s.trim()).filter(Boolean);
+          const params = m[1]
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
           for (const name of params) {
             if (!name || seen.has(name) || name === "...") continue;
             seen.add(name);
@@ -2859,7 +2871,9 @@ const LuaLanguage = (() => {
             });
           }
         }
-        return { suggestions };
+        return {
+          suggestions,
+        };
       },
     });
     const symbolProvider = _buildSymbolProvider(monaco);

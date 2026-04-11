@@ -1,28 +1,22 @@
 const ctxMenu = (() => {
   const el = document.getElementById("ctxMenu");
-  let _skipNextHide = false;
+  let _open = false;
   function hide() {
-    if (_skipNextHide) {
-      _skipNextHide = false;
-      return;
-    }
+    if (!_open) return;
+    _open = false;
     el.classList.remove("open");
   }
-  document.addEventListener("click", hide);
+  document.addEventListener("mousedown", (e) => {
+    if (_open && !el.contains(e.target)) hide();
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      _skipNextHide = false;
-      el.classList.remove("open");
-    }
+    if (e.key === "Escape") hide();
   });
   document.addEventListener("contextmenu", (e) => {
-    if (!el.contains(e.target)) {
-      _skipNextHide = false;
-      el.classList.remove("open");
-    }
+    if (_open && !el.contains(e.target)) hide();
   });
   function _position(clientX, clientY) {
-    _skipNextHide = true;
+    _open = true;
     el.classList.add("open");
     el.style.left = "0px";
     el.style.top = "0px";
@@ -37,8 +31,7 @@ const ctxMenu = (() => {
     btn.className = "ctx-item" + (danger ? " danger" : "");
     btn.innerHTML = `${icon}<span>${label}</span>`;
     btn.addEventListener("click", () => {
-      _skipNextHide = false;
-      el.classList.remove("open");
+      hide();
       onClick();
     });
     el.appendChild(btn);
