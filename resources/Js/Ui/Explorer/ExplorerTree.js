@@ -111,7 +111,8 @@ const ExplorerTree = (() => {
   function _renderRootNode(rootNode, container) {
     const isPrimary = state.roots.indexOf(rootNode) === 0;
     const header = document.createElement("div");
-    header.className = "tree-root-header" + (isPrimary ? "" : " tree-root-header--secondary");
+    header.className =
+      "tree-root-header" + (isPrimary ? "" : " tree-root-header--secondary");
     const left = document.createElement("div");
     left.className = "tree-root-left";
     const arrow = document.createElement("span");
@@ -159,6 +160,12 @@ const ExplorerTree = (() => {
     if (node.type === "file") row.draggable = true;
     const indent = document.createElement("div");
     indent.className = "tree-indent";
+    for (let i = 0; i < depth; i++) {
+      const guide = document.createElement("span");
+      guide.className = "tree-guide";
+      guide.style.left = i * 14 + 13 + "px";
+      row.appendChild(guide);
+    }
     indent.style.paddingLeft = depth * 14 + 6 + "px";
     const arrowEl = document.createElement("span");
     arrowEl.className =
