@@ -4,14 +4,11 @@
   --font-ui:
     "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
 
-  --glow-xs: 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent);
-  --glow-sm: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent);
-  --glow-md: 0 0 24px color-mix(in srgb, var(--accent) 20%, transparent);
-  --glow-ok: 0 0 8px color-mix(in srgb, var(--ok) 55%, transparent);
-  --glow-err: 0 0 8px color-mix(in srgb, var(--fail) 55%, transparent);
+  --glow-ok: 0 0 6px color-mix(in srgb, var(--ok) 50%, transparent);
+  --glow-err: 0 0 6px color-mix(in srgb, var(--fail) 50%, transparent);
 
-  --chrome-border: color-mix(in srgb, var(--accent) 10%, var(--border));
-  --chrome-bg: color-mix(in srgb, var(--bg1) 100%, transparent);
+  --chrome-border: var(--border-strong);
+  --chrome-bg: var(--bg1);
 }
 
 body::after {
@@ -20,7 +17,7 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 9998;
-  opacity: 0.03;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px;
 }
@@ -28,34 +25,29 @@ body::after {
 .titlebar {
   height: 30px !important;
   background: var(--bg1) !important;
-  border-bottom: 1px solid var(--chrome-border) !important;
-  box-shadow:
-    0 1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
-    0 2px 12px rgba(0, 0, 0, 0.35) !important;
+  border-bottom: 1px solid var(--border-strong) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3) !important;
   position: relative !important;
   z-index: 100;
-
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
 .activity-bar {
   background: var(--bg1) !important;
-  border-right: 1px solid var(--chrome-border) !important;
+  border-right: 1px solid var(--border-strong) !important;
   padding: 6px 0 !important;
   gap: 2px !important;
 }
 
 .activity-btn {
-  border-radius: 9px !important;
+  border-radius: 8px !important;
   width: 36px !important;
   height: 36px !important;
   color: var(--text3) !important;
-
   transition:
     color 110ms ease,
-    background 110ms ease,
-    box-shadow 110ms ease !important;
+    background 110ms ease !important;
 }
 
 .activity-btn svg {
@@ -73,21 +65,21 @@ body::after {
 }
 
 .activity-btn.active {
-  color: var(--accent) !important;
-  background: color-mix(in srgb, var(--accent) 11%, var(--bg3)) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  color: var(--text0) !important;
+  background: var(--bg3) !important;
+  box-shadow: none !important;
 }
 
 .sidebar {
   background: var(--bg1) !important;
-  border-right: 1px solid var(--chrome-border) !important;
+  border-right: 1px solid var(--border-strong) !important;
 }
 
 .sidebar-header {
   height: 40px !important;
   min-height: 40px !important;
-  background: color-mix(in srgb, var(--bg1) 70%, var(--bg0)) !important;
-  border-bottom: 1px solid var(--chrome-border) !important;
+  background: var(--bg1) !important;
+  border-bottom: 1px solid var(--border-strong) !important;
 }
 
 .sidebar-label {
@@ -116,7 +108,7 @@ body::after {
 
 .tab-strip {
   background: var(--bg1) !important;
-  border-bottom: 1px solid var(--chrome-border) !important;
+  border-bottom: 1px solid var(--border-strong) !important;
   height: 40px !important;
   min-height: 40px !important;
   padding: 0 6px !important;
@@ -129,16 +121,14 @@ body::after {
 
 .tab {
   height: 28px !important;
-  border-radius: 7px !important;
+  border-radius: 6px !important;
   font-size: 12px !important;
   color: var(--text2) !important;
   border: none !important;
   background: transparent !important;
-
   transition:
     color 100ms ease,
-    background 100ms ease,
-    box-shadow 100ms ease !important;
+    background 100ms ease !important;
 }
 
 .tab:hover {
@@ -148,8 +138,8 @@ body::after {
 
 .tab.active {
   color: var(--text0) !important;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg3)) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent) !important;
+  background: var(--bg3) !important;
+  box-shadow: none !important;
 }
 
 .tab::before,
@@ -163,13 +153,13 @@ body::after {
 
 .bottom-panel {
   background: var(--bg1) !important;
-  border-top: 1px solid var(--chrome-border) !important;
-  box-shadow: 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent) !important;
+  border-top: 1px solid var(--border-strong) !important;
+  box-shadow: none !important;
 }
 
 .panel-header {
-  background: color-mix(in srgb, var(--bg1) 70%, var(--bg0)) !important;
-  border-bottom: 1px solid var(--chrome-border) !important;
+  background: var(--bg1) !important;
+  border-bottom: 1px solid var(--border-strong) !important;
 }
 
 .panel-tab {
@@ -187,20 +177,20 @@ body::after {
 
 .panel-tab.active {
   color: var(--text0) !important;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg3)) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent) !important;
+  background: var(--bg3) !important;
+  box-shadow: none !important;
 }
 
 .status-bar {
-  background: color-mix(in srgb, var(--accent) 7%, var(--bg0)) !important;
-  border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border)) !important;
+  background: var(--bg0) !important;
+  border-top: 1px solid var(--border-strong) !important;
 }
 
 .status-item {
-  color: var(--text2) !important;
+  color: var(--text3) !important;
 }
 .status-item:hover {
-  color: var(--text0) !important;
+  color: var(--text1) !important;
   background: var(--bg3) !important;
 }
 
@@ -220,7 +210,7 @@ body::after {
 
 .fab-secondary {
   background: var(--bg3) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border-strong)) !important;
+  border: 1px solid var(--border-strong) !important;
   border-right: none !important;
   border-radius: 13px 0 0 13px !important;
   height: 46px !important;
@@ -228,12 +218,12 @@ body::after {
 }
 
 .execute-fab {
-  background: color-mix(in srgb, var(--accent) 15%, var(--bg3)) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border-strong)) !important;
+  background: var(--bg3) !important;
+  border: 1px solid var(--border-strong) !important;
   border-radius: 0 13px 13px 0 !important;
   height: 46px !important;
   width: 46px !important;
-  color: var(--accent) !important;
+  color: var(--text0) !important;
   box-shadow: none !important;
   transition:
     background 120ms ease,
@@ -246,17 +236,13 @@ body::after {
 }
 
 .execute-fab:hover {
-  background: color-mix(in srgb, var(--accent) 24%, var(--bg3)) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--accent) 70%,
-    var(--border-strong)
-  ) !important;
+  background: var(--bg4) !important;
+  border-color: var(--border-strong) !important;
   transform: scale(1.05) !important;
 }
 .execute-fab:active {
   transform: scale(0.92) !important;
-  background: color-mix(in srgb, var(--accent) 18%, var(--bg3)) !important;
+  background: var(--bg4) !important;
 }
 
 .fab-icon-btn {
@@ -275,11 +261,7 @@ body::after {
 }
 
 .fab-divider {
-  background: color-mix(
-    in srgb,
-    var(--accent) 25%,
-    var(--border-strong)
-  ) !important;
+  background: var(--border-strong) !important;
 }
 
 .tree-row {
@@ -291,7 +273,7 @@ body::after {
 }
 
 .tree-row.active {
-  background: color-mix(in srgb, var(--accent) 9%, var(--bg3)) !important;
+  background: var(--bg3) !important;
 }
 .tree-row.active::before {
   content: "";
@@ -300,9 +282,8 @@ body::after {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--accent);
+  background: var(--text1);
   border-radius: 0 2px 2px 0;
-  box-shadow: var(--glow-xs);
 }
 
 .sidebar-resizer {
@@ -310,16 +291,16 @@ body::after {
 }
 .sidebar-resizer:hover,
 .sidebar-resizer.dragging {
-  background: var(--accent) !important;
-  box-shadow: var(--glow-sm) !important;
+  background: var(--border-strong) !important;
+  box-shadow: none !important;
 }
 .panel-resizer {
   transition: background 100ms ease !important;
 }
 .panel-resizer:hover,
 .panel-resizer.dragging {
-  background: var(--accent) !important;
-  box-shadow: var(--glow-sm) !important;
+  background: var(--border-strong) !important;
+  box-shadow: none !important;
 }
 
 ::-webkit-scrollbar {
@@ -334,7 +315,7 @@ body::after {
   border-radius: 10px !important;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--accent) 30%, var(--bg5)) !important;
+  background: var(--border-strong) !important;
 }
 
 .panel-ctrl-btn {
@@ -344,17 +325,12 @@ body::after {
   color: var(--text2) !important;
   transition:
     background 100ms ease,
-    color 100ms ease,
-    border-color 100ms ease !important;
+    color 100ms ease !important;
 }
 .panel-ctrl-btn:hover:not(:disabled) {
   background: var(--bg4) !important;
   color: var(--text0) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--accent) 30%,
-    var(--border-strong)
-  ) !important;
+  border-color: var(--border-strong) !important;
   transform: none !important;
 }
 .panel-ctrl-btn--stop:not(:disabled):hover {
@@ -373,33 +349,31 @@ body::after {
 }
 .modal-text-input:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent) !important;
   outline: none !important;
 }
 
 .open-folder-btn:not(.open-folder-btn--secondary) {
   background: var(--accent) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent) !important;
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent) !important;
-  transition:
-    filter 130ms ease,
-    box-shadow 130ms ease !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: filter 130ms ease !important;
   transform: none !important;
 }
 .open-folder-btn:not(.open-folder-btn--secondary):hover {
   filter: brightness(1.1) !important;
-  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 42%, transparent) !important;
+  box-shadow: none !important;
   transform: none !important;
 }
 
 .hist-panel {
   background: var(--bg1) !important;
-  border-left: 1px solid var(--chrome-border) !important;
-  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.55) !important;
+  border-left: 1px solid var(--border-strong) !important;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45) !important;
 }
 .hist-header {
-  background: color-mix(in srgb, var(--bg1) 70%, var(--bg0)) !important;
-  border-bottom: 1px solid var(--chrome-border) !important;
+  background: var(--bg1) !important;
+  border-bottom: 1px solid var(--border-strong) !important;
 }
 .hist-item:hover {
   background: var(--bg3) !important;
@@ -408,48 +382,46 @@ body::after {
 .hist-btn-primary {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  box-shadow: none !important;
 }
 .hist-btn-primary:hover {
   filter: brightness(1.1) !important;
 }
 
 .context-menu {
-  background: var(--bg1) !important;
-  border: 1px solid var(--chrome-border) !important;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.55),
-    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent) !important;
+  background: var(--bg2) !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
 }
 
 .placeholder-icon-wrap {
   background: var(--bg3) !important;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border)) !important;
+  border: 1px solid var(--border-strong) !important;
 }
 .placeholder-icon-wrap svg {
-  color: var(--accent) !important;
+  color: var(--text3) !important;
 }
 
 .placeholder-shortcuts kbd {
   background: var(--bg3) !important;
   border: 1px solid var(--border-strong) !important;
-  color: var(--text1) !important;
+  color: var(--text2) !important;
   box-shadow: 0 1px 0 var(--border-strong) !important;
 }
 
 .toast {
-  background: var(--bg1) !important;
-  border: 1px solid var(--chrome-border) !important;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5) !important;
+  background: var(--bg2) !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
   color: var(--text0);
 }
 
 .ws-picker-item:hover {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border)) !important;
+  border-color: var(--border-strong) !important;
   background: var(--bg3) !important;
   transform: none !important;
 }
