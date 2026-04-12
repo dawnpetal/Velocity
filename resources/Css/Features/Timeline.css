@@ -6,7 +6,7 @@
   height: 180px;
   min-height: 24px;
   max-height: 480px;
-  background: var(--bg1);
+  background: var(--bg2);
   overflow: hidden;
 }
 
