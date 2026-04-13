@@ -163,6 +163,20 @@ const timeline = (() => {
       document.addEventListener("mouseup", onUp);
     });
   }
+  function snapshotByPath() {
+    const snap = {};
+    state.files.forEach((f) => {
+      const h = _histories.get(f.id);
+      if (h?.length) snap[f.path] = h;
+    });
+    return snap;
+  }
+  function restoreFromSnapshot(snap) {
+    state.files.forEach((f) => {
+      if (snap[f.path]?.length) _histories.set(f.id, snap[f.path]);
+    });
+    _render();
+  }
   return {
     init,
     recordSave,
@@ -171,5 +185,7 @@ const timeline = (() => {
     clearActive,
     getHistory,
     restoreHistory,
+    snapshotByPath,
+    restoreFromSnapshot,
   };
 })();

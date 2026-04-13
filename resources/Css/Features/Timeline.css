@@ -3,7 +3,7 @@
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  height: 180px;
+  height: 100px;
   min-height: 24px;
   max-height: 480px;
   background: var(--bg2);
@@ -11,8 +11,8 @@
 }
 
 .sb-resizer {
-  height: 4px;
-  min-height: 4px;
+  height: 1.5px;
+  min-height: 1px;
   cursor: row-resize;
   flex-shrink: 0;
   transition: background var(--fast);
