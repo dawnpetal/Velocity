@@ -2,277 +2,203 @@ const invoke = window.__TAURI__.core.invoke;
 const { listen } = window.__TAURI__.event;
 const _win = window.__TAURI__.window.getCurrentWindow();
 
-const PLAY = `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>`;
-const CIRC = 138.2;
+const CIRC = 125.7;
+let _validCache = null;
+let _tickTimer = null;
+let _allScripts = [];
+let _pinned = JSON.parse(localStorage.getItem("v_p") || "[]");
+let _recents = JSON.parse(localStorage.getItem("v_r") || "[]");
+let _isRefreshing = false;
 
 const el = {
-  keySection:  document.getElementById("key-section"),
-  expires:     document.getElementById("expires-value"),
-  expiresSub:  document.getElementById("expires-sub"),
-  keyVal:      document.getElementById("key-value"),
-  btnCopy:     document.getElementById("btn-copy"),
-  btnRefresh:  document.getElementById("btn-refresh"),
-  ringHour:    document.getElementById("ring-hour"),
-  ringDay:     document.getElementById("ring-day"),
-  ringHourNum: document.getElementById("ring-hour-num"),
-  ringDayNum:  document.getElementById("ring-day-num"),
-  scroll:      document.getElementById("scripts-scroll"),
-  empty:       document.getElementById("empty"),
-  btnOpen:     document.getElementById("btn-open"),
-  runCount:    document.getElementById("run-count"),
+  keySec: document.getElementById("key-section"),
+  expVal: document.getElementById("exp-val"),
+  expSub: document.getElementById("exp-sub"),
+  keyDisp: document.getElementById("key-display"),
+  btnCopy: document.getElementById("btn-copy"),
+  btnRefresh: document.getElementById("btn-refresh"),
+  ringH: document.getElementById("ring-h"),
+  ringD: document.getElementById("ring-d"),
+  ringHN: document.getElementById("ring-h-n"),
+  ringDN: document.getElementById("ring-d-n"),
+  list: document.getElementById("list"),
+  listLoader: document.getElementById("list-loader"),
+  recents: document.getElementById("recents"),
+  empty: document.getElementById("empty"),
+  count: document.getElementById("count"),
+  search: document.getElementById("search-input"),
+  status: document.getElementById("status"),
+  dot: document.getElementById("status-dot")
 };
-
-let _validCache = null;
-let _tickTimer  = null;
 
 function hourKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}`;
 }
 
 function dayKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-
-function isRateLimit(err) {
-  const s = String(err).toLowerCase();
-  return s.includes("rate") || s.includes("429") || s.includes("too many");
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function setRing(ring, numEl, val, max) {
   const pct = max > 0 ? Math.min(val / max, 1) : 0;
   ring.style.strokeDashoffset = CIRC - pct * CIRC;
-  ring.className = "ring-fill" + (pct >= 0.67 ? " warn" : "");
+  ring.classList.toggle("warn", pct >= 0.75);
   numEl.textContent = val;
 }
 
-function fmtCountdown(secs) {
-  if (secs <= 0) return "Expired";
-  const d = Math.floor(secs / 86400);
-  const h = Math.floor((secs % 86400) / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  const s = Math.floor(secs % 60);
-  if (d > 0) return `${d}d ${h}h ${m}m`;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  return `${m}m ${s}s`;
-}
-
-function fmtBig(secs) {
-  if (secs <= 0) return { text: "Expired", cls: "fail" };
-  const d = Math.floor(secs / 86400);
-  const h = Math.floor(secs / 3600);
-  if (d >= 2)  return { text: `${d} Days`,  cls: d < 4 ? "warn" : "" };
-  if (d === 1) return { text: "1 Day",      cls: "warn" };
-  if (h >= 1)  return { text: `${h}h`,      cls: "warn" };
-  const m = Math.floor(secs / 60);
-  return { text: `${m}m`, cls: "warn" };
-}
-
-function startTick() {
-  if (_tickTimer) clearInterval(_tickTimer);
-  if (!_validCache?.expires_at) return;
-
-  function tick() {
-    if (!_validCache?.expires_at) return;
-    const elapsed = Date.now() / 1000 - _validCache.fetched_at;
-    const remaining = _validCache.expires_at - _validCache.fetched_at - elapsed;
-    const { text, cls } = fmtBig(remaining);
-    el.expires.textContent = text;
-    el.expires.className = cls;
-    if (remaining > 0) {
-      el.expiresSub.textContent = fmtCountdown(remaining);
-    } else {
-      el.expiresSub.textContent = "Key expired";
-      clearInterval(_tickTimer);
-    }
-  }
-
-  tick();
-  _tickTimer = setInterval(tick, 1000);
-}
-
-function renderCache(c) {
-  if (!c) {
-    el.expires.textContent = "—";
-    el.expires.className = "";
-    el.expiresSub.textContent = "";
-    el.keyVal.textContent = "No key loaded";
-    setRing(el.ringHour, el.ringHourNum, 0, 3);
-    setRing(el.ringDay,  el.ringDayNum,  0, 12);
-    return;
-  }
-
-  if (!c.valid) {
-    if (isRateLimit(c.error ?? "") && _validCache) {
-      renderValidState(_validCache, true);
-      return;
-    }
-    if (_validCache && _validCache.expires_at) {
-      renderValidState(_validCache, true);
-      return;
-    }
-    el.expires.textContent = "Invalid";
-    el.expires.className = "fail";
-    el.expiresSub.textContent = c.error ? c.error.replace("Rate limited: ", "") : "Validation failed";
-    el.keyVal.textContent = c.key || c.error || "Validation failed";
-    setRing(el.ringHour, el.ringHourNum, 0, 3);
-    setRing(el.ringDay,  el.ringDayNum,  0, 12);
-    return;
-  }
-
-  _validCache = c;
-  renderValidState(c, false);
-}
-
-function renderValidState(c, isStale) {
-  el.keyVal.textContent = c.key || "—";
-  setRing(el.ringHour, el.ringHourNum, (c.hourly_counts ?? {})[hourKey()] ?? 0, 3);
-  setRing(el.ringDay,  el.ringDayNum,  (c.daily_counts  ?? {})[dayKey()]  ?? 0, 12);
-  if (isStale) {
-    el.expiresSub.textContent = "cached · tap ↺ to refresh";
-  } else {
-    el.expiresSub.textContent = "";
-  }
-  startTick();
-}
-
-function renderScripts(scripts, executor) {
-  el.scroll.querySelectorAll(".srow").forEach(n => n.remove());
-
-  if (!scripts?.length) {
-    el.empty.style.display = "block";
-    el.runCount.textContent = "";
-    return;
-  }
-  el.empty.style.display = "none";
-  el.runCount.textContent = scripts.length;
-
-  scripts.forEach((s, i) => {
-    const row = document.createElement("div");
-    row.className = "srow";
-    row.setAttribute("role", "button");
-
-    const idx = document.createElement("div");
-    idx.className = "sidx";
-    idx.textContent = i + 1;
-
-    const meta = document.createElement("div");
-    meta.className = "smeta";
-
-    const name = document.createElement("div");
-    name.className = "sname";
-    name.textContent = s.name;
-    meta.appendChild(name);
-
-    if (s.shortcut) {
-      const kbd = document.createElement("div");
-      kbd.className = "skbd";
-      kbd.textContent = s.shortcut.toLowerCase()
-        .replace("cmd","⌘").replace("shift","⇧")
-        .replace("alt","⌥").replace("ctrl","⌃")
-        .replace(/\+/g,"");
-      meta.appendChild(kbd);
-    }
-
-    const run = document.createElement("button");
-    run.className = "srun";
-    run.innerHTML = PLAY;
-
-    const doRun = (e) => {
-      e.stopPropagation();
-      invoke("hide_popover").catch(() => {});
-      invoke("inject_script", { code: s.content, executor }).catch(() => {});
+function renderRecents() {
+  el.recents.innerHTML = "";
+  if (!_recents.length) return el.recents.style.display = "none";
+  el.recents.style.display = "flex";
+  _recents.forEach(name => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.textContent = name;
+    chip.onclick = () => {
+      const s = _allScripts.find(x => x.name === name);
+      if (s) runScript(s);
     };
-
-    row.addEventListener("click", doRun);
-    run.addEventListener("click", doRun);
-    row.append(idx, meta, run);
-    el.scroll.insertBefore(row, el.empty);
+    el.recents.appendChild(chip);
   });
 }
 
-async function getSettings() {
-  try { return (await invoke("load_ui_state_cmd"))?.settings ?? {}; }
-  catch { return {}; }
+async function runScript(s) {
+  if (el.dot.classList.contains("busy")) return;
+  
+  el.status.textContent = "Injecting";
+  el.dot.classList.add("busy");
+  
+  try {
+    await invoke("inject_script", { code: s.content });
+    _recents = [s.name, ..._recents.filter(x => x !== s.name)].slice(0, 6);
+    localStorage.setItem("v_r", JSON.stringify(_recents));
+    renderRecents();
+    el.status.textContent = "Success";
+  } catch (e) {
+    el.status.textContent = "Failed";
+  } finally {
+    el.dot.classList.remove("busy");
+    setTimeout(() => el.status.textContent = "Ready", 2000);
+  }
 }
 
-async function refresh() {
-  const settings   = await getSettings();
-  const executor   = settings.executor ?? "hydrogen";
-  const isHydrogen = !executor || executor === "hydrogen";
+function renderScripts(query = "") {
+  el.list.querySelectorAll(".srow").forEach(n => n.remove());
+  const filtered = _allScripts
+    .filter(s => s.name.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => {
+      const aP = _pinned.includes(a.name);
+      const bP = _pinned.includes(b.name);
+      return aP === bP ? a.name.localeCompare(b.name) : aP ? -1 : 1;
+    });
 
-  el.keySection.classList.toggle("hidden", !isHydrogen);
+  el.empty.style.display = filtered.length ? "none" : "block";
+  el.count.textContent = `${filtered.length} Scripts`;
 
-  if (isHydrogen) {
-    try {
-      const c = await invoke("get_key_cache") ?? null;
+  filtered.forEach(s => {
+    const isPinned = _pinned.includes(s.name);
+    const row = document.createElement("div");
+    row.className = `srow ${isPinned ? 'is-pinned' : ''}`;
+    row.innerHTML = `
+      <div class="s-name">${s.name}</div>
+      <div class="s-pin">
+        <svg viewBox="0 0 24 24" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.5" width="14"><path d="M12 2L15 8.5L22 9.2L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9.2L9 8.5L12 2Z"/></svg>
+      </div>
+    `;
+
+    row.querySelector(".s-pin").onclick = (e) => {
+      e.stopPropagation();
+      _pinned = isPinned ? _pinned.filter(p => p !== s.name) : [..._pinned, s.name];
+      localStorage.setItem("v_p", JSON.stringify(_pinned));
+      renderScripts(el.search.value);
+    };
+
+    row.onclick = () => runScript(s);
+    el.list.appendChild(row);
+  });
+}
+
+async function refresh(force = false) {
+  if (_isRefreshing && !force) return;
+  _isRefreshing = true;
+  
+  el.listLoader.classList.add("active");
+  
+  try {
+    const uiState = await invoke("load_ui_state_cmd").catch(() => ({}));
+    const executor = uiState?.settings?.executor ?? "hydrogen";
+    const isHydro = executor === "hydrogen";
+    el.keySec.classList.toggle("hidden", !isHydro);
+
+    if (isHydro) {
+      const c = await invoke("get_key_cache").catch(() => null);
       if (c?.valid) {
         _validCache = c;
-        renderValidState(c, false);
-      } else if (c && !c.valid && _validCache) {
-        renderValidState(_validCache, true);
+        el.keyDisp.textContent = c.key || "—";
+        setRing(el.ringH, el.ringHN, (c.hourly_counts ?? {})[hourKey()] ?? 0, 3);
+        setRing(el.ringD, el.ringDN, (c.daily_counts ?? {})[dayKey()] ?? 0, 12);
+        
+        if (_tickTimer) clearInterval(_tickTimer);
+        _tickTimer = setInterval(() => {
+          const rem = _validCache.expires_at - (Date.now() / 1000);
+          if (rem <= 0) {
+            el.expVal.textContent = "Expired";
+            el.expSub.textContent = "Revalidate Required";
+            return;
+          }
+          const h = Math.floor(rem / 3600);
+          const m = Math.floor((rem % 3600) / 60);
+          el.expVal.textContent = h > 0 ? `${h}h ${m}m` : `${m}m ${Math.floor(rem % 60)}s`;
+          el.expSub.textContent = `Until ${new Date(_validCache.expires_at * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+        }, 1000);
       } else {
-        renderCache(c);
+        el.expVal.textContent = "Invalid";
+        el.expSub.textContent = "Key expired or missing";
       }
-    } catch {
-      if (_validCache) renderValidState(_validCache, true);
     }
-  }
 
-  try {
-    const scripts = await invoke("get_scripts") ?? [];
-    renderScripts(scripts, executor);
-  } catch {}
-}
-
-async function revalidate() {
-  el.btnRefresh.classList.add("spinning");
-  el.btnRefresh.disabled = true;
-
-  try {
-    const settings = await getSettings();
-    const c = await invoke("validate_key") ?? null;
-    renderCache(c);
-    const scripts = await invoke("get_scripts") ?? [];
-    renderScripts(scripts, settings.executor ?? "hydrogen");
-  } catch (err) {
-    if (isRateLimit(err) && _validCache) renderValidState(_validCache, true);
-    else if (_validCache) renderValidState(_validCache, true);
-    else { el.expires.textContent = "Failed"; el.expires.className = "fail"; }
+    _allScripts = await invoke("get_scripts").catch(() => []);
+    renderScripts(el.search.value);
+    renderRecents();
   } finally {
-    el.btnRefresh.classList.remove("spinning");
-    el.btnRefresh.disabled = false;
+    _isRefreshing = false;
+    el.listLoader.classList.remove("active");
   }
 }
 
-el.btnRefresh.addEventListener("click", revalidate);
+el.search.oninput = (e) => renderScripts(e.target.value);
 
-el.btnCopy.addEventListener("click", async () => {
+el.btnRefresh.onclick = async () => {
+  if (el.btnRefresh.disabled) return;
+  
+  el.btnRefresh.disabled = true;
+  el.btnRefresh.classList.add("spinning");
+  el.status.textContent = "Validating";
+  
   try {
-    const c = _validCache ?? await invoke("get_key_cache");
-    if (!c?.key) return;
-    await navigator.clipboard.writeText(c.key);
-    el.btnCopy.classList.add("copied");
-    setTimeout(() => el.btnCopy.classList.remove("copied"), 1500);
-  } catch {}
-});
+    await invoke("validate_key");
+    await refresh(true);
+    el.status.textContent = "Updated";
+  } catch (e) {
+    el.status.textContent = "Error";
+  } finally {
+    el.btnRefresh.disabled = false;
+    el.btnRefresh.classList.remove("spinning");
+    setTimeout(() => el.status.textContent = "Ready", 2000);
+  }
+};
 
-el.btnOpen.addEventListener("click", () => {
-  _win.hide().catch(() => {});
-  invoke("show_popover").catch(() => {});
-});
+el.btnCopy.onclick = async () => {
+  if (!_validCache?.key) return;
+  await navigator.clipboard.writeText(_validCache.key);
+  const old = el.status.textContent;
+  el.status.textContent = "Copied";
+  setTimeout(() => el.status.textContent = old, 1500);
+};
 
-window.addEventListener("keydown", e => {
-  if (e.key === "Escape") _win.hide().catch(() => {});
-});
-
-let _shownAt = 0;
-_win.onFocusChanged(({ payload: focused }) => {
-  if (!focused && Date.now() - _shownAt > 300) _win.hide().catch(() => {});
-});
-
-listen("popover:refresh",  () => { _shownAt = Date.now(); refresh(); });
-listen("executor:changed", () => refresh());
+_win.listen("tauri://blur", () => _win.hide());
+listen("popover:refresh", () => refresh(true));
 
 refresh();

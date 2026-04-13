@@ -65,7 +65,7 @@ pub fn seed_default_workspace(app: &AppHandle) -> anyhow::Result<bool> {
             MenuScript {
                 name: "Dex Explorer".to_string(),
                 shortcut: None,
-                content: "loadstring(game:HttpGet('https://raw.githubusercontent.com/LorekeeperZinnia/Dex/refs/heads/master/main.lua'))()".to_string(),
+                content: "loadstring(game:HttpGet('https://raw.githubusercontent.com/infyiff/backup/main/dex.lua'))()".to_string(),
             },
         ];
 

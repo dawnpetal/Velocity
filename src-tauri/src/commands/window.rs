@@ -12,11 +12,6 @@ fn show_without_stealing_focus(window: &tauri::WebviewWindow) {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
-fn show_without_stealing_focus(window: &tauri::WebviewWindow) {
-    let _ = window.show();
-}
-
 #[tauri::command]
 pub fn show_popover(app: AppHandle) -> Result<(), String> {
     if let Some(popover) = app.get_webview_window("popover") {
@@ -40,6 +35,8 @@ pub fn hide_popover(app: AppHandle) -> Result<(), String> {
 
 pub fn show_popover_without_focus(app: &AppHandle) {
     if let Some(popover) = app.get_webview_window("popover") {
+        let _ = popover.show();
+        let _ = popover.set_focus();
         show_without_stealing_focus(&popover);
         let _ = popover.emit("popover:refresh", ());
     }
