@@ -66,7 +66,7 @@ body::after {
 
 .activity-btn.active {
   color: var(--text0) !important;
-  background: var(--bg3) !important;
+  background: var(--bg5) !important;
   box-shadow: none !important;
 }
 
@@ -107,7 +107,7 @@ body::after {
 }
 
 .tab-strip {
-  background: var(--bg1) !important;
+  background: var(--bg2) !important;
   border-bottom: 1px solid var(--border-strong) !important;
   height: 40px !important;
   min-height: 40px !important;
@@ -138,7 +138,7 @@ body::after {
 
 .tab.active {
   color: var(--text0) !important;
-  background: var(--bg3) !important;
+  background: var(--bg4) !important;
   box-shadow: none !important;
 }
 
@@ -177,7 +177,7 @@ body::after {
 
 .panel-tab.active {
   color: var(--text0) !important;
-  background: var(--bg3) !important;
+  background: var(--bg4) !important;
   box-shadow: none !important;
 }
 
