@@ -1,7 +1,3 @@
-/* =====================================================================
-   EMPTY EXPLORER
-   ===================================================================== */
-
 .empty-explorer {
   display: flex;
   flex-direction: column;
@@ -93,11 +89,6 @@
   height: 12px;
   flex-shrink: 0;
 }
-
-
-/* =====================================================================
-   FILE TREE
-   ===================================================================== */
 
 .tree-root-header {
   display: flex;
@@ -341,11 +332,6 @@
   outline-offset: -4px;
 }
 
-
-/* =====================================================================
-   SEARCH PANEL
-   ===================================================================== */
-
 .search-panel {
   padding: 8px;
   border-bottom: 1px solid var(--border);
@@ -404,7 +390,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color var(--fast), background var(--fast);
+  transition:
+    color var(--fast),
+    background var(--fast);
 }
 
 .search-toggle:hover {
@@ -577,11 +565,6 @@
   color: var(--text3);
 }
 
-
-/* =====================================================================
-   SETTINGS PANEL — SHELL & NAV
-   ===================================================================== */
-
 .settings-panel {
   flex: 1;
   display: flex;
@@ -622,7 +605,9 @@
   color: var(--text2);
   text-decoration: none;
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s;
   border-left: 2px solid transparent;
   margin: 0 6px 0 0;
   border-radius: 0 6px 6px 0;
@@ -656,11 +641,6 @@
   opacity: 1;
 }
 
-
-/* =====================================================================
-   SETTINGS PANEL — BODY & SECTIONS
-   ===================================================================== */
-
 .sp-body {
   flex: 1;
   overflow-y: auto;
@@ -674,7 +654,7 @@
   max-width: 680px;
 }
 
-.sp-section+.sp-section {
+.sp-section + .sp-section {
   margin-top: 12px;
   border-top: 1px solid var(--border);
   padding-top: 40px;
@@ -699,11 +679,6 @@
   line-height: 1.5;
 }
 
-
-/* =====================================================================
-   SETTINGS PANEL — ROWS
-   ===================================================================== */
-
 .sp-rows {
   display: flex;
   flex-direction: column;
@@ -720,7 +695,9 @@
   background: var(--bg2);
   border: 1px solid transparent;
   min-height: 52px;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
 
 .sp-row:hover {
@@ -752,10 +729,98 @@
   line-height: 1.4;
 }
 
+.about-update-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
 
-/* =====================================================================
-   SETTINGS PANEL — SHORTCUTS GRID
-   ===================================================================== */
+.about-update-status {
+  font-size: 11px;
+  font-family: var(--font-ui);
+  color: var(--text3);
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.about-update-status:empty {
+  display: none;
+}
+
+.about-update-status[data-status-type="ok"] {
+  color: var(--ok);
+}
+
+.about-update-status[data-status-type="update"] {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.about-update-status[data-status-type="error"] {
+  color: var(--fail);
+}
+
+.about-update-status[data-status-type="loading"] {
+  color: var(--text2);
+  font-style: italic;
+}
+
+.about-update-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text1);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.about-update-btn:hover {
+  background: var(--bg4);
+  border-color: var(--text2);
+  color: var(--text0);
+}
+
+.about-update-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.about-discord-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, #5865f2 55%, var(--border-strong));
+  color: color-mix(in srgb, #8891f8 80%, var(--text1));
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.about-discord-btn:hover {
+  background: color-mix(in srgb, #5865f2 12%, transparent);
+  border-color: #5865f2;
+  color: #a5aeff;
+}
 
 .sp-shortcut-grid {
   display: grid;
@@ -797,11 +862,6 @@
   color: var(--text2);
 }
 
-
-/* =====================================================================
-   SETTINGS PANEL — THEME GRID
-   ===================================================================== */
-
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -815,18 +875,25 @@
   border-radius: 9px;
   padding: 12px 14px;
   cursor: pointer;
-  transition: border-color 0.12s, background 0.12s, transform 0.1s;
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    transform 0.1s;
   position: relative;
   overflow: hidden;
 }
 
 .theme-card::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   opacity: 0;
   transition: opacity 0.12s;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 60%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 5%, transparent),
+    transparent 60%
+  );
   pointer-events: none;
 }
 
@@ -850,7 +917,7 @@
 }
 
 .theme-card.active::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 10px;
   right: 10px;
@@ -889,11 +956,6 @@
   letter-spacing: 0.01em;
 }
 
-
-/* =====================================================================
-   SETTINGS PANEL — ICON THEMES
-   ===================================================================== */
-
 .icon-theme-list {
   display: flex;
   flex-direction: column;
@@ -909,7 +971,9 @@
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid transparent;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   cursor: pointer;
 }
 
@@ -964,11 +1028,6 @@
   padding: 2px 7px;
   border-radius: 4px;
 }
-
-
-/* =====================================================================
-   SETTINGS PANEL — CONTROLS (select, range, toggle)
-   ===================================================================== */
 
 .settings-section {
   font-size: 10px;
@@ -1099,7 +1158,7 @@
   border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
 }
 
-.toggle-switch input:checked+.toggle-track {
+.toggle-switch input:checked + .toggle-track {
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -1116,14 +1175,9 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.toggle-switch input:checked+.toggle-track .toggle-thumb {
+.toggle-switch input:checked + .toggle-track .toggle-thumb {
   transform: translateX(14px);
 }
-
-
-/* =====================================================================
-   SETTINGS PANEL — ACTION BUTTONS
-   ===================================================================== */
 
 .settings-action-btn {
   background: var(--bg3);
@@ -1135,7 +1189,10 @@
   padding: 6px 14px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
   white-space: nowrap;
 }
 
@@ -1178,11 +1235,6 @@
   border: 1px solid var(--border);
   color: var(--text3);
 }
-
-
-/* =====================================================================
-   CONTEXT MENU
-   ===================================================================== */
 
 .ctx-menu {
   position: fixed;
@@ -1238,7 +1290,9 @@
   padding: 6px 9px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background var(--fast), color var(--fast);
+  transition:
+    background var(--fast),
+    color var(--fast);
   text-align: left;
 }
 
@@ -1275,11 +1329,6 @@
   background: var(--border);
   margin: 3px 4px;
 }
-
-
-/* =====================================================================
-   TOAST
-   ===================================================================== */
 
 .toast-container {
   position: fixed;
@@ -1330,7 +1379,9 @@
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s, color 0.12s;
+  transition:
+    opacity 0.12s,
+    color 0.12s;
 }
 
 .toast:hover .toast-dismiss {
@@ -1400,11 +1451,6 @@
     transform: scaleX(0);
   }
 }
-
-
-/* =====================================================================
-   MODAL
-   ===================================================================== */
 
 .modal {
   position: fixed;
@@ -1483,7 +1529,9 @@
   padding: 6px 14px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background var(--fast), color var(--fast);
+  transition:
+    background var(--fast),
+    color var(--fast);
 }
 
 .modal-btn:hover {
@@ -1510,11 +1558,6 @@
 .modal-btn.danger:hover {
   background: rgba(248, 81, 73, 0.25);
 }
-
-
-/* =====================================================================
-   LOG LINES
-   ===================================================================== */
 
 .log-line {
   display: flex;
@@ -1633,11 +1676,6 @@
   border-color: color-mix(in srgb, var(--fail) 20%, transparent);
 }
 
-
-/* =====================================================================
-   MONACO EDITOR OVERRIDES
-   ===================================================================== */
-
 .monaco-editor .margin {
   background: var(--bg1) !important;
 }
@@ -1646,7 +1684,7 @@
   background: var(--bg1) !important;
 }
 
-.monaco-editor .current-line~.line-numbers {
+.monaco-editor .current-line ~ .line-numbers {
   color: var(--text0) !important;
 }
 
@@ -1663,11 +1701,6 @@
 .tab.deleted {
   opacity: 0.6;
 }
-
-
-/* =====================================================================
-   PINBOARD — TOOLBAR
-   ===================================================================== */
 
 .pb-activity-pulse {
   animation: pbPulse var(--slow) ease-in-out;
@@ -1812,11 +1845,6 @@
   background: var(--bg5);
 }
 
-
-/* =====================================================================
-   PINBOARD — CARDS
-   ===================================================================== */
-
 .pb-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -1942,7 +1970,9 @@
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  transition: border-color var(--fast), background var(--fast);
+  transition:
+    border-color var(--fast),
+    background var(--fast);
 }
 
 .pb-code-preview:hover {
@@ -1979,11 +2009,6 @@
   gap: 6px;
   opacity: 1;
 }
-
-
-/* =====================================================================
-   PINBOARD — BUTTONS & STATUS
-   ===================================================================== */
 
 .pb-btn {
   background: var(--bg3);
@@ -2080,11 +2105,6 @@
   background: var(--bg0);
   border-top: 1px solid var(--fail);
 }
-
-
-/* =====================================================================
-   PINBOARD — EMPTY STATE & TOOLBAR BTNS
-   ===================================================================== */
 
 .pb-empty {
   grid-column: 1 / -1;

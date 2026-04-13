@@ -3,6 +3,7 @@ const panelController = (() => {
     const panel = document.getElementById("bottomPanel");
     const visible = panel.classList.toggle("visible");
     panel.classList.toggle("hidden", !visible);
+    uiState.setPanelVisible(visible);
     eventBus.emit("ui:panel-toggled", {
       visible,
     });
@@ -43,6 +44,7 @@ const panelController = (() => {
       const panel = document.getElementById("bottomPanel");
       panel.classList.remove("visible");
       panel.classList.add("hidden");
+      uiState.setPanelVisible(false);
     });
     document
       .getElementById("btnClearConsole")
@@ -71,6 +73,7 @@ const panelController = (() => {
       min: 150,
       max: 480,
       compute: (clientX) => clientX - 46,
+      onCommit: (val) => uiState.setSidebarWidth(val),
     });
     _makeResizer({
       resizerEl: document.getElementById("panelResizer"),
@@ -81,6 +84,7 @@ const panelController = (() => {
       max: 500,
       compute: (clientY) =>
         document.querySelector(".app").getBoundingClientRect().height - clientY,
+      onCommit: (val) => uiState.setSbBottomHeight(val),
     });
   }
   function _makeResizer({
@@ -91,9 +95,11 @@ const panelController = (() => {
     min,
     max,
     compute,
+    onCommit,
   }) {
     if (!resizerEl || !targetEl) return;
     let dragging = false;
+    let lastVal = null;
     resizerEl.addEventListener("mousedown", (e) => {
       dragging = true;
       resizerEl.classList.add("dragging");
@@ -101,16 +107,20 @@ const panelController = (() => {
     });
     document.addEventListener("mousemove", (e) => {
       if (!dragging) return;
-      const val = Math.min(
+      lastVal = Math.min(
         max,
         Math.max(min, compute(axis === "x" ? e.clientX : e.clientY)),
       );
-      targetEl.style[prop] = val + "px";
+      targetEl.style[prop] = lastVal + "px";
     });
     document.addEventListener("mouseup", () => {
       if (!dragging) return;
       dragging = false;
       resizerEl.classList.remove("dragging");
+      if (lastVal !== null) {
+        onCommit(lastVal);
+        lastVal = null;
+      }
     });
   }
   function init() {

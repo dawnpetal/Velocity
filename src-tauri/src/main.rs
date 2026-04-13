@@ -238,6 +238,8 @@ fn main() {
             commands::persistence::load_ui_state_cmd,
             commands::persistence::push_exec_history_cmd,
             commands::persistence::get_exec_history_cmd,
+            commands::update::get_app_version,
+            commands::update::check_for_update,
             commands::multi_instance::multiinstance_get_clients,
             commands::multi_instance::multiinstance_send_script,
             commands::multi_instance::multiinstance_send_script_many,

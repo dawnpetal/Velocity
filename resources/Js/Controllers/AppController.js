@@ -43,46 +43,6 @@ const appController = (() => {
     pinboard: "pinboardView",
     settings: "settingsPanel",
   };
-  function _setupActivityBar() {
-    document.querySelectorAll(".activity-btn[data-view]").forEach((btn) => {
-      btn.addEventListener("click", () => _switchView(btn.dataset.view));
-    });
-    document.getElementById("btnNewFile")?.addEventListener("click", () => {
-      if (!state.fileTree)
-        return modal.alert(
-          "No Workspace Open",
-          "Open or import a folder first.",
-        );
-      ExplorerTree.startCreate(state.fileTree, "file");
-    });
-    document.getElementById("btnNewFolder")?.addEventListener("click", () => {
-      if (!state.fileTree)
-        return modal.alert(
-          "No Workspace Open",
-          "Open or import a folder first.",
-        );
-      ExplorerTree.startCreate(state.fileTree, "folder");
-    });
-    document
-      .getElementById("btnOpenFolder")
-      ?.addEventListener("click", () => workspaceController.openFolderDialog());
-    document
-      .getElementById("btnGuide")
-      ?.addEventListener("click", () => guide.start());
-    document
-      .getElementById("btnRefreshTree")
-      ?.addEventListener("click", () => workspaceController.refreshTree());
-    document
-      .getElementById("fileTree")
-      ?.addEventListener("contextmenu", (e) => {
-        if (
-          e.target.closest(".tree-row") ||
-          e.target.closest(".tree-root-header")
-        )
-          return;
-        if (state.fileTree) ctxMenu.showEmpty(e, state.fileTree);
-      });
-  }
   function _switchView(view) {
     const prevView = document.querySelector(".activity-btn.active")?.dataset
       .view;
@@ -137,9 +97,50 @@ const appController = (() => {
       }
     }
     keyboardManager.setScope(view);
+    uiState.setActiveView(view);
     eventBus.emit("ui:view-changed", {
       view,
     });
+  }
+  function _setupActivityBar() {
+    document.querySelectorAll(".activity-btn[data-view]").forEach((btn) => {
+      btn.addEventListener("click", () => _switchView(btn.dataset.view));
+    });
+    document.getElementById("btnNewFile")?.addEventListener("click", () => {
+      if (!state.fileTree)
+        return modal.alert(
+          "No Workspace Open",
+          "Open or import a folder first.",
+        );
+      ExplorerTree.startCreate(state.fileTree, "file");
+    });
+    document.getElementById("btnNewFolder")?.addEventListener("click", () => {
+      if (!state.fileTree)
+        return modal.alert(
+          "No Workspace Open",
+          "Open or import a folder first.",
+        );
+      ExplorerTree.startCreate(state.fileTree, "folder");
+    });
+    document
+      .getElementById("btnOpenFolder")
+      ?.addEventListener("click", () => workspaceController.openFolderDialog());
+    document
+      .getElementById("btnGuide")
+      ?.addEventListener("click", () => guide.start());
+    document
+      .getElementById("btnRefreshTree")
+      ?.addEventListener("click", () => workspaceController.refreshTree());
+    document
+      .getElementById("fileTree")
+      ?.addEventListener("contextmenu", (e) => {
+        if (
+          e.target.closest(".tree-row") ||
+          e.target.closest(".tree-root-header")
+        )
+          return;
+        if (state.fileTree) ctxMenu.showEmpty(e, state.fileTree);
+      });
   }
   function _setupSettings() {
     document
@@ -154,11 +155,15 @@ const appController = (() => {
       const size = parseInt(fontSlider.value);
       if (fontVal) fontVal.textContent = size;
       editor.updateSettings("fontSize", size);
-      persist.saveUI().catch(() => {});
+      uiState.setFontSize(size);
     });
-    _toggle("wordWrapToggle", "wordWrap");
-    _toggle("minimapToggle", "minimap");
-    _toggle("lineNumToggle", "lineNumbers");
+    _toggle("wordWrapToggle", "wordWrap", uiState.setWordWrap.bind(uiState));
+    _toggle("minimapToggle", "minimap", uiState.setMinimap.bind(uiState));
+    _toggle(
+      "lineNumToggle",
+      "lineNumbers",
+      uiState.setLineNumbers.bind(uiState),
+    );
     const sidebarSlider = document.getElementById("sidebarWidthSlider");
     const sidebarWidthVal = document.getElementById("sidebarWidthVal");
     sidebarSlider?.addEventListener("input", () => {
@@ -166,7 +171,7 @@ const appController = (() => {
       if (sidebarWidthVal) sidebarWidthVal.textContent = w;
       const sidebar = document.getElementById("sidebar");
       if (sidebar) sidebar.style.width = w + "px";
-      persist.saveUI().catch(() => {});
+      uiState.setSidebarWidth(w);
     });
     const tlSlider = document.getElementById("timelineHeightSlider");
     const tlHeightVal = document.getElementById("timelineHeightVal");
@@ -175,7 +180,13 @@ const appController = (() => {
       if (tlHeightVal) tlHeightVal.textContent = h;
       const panel = document.getElementById("sidebarBottom");
       if (panel) panel.style.height = h + "px";
-      persist.saveUI().catch(() => {});
+      uiState.setSbBottomHeight(h);
+    });
+  }
+  function _toggle(id, settingKey, uiStateSetter) {
+    document.getElementById(id)?.addEventListener("change", function () {
+      editor.updateSettings(settingKey, this.checked);
+      uiStateSetter(this.checked);
     });
   }
   let _settingsNavInited = false;
@@ -204,9 +215,8 @@ const appController = (() => {
           if (
             sec.getBoundingClientRect().top - body.getBoundingClientRect().top <
             60
-          ) {
+          )
             active = sec.id;
-          }
         }
         navItems.forEach((item) =>
           item.classList.toggle("active", item.dataset.section === active),
@@ -217,40 +227,31 @@ const appController = (() => {
       },
     );
   }
-  function _toggle(id, settingKey) {
-    document.getElementById(id)?.addEventListener("change", function () {
-      editor.updateSettings(settingKey, this.checked);
-      persist.saveUI().catch(() => {});
-    });
-  }
   function _restoreUI(ui) {
+    uiState.applyLoaded(ui);
     const sidebar = document.getElementById("sidebar");
     const sbBottom = document.getElementById("sidebarBottom");
     const panel = document.getElementById("bottomPanel");
-    if (ui.sidebarWidth && sidebar)
-      sidebar.style.width = ui.sidebarWidth + "px";
-    if (sbBottom && ui.sbBottomHeight)
-      sbBottom.style.height = ui.sbBottomHeight + "px";
-    if (ui.panelVisible && panel) {
+    if (uiState.sidebarWidth && sidebar)
+      sidebar.style.width = uiState.sidebarWidth + "px";
+    if (uiState.sbBottomHeight && sbBottom)
+      sbBottom.style.height = uiState.sbBottomHeight + "px";
+    if (uiState.panelVisible && panel) {
       panel.classList.add("visible");
       panel.classList.remove("hidden");
     }
-    const { fontSize, wordWrap, minimap, lineNumbers, executor } =
-      ui.settings ?? {};
-    if (typeof executorSettings !== "undefined") {
-      executorSettings.init(executor ?? "hydrogen");
-    }
+    executorSettings.init(uiState.executor);
     const fontSlider = document.getElementById("fontSizeSlider");
     const fontVal = document.getElementById("fontSizeVal");
-    if (fontSize != null && fontSlider) {
-      fontSlider.value = fontSize;
-      if (fontVal) fontVal.textContent = fontSize;
-      editor.updateSettings("fontSize", fontSize);
+    if (uiState.fontSize != null && fontSlider) {
+      fontSlider.value = uiState.fontSize;
+      if (fontVal) fontVal.textContent = uiState.fontSize;
+      editor.updateSettings("fontSize", uiState.fontSize);
     }
-    _restoreToggle("wordWrapToggle", "wordWrap", wordWrap);
-    _restoreToggle("minimapToggle", "minimap", minimap);
-    _restoreToggle("lineNumToggle", "lineNumbers", lineNumbers);
-    _switchView(ui.activeView ?? "explorer");
+    _restoreToggle("wordWrapToggle", "wordWrap", uiState.wordWrap);
+    _restoreToggle("minimapToggle", "minimap", uiState.minimap);
+    _restoreToggle("lineNumToggle", "lineNumbers", uiState.lineNumbers);
+    _switchView(uiState.activeView ?? "explorer");
   }
   function _restoreToggle(id, key, value) {
     if (value == null) return;
@@ -262,23 +263,26 @@ const appController = (() => {
   }
   function _setupGlobalShortcuts() {
     document.getElementById("tabStrip")?.addEventListener("mousedown", () => {
-      const active = document.querySelector(".activity-btn.active");
-      const view = active?.dataset.view ?? "explorer";
+      const view =
+        document.querySelector(".activity-btn.active")?.dataset.view ??
+        "explorer";
       keyboardManager.setScope(view);
     });
     document
       .getElementById("editorContainer")
       ?.addEventListener("mousedown", (e) => {
         if (e.target.closest(".monaco-editor")) return;
-        const active = document.querySelector(".activity-btn.active");
-        const view = active?.dataset.view ?? "explorer";
+        const view =
+          document.querySelector(".activity-btn.active")?.dataset.view ??
+          "explorer";
         keyboardManager.setScope(view);
       });
     document
       .getElementById("bottomPanel")
       ?.addEventListener("mousedown", () => {
-        const active = document.querySelector(".activity-btn.active");
-        const view = active?.dataset.view ?? "explorer";
+        const view =
+          document.querySelector(".activity-btn.active")?.dataset.view ??
+          "explorer";
         keyboardManager.setScope(view);
       });
     keyboardManager.registerShortcut({
@@ -296,8 +300,7 @@ const appController = (() => {
       handler: async () => {
         const currentView = document.querySelector(".activity-btn.active")
           ?.dataset.view;
-        if (currentView === "autoexec") return;
-        if (currentView === "guide") return;
+        if (currentView === "autoexec" || currentView === "guide") return;
         const active = state.getActive();
         if (!active) return;
         if (pinboard.isSnippetFile(active.id)) {
@@ -388,7 +391,7 @@ const appController = (() => {
     await workspaceController.shutdown();
     await Promise.allSettled([
       menuBar.killAgent(),
-      persist.saveUI(),
+      persist.saveUI(uiState.snapshot()),
       persist.saveTreeState(state.workDir),
       persist.saveTimeline(state.workDir),
       persist.saveSession({
@@ -429,16 +432,15 @@ const appController = (() => {
     if (ui) {
       _restoreUI(ui);
     } else {
-      if (typeof executorSettings !== "undefined")
-        executorSettings.init("hydrogen");
+      executorSettings.init("hydrogen");
       _switchView("explorer");
-      persist.saveUI().catch(() => {});
     }
     await workspaceController.boot();
     _setupFab();
     multiInstanceUI.mount();
     menuScriptsPanel.mount();
     await menuBar.init();
+    updateChecker.check();
   }
   return {
     init,

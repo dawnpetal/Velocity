@@ -220,7 +220,11 @@ const workspaceController = (() => {
     ExplorerTree.render();
     tabs.render();
     editorController.renderEditor();
-    timeline.setFile(activePath ? state.files.find((f) => f.path === activePath) ?? null : null);
+    timeline.setFile(
+      activePath
+        ? (state.files.find((f) => f.path === activePath) ?? null)
+        : null,
+    );
     eventBus.emit("tree:refreshed", {});
   }
   return {

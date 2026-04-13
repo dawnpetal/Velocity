@@ -10,4 +10,5 @@ pub mod persistence;
 pub mod scripts;
 pub mod search;
 pub mod seed;
+pub mod update;
 pub mod window;

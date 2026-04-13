@@ -17,7 +17,9 @@
   border-bottom: 1px solid var(--border-strong);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 8px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.03),
+    0 1px 8px rgba(0, 0, 0, 0.3);
   position: relative;
 }
 

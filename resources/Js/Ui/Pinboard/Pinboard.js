@@ -6,23 +6,25 @@ const pinboard = (() => {
   const SORT_MODES = ["manual", "name", "runs", "recent"];
   const SEARCH_DEBOUNCE_MS = 100;
   const NEW_SNIPPET_PIN_TOAST_DURATION = 1800;
-
   const SVG = {
     pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>',
     add: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
     sort: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>',
-    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
-    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    search:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    close:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   };
-
   function _context() {
     return {
       snippets: _snippets,
       sortMode: _sortMode,
       activeEditorIds: _activeEditorIds,
       findIdx: _findIdx,
-      onRun: (snippet, showOutput) => PinboardOps.run(snippet, showOutput, _context()),
-      onOpenInEditor: (snippet) => PinboardOps.openInEditor(snippet, _context()),
+      onRun: (snippet, showOutput) =>
+        PinboardOps.run(snippet, showOutput, _context()),
+      onOpenInEditor: (snippet) =>
+        PinboardOps.openInEditor(snippet, _context()),
       onSave: _save,
       onRender: render,
       onFilterByTag: (tag) => {
@@ -31,11 +33,9 @@ const pinboard = (() => {
       },
     };
   }
-
   function _dir() {
     return paths.internals;
   }
-
   async function _save() {
     try {
       const dir = await _dir();
@@ -48,7 +48,6 @@ const pinboard = (() => {
       });
     } catch {}
   }
-
   async function _load() {
     try {
       const dir = await _dir();
@@ -116,15 +115,12 @@ const pinboard = (() => {
       ];
     }
   }
-
   function _container() {
     return document.getElementById("pinboardView");
   }
-
   function _findIdx(id) {
     return _snippets.findIndex((s) => s.id === id);
   }
-
   function _visibleSnippets() {
     let list = _snippets.slice();
     if (_filter) {
@@ -144,27 +140,28 @@ const pinboard = (() => {
       list.sort((a, b) => (b.lastRun ?? 0) - (a.lastRun ?? 0));
     return list;
   }
-
   function _buildToolbar() {
     const bar = DomHelpers.el("div", "pb-toolbar");
     const top = DomHelpers.el("div", "pb-toolbar-top");
     const left = DomHelpers.el("div", "pb-toolbar-left");
     const titleEl = DomHelpers.el("span", "pb-toolbar-title", "Pinboard");
-    const countEl = DomHelpers.el("span", "pb-toolbar-count", String(_snippets.length));
+    const countEl = DomHelpers.el(
+      "span",
+      "pb-toolbar-count",
+      String(_snippets.length),
+    );
     left.append(titleEl, countEl);
-
     const right = DomHelpers.el("div", "pb-toolbar-right");
-    
     const sortBtn = document.createElement("button");
     sortBtn.className = "pb-toolbar-btn pb-sort-btn";
     sortBtn.innerHTML = SVG.sort + `<span>${_sortMode}</span>`;
     sortBtn.setAttribute("data-sort", _sortMode);
     sortBtn.addEventListener("click", () => {
-      _sortMode = SORT_MODES[(SORT_MODES.indexOf(_sortMode) + 1) % SORT_MODES.length];
+      _sortMode =
+        SORT_MODES[(SORT_MODES.indexOf(_sortMode) + 1) % SORT_MODES.length];
       _save().catch(() => {});
       render();
     });
-
     const pinBtn = document.createElement("button");
     pinBtn.className = "pb-toolbar-btn pb-pin-btn";
     pinBtn.innerHTML = SVG.pin + "<span>Pin</span>";
@@ -190,17 +187,18 @@ const pinboard = (() => {
       _snippets.unshift(snippet);
       _save().catch(() => {});
       render();
-      toast.show('Pinned "' + snippet.label + '"', "ok", NEW_SNIPPET_PIN_TOAST_DURATION);
+      toast.show(
+        'Pinned "' + snippet.label + '"',
+        "ok",
+        NEW_SNIPPET_PIN_TOAST_DURATION,
+      );
     });
-
     const addBtn = document.createElement("button");
     addBtn.className = "pb-toolbar-btn pb-add-btn";
     addBtn.innerHTML = SVG.add + "<span>New</span>";
     addBtn.addEventListener("click", _addNew);
-
     right.append(sortBtn, pinBtn, addBtn);
     top.append(left, right);
-
     const searchRow = DomHelpers.el("div", "pb-search-row");
     const searchIcon = DomHelpers.el("span", "pb-search-icon");
     searchIcon.innerHTML = SVG.search;
@@ -208,13 +206,14 @@ const pinboard = (() => {
     searchInput.className = "pb-search-input";
     searchInput.placeholder = "Filter by name, code, tag\u2026";
     searchInput.value = _filter;
-    searchInput.addEventListener("input", helpers.debounce(() => {
-      _filter = searchInput.value;
-      _rerenderList();
-    }, SEARCH_DEBOUNCE_MS));
-
+    searchInput.addEventListener(
+      "input",
+      helpers.debounce(() => {
+        _filter = searchInput.value;
+        _rerenderList();
+      }, SEARCH_DEBOUNCE_MS),
+    );
     searchRow.append(searchIcon, searchInput);
-
     if (_filter) {
       const clearBtn = document.createElement("button");
       clearBtn.className = "pb-search-clear";
@@ -225,18 +224,15 @@ const pinboard = (() => {
       });
       searchRow.appendChild(clearBtn);
     }
-
     bar.append(top, searchRow);
     return bar;
   }
-
   function _rerenderList() {
     const container = _container();
     if (!container) return;
     container.querySelector(".pb-list")?.remove();
     container.querySelector(".pb-empty")?.remove();
     const visible = _visibleSnippets();
-    
     if (!_snippets.length) {
       container.appendChild(PinboardCard.buildEmpty(_addNew));
       return;
@@ -247,35 +243,38 @@ const pinboard = (() => {
       container.appendChild(noMatches);
       return;
     }
-
     const list = DomHelpers.el("div", "pb-list");
-    visible.forEach((snippet) => list.appendChild(PinboardCard.buildCard(snippet, _context())));
+    visible.forEach((snippet) =>
+      list.appendChild(PinboardCard.buildCard(snippet, _context())),
+    );
     container.appendChild(list);
   }
-
   function render() {
     const container = _container();
     if (!container) return;
     container.innerHTML = "";
     container.appendChild(_buildToolbar());
     const visible = _visibleSnippets();
-    
     if (!_snippets.length) {
       container.appendChild(PinboardCard.buildEmpty(_addNew));
       return;
     }
     if (_filter && !visible.length) {
       const noMatches = DomHelpers.el("div", "pb-empty");
-      noMatches.innerHTML = SVG.search + '<span>No matches for "' + helpers.escapeHtml(_filter) + '"</span>';
+      noMatches.innerHTML =
+        SVG.search +
+        '<span>No matches for "' +
+        helpers.escapeHtml(_filter) +
+        '"</span>';
       container.appendChild(noMatches);
       return;
     }
-
     const list = DomHelpers.el("div", "pb-list");
-    visible.forEach((snippet) => list.appendChild(PinboardCard.buildCard(snippet, _context())));
+    visible.forEach((snippet) =>
+      list.appendChild(PinboardCard.buildCard(snippet, _context())),
+    );
     container.appendChild(list);
   }
-
   function _addNew() {
     const snippet = {
       id: helpers.uid(),
@@ -291,43 +290,47 @@ const pinboard = (() => {
     render();
     requestAnimationFrame(() => {
       const container = _container();
-      const card = container ? container.querySelector(`.pb-card[data-id="${snippet.id}"]`) : null;
+      const card = container
+        ? container.querySelector(`.pb-card[data-id="${snippet.id}"]`)
+        : null;
       const labelEl = card ? card.querySelector(".pb-card-label") : null;
       if (labelEl) PinboardCard.startInlineRename(labelEl, snippet, _context());
     });
   }
-
   async function init() {
     await _load();
     document.addEventListener("keydown", (e) => {
       const container = _container();
       if (!container || container.style.display === "none") return;
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+        return;
       if (e.key === "n" || e.key === "N") _addNew();
     });
   }
-
   function show() {
     render();
     const container = _container();
     if (container) container.scrollTop = 0;
   }
-
   function pinFile(node) {
     PinboardOps.pinFile(node, _context());
   }
-
   function handleEditorSave(fileId) {
     return PinboardOps.handleEditorSave(fileId, _context());
   }
-
   function handleTabClose(fileId) {
     PinboardOps.handleTabClose(fileId, _context());
   }
-
   function isSnippetFile(fileId) {
     return PinboardOps.isSnippetFile(fileId, _context());
   }
-
-  return { init, show, render, pinFile, handleEditorSave, handleTabClose, isSnippetFile };
+  return {
+    init,
+    show,
+    render,
+    pinFile,
+    handleEditorSave,
+    handleTabClose,
+    isSnippetFile,
+  };
 })();

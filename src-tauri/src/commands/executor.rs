@@ -140,13 +140,12 @@ async fn exec_opium(code: String) -> anyhow::Result<()> {
 #[tauri::command]
 pub async fn inject_script(
     code: String,
-    executor: Option<String>,
     port_cache: State<'_, PortCache>,
     client: State<'_, SharedClient>,
 ) -> Result<(), String> {
-    let kind = executor
-        .as_deref()
-        .unwrap_or("hydrogen")
+    let kind = crate::services::load_ui_state()
+        .and_then(|ui| ui.settings.executor)
+        .unwrap_or_else(|| "hydrogen".to_string())
         .trim()
         .to_ascii_lowercase();
 

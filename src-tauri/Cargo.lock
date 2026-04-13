@@ -5422,6 +5422,7 @@ dependencies = [
  "objc2-foundation",
  "regex",
  "reqwest 0.12.28",
+ "semver",
  "serde",
  "serde_json",
  "tauri",
