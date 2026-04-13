@@ -95,7 +95,9 @@ success "Installed to $APP_PATH"
 
 header "Finalizing installation..."
 
-info "Clearing Gatekeeper restrictions..."
+info "Clearing Gatekeeper restrictions, you may have to enter your macOS password..."
+info "The password would not be visible when you type, that's normal. Just type it and press Enter, you get 3 tries before the installation fails."
+info "You may ask ChatGPT about this step if you want to learn more, it's a common process for all apps (from unverified developers like me) downloaded from the internet on macOS."
 sudo xattr -cr "$APP_PATH" || die "Failed to remove macOS security restrictions."
 
 success "Ready to launch"
@@ -117,5 +119,4 @@ fi
 
 echo -e "  ${CYAN}Thank you for choosing Velocity!${RESET}"
 echo -e "  ${DIM}Always be careful when downloading software from the internet, do not trust unknown sources.${RESET}"
-echo -e "  ${DIM}Do not give your administrator password to untrusted software, do not fall for freebies and be cautious.${RESET}"
 echo
