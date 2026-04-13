@@ -197,6 +197,7 @@ const workspaceController = (() => {
     };
     state.roots.forEach((r) => collectOpen(r));
     const rootPaths = state.roots.map((r) => r.path);
+    const timelineSnapshot = timeline.snapshotByPath();
     state.clear();
     for (const p of rootPaths) {
       try {
@@ -204,6 +205,7 @@ const workspaceController = (() => {
       } catch {}
     }
     state.workDir = rootPaths[0] ?? null;
+    timeline.restoreFromSnapshot(timelineSnapshot);
     const restoreOpen = (node) => {
       if (node?.type === "folder") {
         if (openPaths.has(node.path)) node.open = true;
@@ -218,6 +220,7 @@ const workspaceController = (() => {
     ExplorerTree.render();
     tabs.render();
     editorController.renderEditor();
+    timeline.setFile(activePath ? state.files.find((f) => f.path === activePath) ?? null : null);
     eventBus.emit("tree:refreshed", {});
   }
   return {

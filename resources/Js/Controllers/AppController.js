@@ -159,6 +159,24 @@ const appController = (() => {
     _toggle("wordWrapToggle", "wordWrap");
     _toggle("minimapToggle", "minimap");
     _toggle("lineNumToggle", "lineNumbers");
+    const sidebarSlider = document.getElementById("sidebarWidthSlider");
+    const sidebarWidthVal = document.getElementById("sidebarWidthVal");
+    sidebarSlider?.addEventListener("input", () => {
+      const w = parseInt(sidebarSlider.value);
+      if (sidebarWidthVal) sidebarWidthVal.textContent = w;
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar) sidebar.style.width = w + "px";
+      persist.saveUI().catch(() => {});
+    });
+    const tlSlider = document.getElementById("timelineHeightSlider");
+    const tlHeightVal = document.getElementById("timelineHeightVal");
+    tlSlider?.addEventListener("input", () => {
+      const h = parseInt(tlSlider.value);
+      if (tlHeightVal) tlHeightVal.textContent = h;
+      const panel = document.getElementById("sidebarBottom");
+      if (panel) panel.style.height = h + "px";
+      persist.saveUI().catch(() => {});
+    });
   }
   let _settingsNavInited = false;
   function _initSettingsNav() {
