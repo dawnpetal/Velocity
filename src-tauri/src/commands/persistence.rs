@@ -33,7 +33,8 @@ pub fn load_session_cmd() -> Option<SessionData> {
 
 #[tauri::command]
 pub fn save_ui_state_cmd(state: UiState) -> Result<(), String> {
-    services::save_ui_state(state).map_err(|e| e.to_string())
+    services::save_ui_state(state).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]

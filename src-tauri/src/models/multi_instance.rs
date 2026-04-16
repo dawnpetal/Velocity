@@ -2,27 +2,39 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RobloxClient {
-    #[serde(rename = "userId")]
+    #[serde(alias = "userId")]
     pub user_id: String,
+
     pub username: String,
-    #[serde(rename = "displayName")]
+
+    #[serde(alias = "displayName")]
     pub display_name: String,
-    #[serde(rename = "gameId")]
-    pub game_id: String,
-    #[serde(rename = "jobId")]
+
+    #[serde(alias = "gameId", default)]
+    pub game_id: i64,
+
+    #[serde(alias = "jobId")]
     pub job_id: String,
-    #[serde(rename = "lastHeartbeat")]
+
+    #[serde(alias = "lastHeartbeat")]
     pub last_heartbeat: i64,
-    #[serde(skip_serializing, skip_deserializing, default)]
+
+    #[serde(skip)]
     pub active: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScriptCommand {
+    #[serde(default)]
     pub id: String,
-    #[serde(rename = "userId")]
+
+    #[serde(default)]
     pub user_id: String,
+
+    #[serde(default)]
     pub script: String,
+
+    #[serde(default)]
     pub timestamp: i64,
 }
 
@@ -30,6 +42,7 @@ pub struct ScriptCommand {
 pub struct BridgeData {
     #[serde(default)]
     pub clients: Vec<RobloxClient>,
+
     #[serde(default)]
     pub commands: Vec<ScriptCommand>,
 }
@@ -42,18 +55,21 @@ impl BridgeData {
         }
     }
 
-    pub fn cleanup(&mut self, now: i64) {
-        const CLIENT_TIMEOUT_SEC: i64 = 10;
+    pub fn cleanup_commands(&mut self, now: i64) {
         const COMMAND_TIMEOUT_SEC: i64 = 30;
-
-        self.clients.retain(|c| now - c.last_heartbeat < CLIENT_TIMEOUT_SEC);
-        self.commands.retain(|c| now - c.timestamp < COMMAND_TIMEOUT_SEC);
+        self.commands
+            .retain(|c| c.timestamp > 0 && now - c.timestamp < COMMAND_TIMEOUT_SEC);
     }
 
     pub fn mark_active_clients(&mut self, now: i64) {
-        const STALE_SEC: i64 = 10;
+        const STALE_SEC: i64 = 12;
+        const CLOCK_SKEW_TOLERANCE: i64 = 3;
+
         for client in &mut self.clients {
-            client.active = now - client.last_heartbeat < STALE_SEC;
+            let delta = now - client.last_heartbeat;
+            client.active = client.last_heartbeat > 0
+                && delta >= -CLOCK_SKEW_TOLERANCE
+                && delta < STALE_SEC;
         }
     }
 }

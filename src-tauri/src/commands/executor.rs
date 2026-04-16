@@ -137,6 +137,10 @@ async fn exec_opium(code: String) -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("Opiumware task join error: {e}"))?
 }
 
+pub async fn exec_opium_shortcut(code: String) -> anyhow::Result<()> {
+    exec_opium(code).await
+}
+
 #[tauri::command]
 pub async fn inject_script(
     code: String,
@@ -145,7 +149,7 @@ pub async fn inject_script(
 ) -> Result<(), String> {
     let kind = crate::services::load_ui_state()
         .and_then(|ui| ui.settings.executor)
-        .unwrap_or_else(|| "hydrogen".to_string())
+        .unwrap_or_else(|| "opiumware".to_string())
         .trim()
         .to_ascii_lowercase();
 
@@ -236,14 +240,29 @@ pub fn start_autoexec_watcher(app: AppHandle) {
                 if is_running {
                     if let Ok(dir) = crate::paths::autoexec_scripts_dir() {
                         if let Ok(entries) = std::fs::read_dir(&dir) {
+                            let executor = crate::services::load_ui_state()
+                                .and_then(|ui| ui.settings.executor)
+                                .unwrap_or_else(|| "opiumware".to_string())
+                                .to_ascii_lowercase();
+
                             for entry in entries.flatten() {
                                 let path = entry.path();
                                 if path.extension().and_then(|e| e.to_str()) != Some("lua") {
                                     continue;
                                 }
                                 if let Ok(code) = std::fs::read_to_string(&path) {
-                                    let _ =
-                                        rt.block_on(inject_hydro_inner(code, &client, &port_cache));
+                                    match executor.as_str() {
+                                        "opiumware" | "opium" => {
+                                            let _ = rt.block_on(exec_opium(code));
+                                        }
+                                        _ => {
+                                            let _ = rt.block_on(inject_hydro_inner(
+                                                code,
+                                                &client,
+                                                &port_cache,
+                                            ));
+                                        }
+                                    }
                                 }
                             }
                         }

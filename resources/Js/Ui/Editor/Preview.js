@@ -1,4 +1,10 @@
 const Preview = (() => {
+  function _base64ToUint8Array(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
   function _tbBtn(label, onClick) {
     const b = document.createElement("button");
     b.className = "preview-tb-btn";
@@ -80,9 +86,8 @@ const Preview = (() => {
     pane.className = "preview-pane preview-image-pane";
     if (file.binaryData) {
       const mime = LangMap.mimeFor(file.name);
-      const blob = new Blob([file.binaryData], {
-        type: mime,
-      });
+      const bytes = _base64ToUint8Array(file.binaryData);
+      const blob = new Blob([bytes], { type: mime });
       const url = URL.createObjectURL(blob);
       EditorModels.setBlobUrl(file.id, url);
       _buildImageUI(pane, url, file.name);
@@ -130,9 +135,8 @@ const Preview = (() => {
   function renderVideo(pane, file) {
     pane.className = "preview-pane preview-video-pane";
     const mime = LangMap.mimeFor(file.name);
-    const blob = new Blob([file.binaryData], {
-      type: mime,
-    });
+    const bytes = _base64ToUint8Array(file.binaryData);
+    const blob = new Blob([bytes], { type: mime });
     const url = URL.createObjectURL(blob);
     EditorModels.setBlobUrl(file.id, url);
     const toolbar = document.createElement("div");

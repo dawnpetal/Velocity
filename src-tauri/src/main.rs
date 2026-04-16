@@ -63,7 +63,6 @@ fn setup_tray(app: &tauri::App) -> Result<()> {
         .join("icons/tray.png");
 
     let icon = if tray_icon_path.exists() {
-        // Decode PNG to raw RGBA so we can construct a tauri Image
         let img = image::open(&tray_icon_path)
             .map(|i| i.into_rgba8())
             .ok();
@@ -125,7 +124,7 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
             use tauri_plugin_global_shortcut::ShortcutState;
-            use commands::executor::{inject_hydro_inner, is_roblox_focused};
+            use commands::executor::{inject_hydro_inner, exec_opium_shortcut, is_roblox_focused};
 
             app.handle().plugin(
                 tauri_plugin_global_shortcut::Builder::new()
@@ -140,14 +139,24 @@ fn main() {
                             map.get(&fired_id).cloned()
                         };
                         if let Some(code) = code {
-                            let port_cache = app.state::<PortCache>();
-                            let client = app.state::<SharedClient>();
-                            let cached_port = *port_cache.0.lock().unwrap_or_else(|e| e.into_inner());
-                            let c = client.0.clone();
-                            tokio::spawn(async move {
-                                let local_cache = PortCache(std::sync::Mutex::new(cached_port));
-                                let _ = inject_hydro_inner(code, &c, &local_cache).await;
-                            });
+                            let executor = crate::services::load_ui_state()
+                                .and_then(|ui| ui.settings.executor)
+                                .unwrap_or_else(|| "opiumware".to_string())
+                                .to_ascii_lowercase();
+                            if executor == "opiumware" || executor == "opium" {
+                                tokio::spawn(async move {
+                                    let _ = exec_opium_shortcut(code).await;
+                                });
+                            } else {
+                                let port_cache = app.state::<PortCache>();
+                                let client = app.state::<SharedClient>();
+                                let cached_port = *port_cache.0.lock().unwrap_or_else(|e| e.into_inner());
+                                let c = client.0.clone();
+                                tokio::spawn(async move {
+                                    let local_cache = PortCache(std::sync::Mutex::new(cached_port));
+                                    let _ = inject_hydro_inner(code, &c, &local_cache).await;
+                                });
+                            }
                         }
                     })
                     .build(),
@@ -171,6 +180,8 @@ fn main() {
             if let Ok(scripts) = commands::scripts::get_scripts(app.handle().clone()) {
                 let _ = commands::scripts::register_script_shortcuts(app.handle(), &scripts);
             }
+
+            let _ = services::install_autoexec_script();
 
             commands::executor::start_autoexec_watcher(app.handle().clone());
 

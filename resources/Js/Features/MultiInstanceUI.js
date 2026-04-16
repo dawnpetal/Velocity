@@ -4,235 +4,280 @@ const multiInstanceUI = (() => {
     caret: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
     check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
   };
-  const _esc = (s) =>
+
+  const esc = (s) =>
     String(s ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
-  let _wrapEl = null;
-  let _btnEl = null;
-  let _toggleEl = null;
-  let _popupEl = null;
-  let _isRunning = false;
-  let _popupOpen = false;
-  function _positionPopup() {
-    if (!_btnEl || !_popupEl) return;
-    const r = _btnEl.getBoundingClientRect();
-    _popupEl.style.top = r.bottom + 6 + "px";
-    const popW = _popupEl.offsetWidth || 220;
-    let left = r.right - popW;
+
+  let wrapEl, btnEl, toggleEl, popupEl;
+  let isRunning = false;
+  let popupOpen = false;
+
+  const api = () => multiInstance;
+
+  function positionPopup() {
+    if (!btnEl || !popupEl) return;
+    const r = btnEl.getBoundingClientRect();
+
+    popupEl.style.top = r.bottom + 6 + "px";
+
+    const w = popupEl.offsetWidth || 240;
+    let left = r.right - w;
     if (left < 8) left = 8;
-    _popupEl.style.left = left + "px";
+
+    popupEl.style.left = left + "px";
   }
-  async function _launchInstance() {
+
+  async function launchInstance() {
     try {
-      await multiInstance.launchInstance();
+      await api().launchInstance();
       toast.show("Launching Roblox…", "ok", 2500);
-    } catch (err) {
-      toast.show(`Launch failed: ${err.message}`, "fail", 3000);
+    } catch (e) {
+      toast.show(`Launch failed: ${e.message}`, "fail", 3000);
     }
   }
-  function _renderPopup() {
-    const clients = multiInstance.getClients();
-    const selectedIds = multiInstance.getSelectedIds();
-    const activeClients = clients.filter((c) => c.active);
-    const allActive =
-      activeClients.length > 0 &&
-      activeClients.every((c) => selectedIds.has(c.userId));
-    if (!clients.length) {
-      _popupEl.innerHTML = `
-        <div class="mi-popup-header">
-          <span>Instances</span>
-          <button class="mi-launch-btn" id="miLaunchBtn" title="Launch new Roblox instance">+ New Instance</button>
-        </div>
-        <div class="mi-popup-empty">Waiting for Roblox instances…<br><span style="font-size:9px;color:var(--text3)">Make sure autoexec ran in-game</span></div>
-      `;
-      _popupEl
-        .querySelector("#miLaunchBtn")
-        .addEventListener("click", _launchInstance);
+
+  function renderBtn() {
+    if (!btnEl) return;
+
+    if (!isRunning) {
+      btnEl.innerHTML = `
+        <span class="mi-dot off"></span>
+        <span class="mi-label">Instances</span>
+        <span class="mi-caret">${SVG.caret}</span>`;
       return;
     }
-    const items = clients
-      .map((c) => {
-        const isChecked = selectedIds.has(c.userId);
-        const cls = c.active ? "ok" : "warn";
-        const stale = !c.active
-          ? `<span class="mi-item-warn">⚠ stale</span>`
-          : "";
-        return `<div class="mi-item${isChecked ? " selected" : ""}" data-userid="${_esc(c.userId)}" role="option" aria-selected="${isChecked}">
-        <span class="mi-item-dot ${cls}"></span>
-        <div class="mi-item-info">
-          <span class="mi-item-name">${_esc(c.displayName || c.username)}</span>
-          <span class="mi-item-meta">@${_esc(c.username)} · game ${_esc(c.gameId)}</span>
-        </div>
-        ${stale}
-        <span class="mi-checkbox${isChecked ? " checked" : ""}" aria-hidden="true">
-          ${isChecked ? SVG.check : ""}
-        </span>
-      </div>`;
-      })
-      .join("");
-    _popupEl.innerHTML = `
-      <div class="mi-popup-header">
-        <span>Instances <span class="mi-count-badge">${clients.length}</span></span>
-        <div class="mi-popup-header-actions">
-          <button class="mi-all-btn${allActive ? " active" : ""}" id="miAllBtn" title="${allActive ? "Deselect all" : "Select all active"}">
-            ${allActive ? "Deselect All" : "Select All"}
-          </button>
-          <button class="mi-launch-btn" id="miLaunchBtn" title="Launch new Roblox instance">+ New</button>
-        </div>
-      </div>
-      <div class="mi-popup-hint">Click to toggle · script runs on checked instances</div>
-      ${items}
-    `;
-    _popupEl.querySelector("#miAllBtn").addEventListener("click", (e) => {
-      e.stopPropagation();
-      allActive ? multiInstance.selectNone() : multiInstance.selectAll();
-      _renderPopup();
-      _renderBtn();
-    });
-    _popupEl
-      .querySelector("#miLaunchBtn")
-      .addEventListener("click", _launchInstance);
-    _popupEl.querySelectorAll(".mi-item").forEach((el) => {
-      el.addEventListener("click", () => {
-        multiInstance.toggleSelected(el.dataset.userid);
-        _renderPopup();
-        _renderBtn();
-      });
-    });
-  }
-  function _renderBtn() {
-    if (!_isRunning) {
-      _btnEl.innerHTML = `<span class="mi-dot off"></span><span class="mi-label">Instances</span><span class="mi-caret">${SVG.caret}</span>`;
+
+    const clients = api().getClients();
+    const selected = api().getSelectedClients();
+    const active = clients.filter(c => c.active);
+
+    if (!active.length) {
+      btnEl.innerHTML = `
+        <span class="mi-dot warn pulse-dot"></span>
+        <span class="mi-label">Waiting…</span>
+        <span class="mi-caret">${SVG.caret}</span>`;
       return;
     }
-    const clients = multiInstance.getClients();
-    const selected = multiInstance.getSelectedClients();
-    const activeClients = clients.filter((c) => c.active);
-    if (!activeClients.length) {
-      _btnEl.innerHTML = `<span class="mi-dot warn pulse-dot"></span><span class="mi-label">Waiting…</span><span class="mi-caret">${SVG.caret}</span>`;
-      return;
-    }
+
     const n = selected.length;
+
     if (n === 0) {
-      _btnEl.innerHTML = `<span class="mi-dot ok"></span><span class="mi-label">${activeClients.length} instance${activeClients.length > 1 ? "s" : ""}</span><span class="mi-caret">${SVG.caret}</span>`;
+      btnEl.innerHTML = `
+        <span class="mi-dot ok"></span>
+        <span class="mi-label">${active.length} instance${active.length > 1 ? "s" : ""}</span>
+        <span class="mi-caret">${SVG.caret}</span>`;
     } else if (n === 1) {
       const t = selected[0];
-      const cls = t.active ? "ok" : "warn";
-      _btnEl.innerHTML = `<span class="mi-dot ${cls}"></span><span class="mi-label">${_esc(t.displayName || t.username)}</span><span class="mi-caret">${SVG.caret}</span>`;
+      btnEl.innerHTML = `
+        <span class="mi-dot ${t.active ? "ok" : "warn"}"></span>
+        <span class="mi-label">${esc(t.display_name || t.username)}</span>
+        <span class="mi-caret">${SVG.caret}</span>`;
     } else {
-      const allSelected = n === activeClients.length;
-      _btnEl.innerHTML = `<span class="mi-dot ok"></span><span class="mi-label">${allSelected ? "All" : n} instances</span><span class="mi-caret">${SVG.caret}</span>`;
+      const all = n === active.length;
+      btnEl.innerHTML = `
+        <span class="mi-dot ok"></span>
+        <span class="mi-label">${all ? "All" : n} instances</span>
+        <span class="mi-caret">${SVG.caret}</span>`;
     }
   }
-  function _openPopup() {
-    _popupOpen = true;
-    _renderPopup();
-    _popupEl.classList.add("open");
-    _btnEl.classList.add("open");
-    requestAnimationFrame(() => {
-      _positionPopup();
-      requestAnimationFrame(() => {
-        _popupEl.classList.add("mi-popup--visible");
+
+  function renderPopup() {
+    if (!popupEl) return;
+
+    const clients = api().getClients();
+    const selected = api().getSelectedIds();
+
+    const active = clients.filter(c => c.active);
+    const allActiveSelected =
+      active.length > 0 && active.every(c => selected.has(c.user_id));
+
+    if (!clients.length) {
+      popupEl.innerHTML = `
+        <div class="mi-popup-header">
+          <span>Instances</span>
+          <button class="mi-launch-btn" id="miLaunchBtn">+ New Instance</button>
+        </div>
+        <div class="mi-popup-empty">Waiting for instances…</div>
+      `;
+
+      popupEl.querySelector("#miLaunchBtn")
+        ?.addEventListener("click", launchInstance);
+      return;
+    }
+
+    popupEl.innerHTML = `
+      <div class="mi-popup-header">
+        <span>Instances <span class="mi-count-badge">${clients.length}</span></span>
+        <div>
+          <button class="mi-all-btn" id="miAllBtn">
+            ${allActiveSelected ? "Deselect All" : "Select All"}
+          </button>
+          <button class="mi-launch-btn" id="miLaunchBtn">+ New</button>
+        </div>
+      </div>
+
+      ${clients.map(c => {
+      const sel = selected.has(c.user_id);
+      return `
+          <div class="mi-item ${sel ? "selected" : ""}" data-id="${c.user_id}">
+            <span class="mi-item-dot ${c.active ? "ok" : "warn"}"></span>
+            <div class="mi-item-info">
+              <div>${esc(c.display_name || c.username)}</div>
+              <div class="mi-item-meta">@${esc(c.username)}</div>
+            </div>
+            <span class="mi-checkbox">${sel ? SVG.check : ""}</span>
+          </div>
+        `;
+    }).join("")}
+    `;
+
+    popupEl.querySelector("#miAllBtn")?.addEventListener("click", () => {
+      allActiveSelected ? api().selectNone() : api().selectAll();
+      renderPopup();
+      renderBtn();
+    });
+
+    popupEl.querySelector("#miLaunchBtn")
+      ?.addEventListener("click", launchInstance);
+
+    popupEl.querySelectorAll(".mi-item").forEach(el => {
+      el.addEventListener("click", () => {
+        api().toggleSelected(el.dataset.id);
+        renderPopup();
+        renderBtn();
       });
     });
+  }
+
+  function openPopup() {
+    popupOpen = true;
+    renderPopup();
+
+    popupEl.classList.add("open");
+    btnEl.classList.add("open");
+
+    requestAnimationFrame(() => {
+      positionPopup();
+      popupEl.classList.add("mi-popup--visible");
+    });
+
     const close = (e) => {
-      if (!_wrapEl.contains(e.target) && !_popupEl.contains(e.target)) {
-        _closePopup();
+      if (!wrapEl.contains(e.target) && !popupEl.contains(e.target)) {
+        closePopup();
         document.removeEventListener("mousedown", close);
       }
     };
+
     setTimeout(() => document.addEventListener("mousedown", close), 0);
   }
-  function _closePopup() {
-    _popupOpen = false;
-    _popupEl.classList.remove("open", "mi-popup--visible");
-    _btnEl.classList.remove("open");
+
+  function closePopup() {
+    popupOpen = false;
+    popupEl.classList.remove("open", "mi-popup--visible");
+    btnEl.classList.remove("open");
   }
-  async function _toggle() {
-    if (_isRunning) {
-      multiInstance.stop();
-      _isRunning = false;
-      _toggleEl.classList.remove("active");
-      _toggleEl.title = "Enable Multi-Instance";
-      _renderBtn();
-    } else {
-      try {
-        await multiInstance.installAutoexec();
-        await multiInstance.start();
-        _isRunning = true;
-        _toggleEl.classList.add("active");
-        _toggleEl.title = "Disable Multi-Instance";
-        _renderBtn();
-      } catch (err) {
-        toast.show(`Multi-Instance: ${err.message}`, "fail", 3000);
-      }
+
+  async function toggle() {
+    if (isRunning) {
+      api().stop();
+      isRunning = false;
+
+      toggleEl.classList.remove("active");
+      toggleEl.title = "Enable Multi-Instance";
+
+      renderBtn();
+      return;
+    }
+
+    try {
+      await api().start();
+
+      isRunning = true;
+
+      toggleEl.classList.add("active");
+      toggleEl.title = "Disable Multi-Instance";
+
+      renderBtn();
+    } catch (e) {
+      toast.show(`Multi-Instance: ${e.message}`, "fail", 3000);
     }
   }
+
   function mount() {
-    const titlebarActions = document.getElementById("titlebarActions");
-    if (!titlebarActions) return;
-    _wrapEl = document.createElement("div");
-    _wrapEl.className = "mi-titlebar-wrap";
-    _wrapEl.innerHTML = `
-      <button class="mi-toggle-btn" id="miToggle" title="Enable Multi-Instance" aria-label="Toggle multi-instance mode">
+    const bar = document.getElementById("titlebarActions");
+    if (!bar) return;
+
+    wrapEl = document.createElement("div");
+    wrapEl.className = "mi-titlebar-wrap";
+
+    wrapEl.innerHTML = `
+      <button class="mi-toggle-btn" id="miToggle">
         ${SVG.instances}
       </button>
-      <div class="mi-dropdown-wrap" id="miDropdownWrap">
-        <button class="mi-select-btn" id="miSelectBtn" aria-label="Select target instances" aria-haspopup="listbox">
+
+      <div class="mi-dropdown-wrap">
+        <button class="mi-select-btn" id="miSelectBtn">
           <span class="mi-dot off"></span>
           <span class="mi-label">Instances</span>
           <span class="mi-caret">${SVG.caret}</span>
         </button>
       </div>
     `;
-    titlebarActions.appendChild(_wrapEl);
-    _popupEl = document.createElement("div");
-    _popupEl.className = "mi-popup";
-    _popupEl.id = "miPopup";
-    _popupEl.setAttribute("role", "listbox");
-    _popupEl.setAttribute("aria-multiselectable", "true");
-    _popupEl.setAttribute("aria-label", "Roblox instances");
-    _popupEl.innerHTML = `
-      <div class="mi-popup-header"><span>Instances</span></div>
-      <div class="mi-popup-empty">Enable multi-instance to begin</div>
-    `;
-    document.body.appendChild(_popupEl);
-    _toggleEl = document.getElementById("miToggle");
-    _btnEl = document.getElementById("miSelectBtn");
-    _toggleEl.addEventListener("click", _toggle);
-    _btnEl.addEventListener("click", () => {
-      if (!_isRunning) return;
-      _popupOpen ? _closePopup() : _openPopup();
+
+    bar.appendChild(wrapEl);
+
+    popupEl = document.createElement("div");
+    popupEl.className = "mi-popup";
+    document.body.appendChild(popupEl);
+
+    toggleEl = document.getElementById("miToggle");
+    btnEl = document.getElementById("miSelectBtn");
+
+    toggleEl.addEventListener("click", toggle);
+
+    btnEl.addEventListener("click", () => {
+      if (!isRunning) return;
+      popupOpen ? closePopup() : openPopup();
     });
+
     window.addEventListener("resize", () => {
-      if (_popupOpen) _positionPopup();
+      if (popupOpen) positionPopup();
     });
+
     eventBus.on("multiinstance:clientsChanged", () => {
-      _renderBtn();
-      if (_popupOpen) _renderPopup();
+      renderBtn();
+      if (popupOpen) renderPopup();
     });
+
     eventBus.on("multiinstance:selectionChanged", () => {
-      _renderBtn();
-      if (_popupOpen) _renderPopup();
+      renderBtn();
+      if (popupOpen) renderPopup();
     });
+
+    renderBtn();
   }
+
   function getTargetsForRun() {
-    if (!_isRunning) return null;
-    const selected = multiInstance.getSelectedClients();
-    if (selected.length) return selected;
-    return multiInstance.getClients().filter((c) => c.active);
+    if (!isRunning) return null;
+
+    const sel = api().getSelectedClients();
+    if (sel.length) return sel;
+
+    return api().getClients().filter(c => c.active);
   }
+
   function getTargetForRun() {
-    const targets = getTargetsForRun();
-    if (!targets || !targets.length) return null;
-    return targets[0];
+    const t = getTargetsForRun();
+    return t?.[0] || null;
   }
+
   return {
     mount,
-    getTargetForRun,
     getTargetsForRun,
+    getTargetForRun,
   };
 })();

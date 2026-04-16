@@ -432,7 +432,7 @@ const appController = (() => {
     if (ui) {
       _restoreUI(ui);
     } else {
-      executorSettings.init("hydrogen");
+      executorSettings.init("opium");
       _switchView("explorer");
     }
     await workspaceController.boot();

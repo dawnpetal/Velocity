@@ -8,7 +8,7 @@ const executorSettings = (() => {
     if (sel && sel.value !== value) sel.value = value;
   }
   function init(savedExecutor) {
-    uiState.setExecutor(savedExecutor ?? "hydrogen");
+    uiState.setExecutor(savedExecutor ?? "opium");
     const row = document.getElementById("executorStatusRow");
     if (row) row.style.display = "none";
     const sel = document.getElementById("executorSelect");

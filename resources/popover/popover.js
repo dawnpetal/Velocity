@@ -3,41 +3,41 @@ const { listen } = window.__TAURI__.event;
 const _win = window.__TAURI__.window.getCurrentWindow();
 
 const CIRC = 125.7;
-let _validCache    = null;
-let _tickTimer     = null;
-let _allScripts    = [];
-let _pinned        = JSON.parse(localStorage.getItem("v_p") || "[]");
-let _recents       = JSON.parse(localStorage.getItem("v_r") || "[]");
-let _isRefreshing  = false;
+let _validCache = null;
+let _tickTimer = null;
+let _allScripts = [];
+let _pinned = JSON.parse(localStorage.getItem("v_p") || "[]");
+let _recents = JSON.parse(localStorage.getItem("v_r") || "[]");
+let _isRefreshing = false;
 
 const el = {
-  keySec:     document.getElementById("key-section"),
-  expVal:     document.getElementById("exp-val"),
-  expSub:     document.getElementById("exp-sub"),
-  keyDisp:    document.getElementById("key-display"),
-  btnCopy:    document.getElementById("btn-copy"),
+  keySec: document.getElementById("key-section"),
+  expVal: document.getElementById("exp-val"),
+  expSub: document.getElementById("exp-sub"),
+  keyDisp: document.getElementById("key-display"),
+  btnCopy: document.getElementById("btn-copy"),
   btnRefresh: document.getElementById("btn-refresh"),
-  ringH:      document.getElementById("ring-h"),
-  ringD:      document.getElementById("ring-d"),
-  ringHN:     document.getElementById("ring-h-n"),
-  ringDN:     document.getElementById("ring-d-n"),
-  list:       document.getElementById("list"),
+  ringH: document.getElementById("ring-h"),
+  ringD: document.getElementById("ring-d"),
+  ringHN: document.getElementById("ring-h-n"),
+  ringDN: document.getElementById("ring-d-n"),
+  list: document.getElementById("list"),
   listLoader: document.getElementById("list-loader"),
-  recents:    document.getElementById("recents"),
-  empty:      document.getElementById("empty"),
-  count:      document.getElementById("count"),
-  search:     document.getElementById("search-input"),
-  status:     document.getElementById("status"),
-  dot:        document.getElementById("status-dot"),
+  recents: document.getElementById("recents"),
+  empty: document.getElementById("empty"),
+  count: document.getElementById("count"),
+  search: document.getElementById("search-input"),
+  status: document.getElementById("status"),
+  dot: document.getElementById("status-dot"),
 };
 
 function hourKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}`;
 }
 function dayKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function setRing(ring, numEl, val, max) {
@@ -65,7 +65,6 @@ async function runScript(s) {
   el.status.textContent = "Injecting";
   el.dot.classList.add("busy");
   try {
-    // Pass executor sourced from Rust — not a stale JS global
     await invoke("inject_script", { code: s.content });
     _recents = [s.name, ..._recents.filter(x => x !== s.name)].slice(0, 6);
     localStorage.setItem("v_r", JSON.stringify(_recents));
@@ -115,7 +114,6 @@ async function refresh(force = false) {
   _isRefreshing = true;
   el.listLoader.classList.add("active");
   try {
-    // Source of truth for executor comes from Rust every refresh
     const uiStateData = await invoke("load_ui_state_cmd").catch(() => ({}));
     const isHydro = (uiStateData?.settings?.executor ?? "hydrogen") === "hydrogen";
     el.keySec.classList.toggle("hidden", !isHydro);
@@ -133,7 +131,7 @@ async function refresh(force = false) {
           if (rem <= 0) { el.expVal.textContent = "Expired"; el.expSub.textContent = "Revalidate Required"; return; }
           const h = Math.floor(rem / 3600), m = Math.floor((rem % 3600) / 60);
           el.expVal.textContent = h > 0 ? `${h}h ${m}m` : `${m}m ${Math.floor(rem % 60)}s`;
-          el.expSub.textContent = `Until ${new Date(_validCache.expires_at * 1000).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+          el.expSub.textContent = `Until ${new Date(_validCache.expires_at * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
         }, 1000);
       } else {
         el.expVal.textContent = "Invalid";

@@ -215,8 +215,23 @@ const editor = (() => {
       return;
     }
     if (pt === "svg") {
-      active.previewType = "svg";
-      _showPreviewFile(active);
+      if (active.content === null) {
+        window.__TAURI__.core
+          .invoke("read_text_file", {
+            path: active.path,
+          })
+          .then((content) => {
+            active.content = content;
+            active.previewType = "svg";
+            _showPreviewFile(active);
+          })
+          .catch((err) =>
+            toast.show("Could not read SVG: " + (err.message ?? err), "fail"),
+          );
+      } else {
+        active.previewType = "svg";
+        _showPreviewFile(active);
+      }
       return;
     }
     if (pt === "video") {

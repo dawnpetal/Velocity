@@ -7,7 +7,7 @@ const uiState = (() => {
   let _wordWrap = null;
   let _minimap = null;
   let _lineNumbers = null;
-  let _executor = "hydrogen";
+  let _executor = "opium";
   const VALID_EXECUTORS = new Set(["hydrogen", "opium"]);
   function snapshot() {
     return {
