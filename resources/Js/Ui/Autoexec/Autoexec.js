@@ -49,32 +49,18 @@ const autoexec = (() => {
   }
   async function _sync() {
     const hydroDir = await _getExecutorDir();
-    try {
-      const existing = await window.__TAURI__.core.invoke("read_dir", {
-        path: hydroDir,
-      });
-      await Promise.all(
-        existing
-          .filter((e) => e.type === "FILE" && e.entry.endsWith(".lua"))
-          .map((e) =>
-            window.__TAURI__.core
-              .invoke("remove_path", {
-                path: `${hydroDir}/${e.entry}`,
-              })
-              .catch(() => {}),
-          ),
-      );
-    } catch {}
-    if (!_enabled) return;
     const scriptsDir = await _getScriptsDir();
-    try {
-      const files = await window.__TAURI__.core.invoke("read_dir", {
-        path: scriptsDir,
-      });
-      await Promise.all(
-        files
-          .filter((e) => e.type === "FILE" && e.entry.endsWith(".lua"))
-          .map(async (e) => {
+    let managedNames = new Set();
+    if (_enabled) {
+      try {
+        const files = await window.__TAURI__.core.invoke("read_dir", {
+          path: scriptsDir,
+        });
+        const luaFiles = files.filter(
+          (e) => e.type === "FILE" && e.entry.endsWith(".lua"),
+        );
+        await Promise.all(
+          luaFiles.map(async (e) => {
             try {
               const content = await window.__TAURI__.core.invoke(
                 "read_text_file",
@@ -86,8 +72,31 @@ const autoexec = (() => {
                 path: `${hydroDir}/${e.entry}`,
                 content,
               });
+              managedNames.add(e.entry);
             } catch {}
           }),
+        );
+      } catch {}
+    }
+    try {
+      const existing = await window.__TAURI__.core.invoke("read_dir", {
+        path: hydroDir,
+      });
+      await Promise.all(
+        existing
+          .filter(
+            (e) =>
+              e.type === "FILE" &&
+              e.entry.endsWith(".lua") &&
+              !managedNames.has(e.entry),
+          )
+          .map((e) =>
+            window.__TAURI__.core
+              .invoke("remove_path", {
+                path: `${hydroDir}/${e.entry}`,
+              })
+              .catch(() => {}),
+          ),
       );
     } catch {}
   }

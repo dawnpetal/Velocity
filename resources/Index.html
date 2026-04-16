@@ -33,6 +33,7 @@
   <link rel="stylesheet" href="Css/Features/MultiInstance.css">
   <link rel="stylesheet" href="Css/Features/Guide.css">
   <link rel="stylesheet" href="Css/Features/MenuScripts.css" />
+  <link rel="stylesheet" href="Css/Features/Accounts.css">
   <link rel="stylesheet" href="Css/Global/Enhancements.css">
 </head>
 
@@ -70,6 +71,15 @@
             stroke-linejoin="round" aria-hidden="true">
             <polyline points="4 17 10 11 4 5" />
             <line x1="12" y1="19" x2="20" y2="19" />
+          </svg>
+        </button>
+        <button class="activity-btn" data-view="accounts" title="Accounts" aria-label="Accounts" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </button>
         <button class="activity-btn" data-view="pinboard" title="Pinboard" aria-label="Pinboard" aria-pressed="false">
@@ -301,6 +311,7 @@
 
       <div id="cloudView" class="workspace-view workspace-view--cloud"></div>
       <div id="autoexecView" class="workspace-view workspace-view--autoexec"></div>
+      <div id="accountsView" class="workspace-view workspace-view--accounts" style="display:none"></div>
       <div id="pinboardView" class="workspace-view workspace-view--pinboard"></div>
 
       <div id="settingsPanel" class="settings-panel" style="display:none">
@@ -686,6 +697,7 @@
   <script src="Js/Ui/Cloud/Cloud.js"></script>
   <script src="Js/Ui/Autoexec/AutoexecEditor.js"></script>
   <script src="Js/Ui/Autoexec/Autoexec.js"></script>
+  <script src="Js/Ui/Accounts/Accounts.js"></script>
   <script src="Js/Ui/Pinboard/PinboardCard.js"></script>
   <script src="Js/Ui/Pinboard/PinboardOps.js"></script>
   <script src="Js/Ui/Pinboard/Pinboard.js"></script>

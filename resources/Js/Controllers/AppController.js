@@ -40,6 +40,7 @@ const appController = (() => {
   const EXCLUSIVE_PANELS = {
     cloud: "cloudView",
     autoexec: "autoexecView",
+    accounts: "accountsView",
     pinboard: "pinboardView",
     settings: "settingsPanel",
   };
@@ -70,6 +71,8 @@ const appController = (() => {
     }
     if (prevView === "autoexec" && view !== "autoexec") autoexec.hide();
     if (view === "autoexec") autoexec.show();
+    if (prevView === "accounts" && view !== "accounts") accountsPanel.hide();
+    if (view === "accounts") accountsPanel.show();
     if (view === "pinboard") pinboard.show();
     if (view === "cloud" && !_cloudInited) {
       cloud.init();

@@ -23,7 +23,6 @@ const ExplorerTree = (() => {
     dots: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>`,
     pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
   };
-
   function _findNode(id, node) {
     if (!node) return null;
     if (node.id === id) return node;
@@ -33,7 +32,6 @@ const ExplorerTree = (() => {
     }
     return null;
   }
-
   function findNodeInRoots(id) {
     for (const root of state.roots) {
       const found = _findNode(id, root);
@@ -41,34 +39,42 @@ const ExplorerTree = (() => {
     }
     return null;
   }
-
-  function setDragSrc(id) { _dragSrcId = id; }
-  function getDragSrc() { return _dragSrcId; }
-  function setDragNodes(nodes) { _dragNodes = nodes ?? []; }
-  function getDragNodes() { return _dragNodes; }
-
-  function clearSelection() { _setSelection([]); }
-
+  function setDragSrc(id) {
+    _dragSrcId = id;
+  }
+  function getDragSrc() {
+    return _dragSrcId;
+  }
+  function setDragNodes(nodes) {
+    _dragNodes = nodes ?? [];
+  }
+  function getDragNodes() {
+    return _dragNodes;
+  }
+  function clearSelection() {
+    _setSelection([]);
+  }
   function _getFileCount(node) {
     if (node.type === "file") return 1;
     return (node.children ?? []).reduce((n, c) => n + _getFileCount(c), 0);
   }
-
   function _setSelection(ids) {
     _selection = new Set(ids);
-    rootEl()?.querySelectorAll(".tree-row").forEach(row => {
-      row.classList.toggle("selected", _selection.has(row.dataset.id));
-    });
+    rootEl()
+      ?.querySelectorAll(".tree-row")
+      .forEach((row) => {
+        row.classList.toggle("selected", _selection.has(row.dataset.id));
+      });
   }
-
   function _getSelectionNodes() {
-    return [..._selection].map(id => findNodeInRoots(id)).filter(Boolean);
+    return [..._selection].map((id) => findNodeInRoots(id)).filter(Boolean);
   }
-
   function _buildStructureKey() {
     const parts = [];
     function walk(node) {
-      parts.push(node.id + (node.type === "folder" ? (node.open ? "O" : "C") : "F"));
+      parts.push(
+        node.id + (node.type === "folder" ? (node.open ? "O" : "C") : "F"),
+      );
       if (node.type === "folder" && node.open) {
         for (const c of node.children) walk(c);
       }
@@ -79,19 +85,17 @@ const ExplorerTree = (() => {
     }
     return parts.join("|");
   }
-
   function _patchSelection() {
     const root = rootEl();
     if (!root) return;
-    root.querySelectorAll(".tree-row").forEach(row => {
+    root.querySelectorAll(".tree-row").forEach((row) => {
       row.classList.toggle("selected", _selection.has(row.dataset.id));
     });
   }
-
   function _patchUnsaved() {
     const root = rootEl();
     if (!root) return;
-    root.querySelectorAll(".tree-row[data-type='file']").forEach(row => {
+    root.querySelectorAll(".tree-row[data-type='file']").forEach((row) => {
       const id = row.dataset.id;
       const meta = row.querySelector(".tree-meta");
       if (!meta) return;
@@ -106,11 +110,9 @@ const ExplorerTree = (() => {
       }
     });
   }
-
   function render() {
     const root = rootEl();
     if (!root) return;
-
     if (!state.roots.length) {
       _structureKey = "";
       root.innerHTML = `
@@ -122,11 +124,16 @@ const ExplorerTree = (() => {
           <button class="open-folder-btn open-folder-btn--secondary" id="explorerResetDefaultBtn">Restore Default Workspace</button>
           <div class="empty-drop-hint">${SVG.upload}<span>or drag a folder here</span></div>
         </div>`;
-      document.getElementById("explorerOpenFolderBtn")?.addEventListener("click", () => workspaceController.openFolderDialog());
-      document.getElementById("explorerResetDefaultBtn")?.addEventListener("click", () => workspaceController.resetDefault());
+      document
+        .getElementById("explorerOpenFolderBtn")
+        ?.addEventListener("click", () =>
+          workspaceController.openFolderDialog(),
+        );
+      document
+        .getElementById("explorerResetDefaultBtn")
+        ?.addEventListener("click", () => workspaceController.resetDefault());
       return;
     }
-
     const newKey = _buildStructureKey();
     if (newKey === _structureKey) {
       _patchSelection();
@@ -134,7 +141,6 @@ const ExplorerTree = (() => {
       return;
     }
     _structureKey = newKey;
-
     root.innerHTML = "";
     _flatOrder = [];
     const frag = document.createDocumentFragment();
@@ -143,27 +149,27 @@ const ExplorerTree = (() => {
     for (const rootNode of state.roots) {
       if (rootNode.open) _buildFlatOrder(rootNode, _flatOrder);
     }
-    _selection.forEach(id => {
-      root.querySelector(`.tree-row[data-id="${id}"]`)?.classList.add("selected");
+    _selection.forEach((id) => {
+      root
+        .querySelector(`.tree-row[data-id="${id}"]`)
+        ?.classList.add("selected");
     });
   }
-
   function _buildFlatOrder(rootNode, out) {
     if (!rootNode.open) return;
     for (const child of rootNode.children) _buildFlatOrderNode(child, out);
   }
-
   function _buildFlatOrderNode(node, out) {
     out.push(node.id);
     if (node.type === "folder" && node.open) {
       for (const child of node.children) _buildFlatOrderNode(child, out);
     }
   }
-
   function _renderRootNode(rootNode, container) {
     const isPrimary = state.roots.indexOf(rootNode) === 0;
     const header = document.createElement("div");
-    header.className = "tree-root-header" + (isPrimary ? "" : " tree-root-header--secondary");
+    header.className =
+      "tree-root-header" + (isPrimary ? "" : " tree-root-header--secondary");
     const left = document.createElement("div");
     left.className = "tree-root-left";
     const arrow = document.createElement("span");
@@ -201,19 +207,16 @@ const ExplorerTree = (() => {
     ExplorerDnd.attachRootHeaderDrop(header, rootNode);
     container.appendChild(header);
     if (rootNode.open) {
-      rootNode.children.forEach(c => _renderNode(c, 0, container));
+      rootNode.children.forEach((c) => _renderNode(c, 0, container));
     }
   }
-
   function _renderNode(node, depth, container) {
     const row = document.createElement("div");
     row.className = "tree-row";
     row.dataset.id = node.id;
     row.dataset.type = node.type;
-
     const indent = document.createElement("div");
     indent.className = "tree-indent";
-
     for (let i = 0; i < depth; i++) {
       const guide = document.createElement("span");
       guide.className = "tree-guide";
@@ -221,38 +224,34 @@ const ExplorerTree = (() => {
       row.appendChild(guide);
     }
     indent.style.paddingLeft = depth * 14 + 6 + "px";
-
     const arrowEl = document.createElement("span");
-    arrowEl.className = "tree-arrow" + (node.type === "folder" ? (node.open ? " open" : "") : " leaf");
+    arrowEl.className =
+      "tree-arrow" +
+      (node.type === "folder" ? (node.open ? " open" : "") : " leaf");
     arrowEl.innerHTML = SVG.arrow;
-
     const iconEl = document.createElement("span");
     iconEl.className = "tree-icon";
-    iconEl.appendChild(helpers.fileIconImg(node.name, node.type === "folder", node.open, 15));
-
+    iconEl.appendChild(
+      helpers.fileIconImg(node.name, node.type === "folder", node.open, 15),
+    );
     const labelEl = document.createElement("span");
     labelEl.className = "tree-label";
     labelEl.textContent = node.name;
-
     const metaEl = document.createElement("span");
     metaEl.className = "tree-meta";
-
     if (state.isUnsaved(node.id)) {
       const dot = document.createElement("span");
       dot.className = "tree-unsaved-dot";
       metaEl.appendChild(dot);
     }
-
     if (node.type === "folder" && node.children?.length > 0) {
       const badge = document.createElement("span");
       badge.className = "tree-folder-count";
       badge.textContent = node.children.length;
       metaEl.appendChild(badge);
     }
-
     indent.append(arrowEl, iconEl, labelEl, metaEl);
     row.appendChild(indent);
-
     row.addEventListener("click", (e) => {
       e.stopPropagation();
       if (e.ctrlKey || e.metaKey) {
@@ -270,7 +269,8 @@ const ExplorerTree = (() => {
         const a = _flatOrder.indexOf(_lastClickedId);
         const b = _flatOrder.indexOf(node.id);
         if (a !== -1 && b !== -1) {
-          const lo = Math.min(a, b), hi = Math.max(a, b);
+          const lo = Math.min(a, b),
+            hi = Math.max(a, b);
           _setSelection(_flatOrder.slice(lo, hi + 1));
           return;
         }
@@ -281,10 +281,11 @@ const ExplorerTree = (() => {
         node.open = !node.open;
         render();
       } else {
-        eventBus.emit("ui:open-file", { id: node.id });
+        eventBus.emit("ui:open-file", {
+          id: node.id,
+        });
       }
     });
-
     row.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -294,28 +295,27 @@ const ExplorerTree = (() => {
       }
       ctxMenu.showForNodes(e, _getSelectionNodes());
     });
-
     ExplorerDnd.attachRowDrop(row, node);
     if (node.type === "file") ExplorerDnd.attachFileDrag(row, node);
     if (node.type === "folder") ExplorerDnd.attachFolderDrag(row, node);
-
     container.appendChild(row);
     if (node.type === "folder" && node.open) {
-      node.children.forEach(c => _renderNode(c, depth + 1, container));
+      node.children.forEach((c) => _renderNode(c, depth + 1, container));
     }
   }
-
   function init() {
     const root = rootEl();
     root?.addEventListener("click", (e) => {
-      if (!e.target.closest(".tree-row") && !e.target.closest(".tree-root-header")) {
+      if (
+        !e.target.closest(".tree-row") &&
+        !e.target.closest(".tree-root-header")
+      ) {
         _setSelection([]);
         _lastClickedId = null;
       }
     });
     ExplorerDnd.attachRootDrop(root);
   }
-
   return {
     render,
     init,

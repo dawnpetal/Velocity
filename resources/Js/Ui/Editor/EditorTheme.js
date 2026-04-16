@@ -1,8 +1,17 @@
 const EditorTheme = (() => {
   let _built = false;
+  function _resolveVar(name, fallback) {
+    const val = getComputedStyle(document.documentElement)
+      .getPropertyValue(name)
+      .trim();
+    return val || fallback;
+  }
   function build(monaco) {
     if (_built) return;
     _built = true;
+    const bg3 = _resolveVar("--bg3", "#1c1c1c");
+    const bg4 = _resolveVar("--bg4", "#242424");
+    const border = _resolveVar("--border", "#2a2a2a");
     monaco.editor.defineTheme("velocity", {
       base: "vs-dark",
       inherit: true,
@@ -38,39 +47,39 @@ const EditorTheme = (() => {
         },
       ],
       colors: {
-        "editor.background": "#1a1a1a",
+        "editor.background": bg3,
         "editor.foreground": "#f0f0f0",
-        "editor.lineHighlightBackground": "#202020",
+        "editor.lineHighlightBackground": bg4,
         "editor.selectionBackground": "#7c3aed28",
-        "editor.inactiveSelectionBackground": "#292929",
+        "editor.inactiveSelectionBackground": bg4,
         "editorCursor.foreground": "#7c3aed",
         "editorLineNumber.foreground": "#525252",
         "editorLineNumber.activeForeground": "#f0f0f0",
-        "editorIndentGuide.background": "#2a2a2a",
+        "editorIndentGuide.background": border,
         "editorIndentGuide.activeBackground": "#525252",
         "editorWhitespace.foreground": "#525252",
         "editorBracketMatch.background": "#7c3aed18",
         "editorBracketMatch.border": "#7c3aed",
-        "editorWidget.background": "#202020",
-        "editorWidget.border": "#2a2a2a",
-        "editorSuggestWidget.background": "#202020",
-        "editorSuggestWidget.border": "#2a2a2a",
-        "editorSuggestWidget.selectedBackground": "#292929",
+        "editorWidget.background": bg4,
+        "editorWidget.border": border,
+        "editorSuggestWidget.background": bg4,
+        "editorSuggestWidget.border": border,
+        "editorSuggestWidget.selectedBackground": bg3,
         "editorSuggestWidget.highlightForeground": "#7c3aed",
-        "editorGutter.background": "#1a1a1a",
+        "editorGutter.background": bg3,
         "scrollbar.shadow": "#00000000",
         "scrollbarSlider.background": "#292929aa",
         "scrollbarSlider.hoverBackground": "#292929",
         "scrollbarSlider.activeBackground": "#525252",
-        "minimap.background": "#1a1a1a",
+        "minimap.background": bg3,
         "minimap.selectionHighlight": "#7c3aed28",
-        "input.background": "#202020",
-        "input.border": "#2a2a2a",
+        "input.background": bg4,
+        "input.border": border,
         "input.foreground": "#f0f0f0",
-        "dropdown.background": "#202020",
-        "dropdown.border": "#2a2a2a",
-        "list.hoverBackground": "#202020",
-        "list.activeSelectionBackground": "#292929",
+        "dropdown.background": bg4,
+        "dropdown.border": border,
+        "list.hoverBackground": bg4,
+        "list.activeSelectionBackground": bg3,
         focusBorder: "#7c3aed",
         "textLink.foreground": "#7c3aed",
       },

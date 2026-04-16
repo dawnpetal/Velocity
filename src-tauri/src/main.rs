@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
+mod cookies;
 mod icon_theme;
 mod models;
 mod paths;
@@ -188,6 +189,17 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::accounts::accounts_add,
+            commands::accounts::accounts_list,
+            commands::accounts::accounts_remove,
+            commands::accounts::accounts_refresh,
+            commands::accounts::accounts_get_cookie,
+            commands::accounts::accounts_get_running,
+            commands::accounts::accounts_launch,
+            commands::accounts::accounts_kill,
+            commands::accounts::accounts_kill_all,
+            commands::accounts::accounts_set_default,
+            commands::accounts::accounts_clear_clients,
             commands::io::get_home_dir,
             commands::io::get_resource_dir,
             commands::io::read_text_file,

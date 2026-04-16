@@ -87,7 +87,9 @@ const Preview = (() => {
     if (file.binaryData) {
       const mime = LangMap.mimeFor(file.name);
       const bytes = _base64ToUint8Array(file.binaryData);
-      const blob = new Blob([bytes], { type: mime });
+      const blob = new Blob([bytes], {
+        type: mime,
+      });
       const url = URL.createObjectURL(blob);
       EditorModels.setBlobUrl(file.id, url);
       _buildImageUI(pane, url, file.name);
@@ -136,7 +138,9 @@ const Preview = (() => {
     pane.className = "preview-pane preview-video-pane";
     const mime = LangMap.mimeFor(file.name);
     const bytes = _base64ToUint8Array(file.binaryData);
-    const blob = new Blob([bytes], { type: mime });
+    const blob = new Blob([bytes], {
+      type: mime,
+    });
     const url = URL.createObjectURL(blob);
     EditorModels.setBlobUrl(file.id, url);
     const toolbar = document.createElement("div");

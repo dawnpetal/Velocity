@@ -92,12 +92,12 @@ const editorController = (() => {
     if (miTargets && miTargets.length) {
       const script = active.content || editor.getContent();
       try {
-        const userIds = miTargets.map((t) => t.userId);
+        const userIds = miTargets.map((t) => t.user_id);
         await multiInstance.sendScriptToMany(userIds, script);
         const n = miTargets.length;
         const label =
           n === 1
-            ? miTargets[0].displayName || miTargets[0].username
+            ? miTargets[0].display_name || miTargets[0].username
             : `${n} instances`;
         toast.show(`Sent to ${label}`, "ok");
         await execHistory.push(script, active.name);
