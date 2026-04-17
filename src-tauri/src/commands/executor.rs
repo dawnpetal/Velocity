@@ -211,10 +211,6 @@ pub fn is_roblox_focused() -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(not(target_os = "macos"))]
-pub fn is_roblox_focused() -> bool {
-    false
-}
 
 pub fn start_autoexec_watcher(app: AppHandle) {
     std::thread::spawn(move || {
@@ -238,29 +234,49 @@ pub fn start_autoexec_watcher(app: AppHandle) {
                 let _ = app.emit("roblox:state", serde_json::json!({ "running": is_running }));
 
                 if is_running {
-                    if let Ok(dir) = crate::paths::autoexec_scripts_dir() {
-                        if let Ok(entries) = std::fs::read_dir(&dir) {
-                            let executor = crate::services::load_ui_state()
-                                .and_then(|ui| ui.settings.executor)
-                                .unwrap_or_else(|| "opiumware".to_string())
-                                .to_ascii_lowercase();
+                    let meta_enabled = crate::paths::internals_dir()
+                        .ok()
+                        .map(|d| d.join("autoexec_meta.json"))
+                        .and_then(|p| std::fs::read_to_string(p).ok())
+                        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                        .and_then(|v| v.get("enabled").and_then(|e| e.as_bool()))
+                        .unwrap_or(false);
 
-                            for entry in entries.flatten() {
-                                let path = entry.path();
-                                if path.extension().and_then(|e| e.to_str()) != Some("lua") {
-                                    continue;
-                                }
-                                if let Ok(code) = std::fs::read_to_string(&path) {
-                                    match executor.as_str() {
-                                        "opiumware" | "opium" => {
-                                            let _ = rt.block_on(exec_opium(code));
-                                        }
-                                        _ => {
-                                            let _ = rt.block_on(inject_hydro_inner(
-                                                code,
-                                                &client,
-                                                &port_cache,
-                                            ));
+                    if meta_enabled {
+                        let executor = crate::services::load_ui_state()
+                            .and_then(|ui| ui.settings.executor)
+                            .unwrap_or_else(|| "opium".to_string())
+                            .to_ascii_lowercase();
+
+                        let dir_opt = crate::paths::home_dir().ok().map(|home| {
+                            match executor.as_str() {
+                                "opiumware" | "opium" => home.join("Opiumware").join("autoexec"),
+                                _ => home.join("Hydrogen").join("workspace").join("autoexecute"),
+                            }
+                        });
+
+                        if let Some(dir) = dir_opt {
+                            if let Ok(entries) = std::fs::read_dir(&dir) {
+                                for entry in entries.flatten() {
+                                    let path = entry.path();
+                                    if path.extension().and_then(|e| e.to_str()) != Some("lua") {
+                                        continue;
+                                    }
+                                    if path.file_name().and_then(|n| n.to_str()) == Some("Velocity_multiexec.lua") {
+                                        continue;
+                                    }
+                                    if let Ok(code) = std::fs::read_to_string(&path) {
+                                        match executor.as_str() {
+                                            "opiumware" | "opium" => {
+                                                let _ = rt.block_on(exec_opium(code));
+                                            }
+                                            _ => {
+                                                let _ = rt.block_on(inject_hydro_inner(
+                                                    code,
+                                                    &client,
+                                                    &port_cache,
+                                                ));
+                                            }
                                         }
                                     }
                                 }

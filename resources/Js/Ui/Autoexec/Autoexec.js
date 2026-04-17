@@ -3,24 +3,26 @@ const autoexec = (() => {
   let _enabled = false;
   let _inited = false;
   let _renaming = null;
+
   const SVG_NEW_FILE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`;
   const SVG_SAVE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`;
   const SVG_RENAME = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
   const SVG_DELETE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
   const SVG_SELECT_FILE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
+
   async function _getHome() {
     return await window.__TAURI__.core.invoke("get_home_dir");
   }
-  async function _getScriptsDir() {
+
+  async function _getInternalDir() {
     const home = await _getHome();
     const dir = `${home}/Velocity/internals/autoexec_scripts`;
     try {
-      await window.__TAURI__.core.invoke("create_dir", {
-        path: dir,
-      });
+      await window.__TAURI__.core.invoke("create_dir", { path: dir });
     } catch {}
     return dir;
   }
+
   async function _getExecutorDir() {
     const home = await _getHome();
     const executor = executorSettings.getActive();
@@ -28,78 +30,21 @@ const autoexec = (() => {
     if (executor === "opium") {
       dir = `${home}/Opiumware/autoexec`;
       try {
-        await window.__TAURI__.core.invoke("create_dir", {
-          path: `${home}/Opiumware`,
-        });
+        await window.__TAURI__.core.invoke("create_dir", { path: `${home}/Opiumware` });
       } catch {}
     } else {
-      dir = `${home}/Hydrogen/autoexecute`;
+      dir = `${home}/Hydrogen/workspace/autoexecute`;
       try {
-        await window.__TAURI__.core.invoke("create_dir", {
-          path: `${home}/Hydrogen`,
-        });
+        await window.__TAURI__.core.invoke("create_dir", { path: `${home}/Hydrogen` });
+        await window.__TAURI__.core.invoke("create_dir", { path: `${home}/Hydrogen/workspace` });
       } catch {}
     }
     try {
-      await window.__TAURI__.core.invoke("create_dir", {
-        path: dir,
-      });
+      await window.__TAURI__.core.invoke("create_dir", { path: dir });
     } catch {}
     return dir;
   }
-  async function _sync() {
-    const hydroDir = await _getExecutorDir();
-    const scriptsDir = await _getScriptsDir();
-    let managedNames = new Set();
-    if (_enabled) {
-      try {
-        const files = await window.__TAURI__.core.invoke("read_dir", {
-          path: scriptsDir,
-        });
-        const luaFiles = files.filter(
-          (e) => e.type === "FILE" && e.entry.endsWith(".lua"),
-        );
-        await Promise.all(
-          luaFiles.map(async (e) => {
-            try {
-              const content = await window.__TAURI__.core.invoke(
-                "read_text_file",
-                {
-                  path: `${scriptsDir}/${e.entry}`,
-                },
-              );
-              await window.__TAURI__.core.invoke("write_text_file", {
-                path: `${hydroDir}/${e.entry}`,
-                content,
-              });
-              managedNames.add(e.entry);
-            } catch {}
-          }),
-        );
-      } catch {}
-    }
-    try {
-      const existing = await window.__TAURI__.core.invoke("read_dir", {
-        path: hydroDir,
-      });
-      await Promise.all(
-        existing
-          .filter(
-            (e) =>
-              e.type === "FILE" &&
-              e.entry.endsWith(".lua") &&
-              !managedNames.has(e.entry),
-          )
-          .map((e) =>
-            window.__TAURI__.core
-              .invoke("remove_path", {
-                path: `${hydroDir}/${e.entry}`,
-              })
-              .catch(() => {}),
-          ),
-      );
-    } catch {}
-  }
+
   async function _loadMeta() {
     try {
       const home = await _getHome();
@@ -114,61 +59,141 @@ const autoexec = (() => {
       _currentFile = null;
     }
   }
+
   async function _saveMeta() {
     try {
       const home = await _getHome();
       const dir = `${home}/Velocity/internals`;
       try {
-        await window.__TAURI__.core.invoke("create_dir", {
-          path: dir,
-        });
+        await window.__TAURI__.core.invoke("create_dir", { path: dir });
       } catch {}
       await window.__TAURI__.core.invoke("write_text_file", {
         path: `${dir}/autoexec_meta.json`,
-        content: JSON.stringify({
-          enabled: _enabled,
-          file: _currentFile,
-        }),
+        content: JSON.stringify({ enabled: _enabled, file: _currentFile }),
       });
     } catch {}
   }
-  async function _listFiles() {
-    const dir = await _getScriptsDir();
+
+  async function _listInternalFiles() {
+    const dir = await _getInternalDir();
     try {
-      const entries = await window.__TAURI__.core.invoke("read_dir", {
-        path: dir,
-      });
+      const entries = await window.__TAURI__.core.invoke("read_dir", { path: dir });
+      return entries
+        .filter((e) => e.type === "FILE" && !e.entry.startsWith(".") && e.entry.endsWith(".lua"))
+        .sort((a, b) => a.entry.localeCompare(b.entry))
+        .map((e) => ({ name: e.entry, path: `${dir}/${e.entry}` }));
+    } catch {
+      return [];
+    }
+  }
+
+  async function _sync() {
+    const internalDir = await _getInternalDir();
+    const executorDir = await _getExecutorDir();
+
+    let internalFiles;
+    try {
+      const entries = await window.__TAURI__.core.invoke("read_dir", { path: internalDir });
+      internalFiles = entries.filter(
+        (e) => e.type === "FILE" && !e.entry.startsWith(".") && e.entry.endsWith(".lua"),
+      );
+    } catch {
+      internalFiles = [];
+    }
+
+    if (_enabled) {
+      for (const f of internalFiles) {
+        try {
+          const content = await window.__TAURI__.core.invoke("read_text_file", {
+            path: `${internalDir}/${f.entry}`,
+          });
+          await window.__TAURI__.core.invoke("write_text_file", {
+            path: `${executorDir}/${f.entry}`,
+            content,
+          });
+          await window.__TAURI__.core.invoke("remove_path", {
+            path: `${internalDir}/${f.entry}`,
+          });
+        } catch {}
+      }
+      if (_currentFile) {
+        const name = _currentFile.split("/").pop();
+        _currentFile = `${executorDir}/${name}`;
+        await _saveMeta();
+      }
+    } else {
+      let executorFiles;
+      try {
+        const entries = await window.__TAURI__.core.invoke("read_dir", { path: executorDir });
+        executorFiles = entries.filter(
+          (e) => e.type === "FILE" && !e.entry.startsWith(".") && e.entry.endsWith(".lua"),
+        );
+      } catch {
+        executorFiles = [];
+      }
+
+      const internalNames = new Set(internalFiles.map((f) => f.entry));
+
+      for (const f of executorFiles) {
+        if (f.entry === "Velocity_multiexec.lua") continue;
+        if (internalNames.has(f.entry)) continue;
+        try {
+          const content = await window.__TAURI__.core.invoke("read_text_file", {
+            path: `${executorDir}/${f.entry}`,
+          });
+          await window.__TAURI__.core.invoke("write_text_file", {
+            path: `${internalDir}/${f.entry}`,
+            content,
+          });
+          await window.__TAURI__.core.invoke("remove_path", {
+            path: `${executorDir}/${f.entry}`,
+          });
+        } catch {}
+      }
+      if (_currentFile) {
+        const name = _currentFile.split("/").pop();
+        _currentFile = `${internalDir}/${name}`;
+        await _saveMeta();
+      }
+    }
+  }
+
+  function _stripLua(name) {
+    return name.endsWith(".lua") ? name.slice(0, -4) : name;
+  }
+
+  async function _activeDir() {
+    return _enabled ? _getExecutorDir() : _getInternalDir();
+  }
+
+  async function _listFiles() {
+    const dir = await _activeDir();
+    try {
+      const entries = await window.__TAURI__.core.invoke("read_dir", { path: dir });
       return entries
         .filter(
           (e) =>
             e.type === "FILE" &&
             !e.entry.startsWith(".") &&
-            e.entry.endsWith(".lua"),
+            e.entry.endsWith(".lua") &&
+            e.entry !== "Velocity_multiexec.lua",
         )
         .sort((a, b) => a.entry.localeCompare(b.entry))
-        .map((e) => ({
-          name: e.entry,
-          path: `${dir}/${e.entry}`,
-        }));
+        .map((e) => ({ name: e.entry, path: `${dir}/${e.entry}` }));
     } catch {
       return [];
     }
   }
-  function _stripLua(name) {
-    return name.endsWith(".lua") ? name.slice(0, -4) : name;
-  }
+
   async function _newFile() {
-    const dir = await _getScriptsDir();
+    const dir = await _activeDir();
     const path = `${dir}/script_${Date.now()}.lua`;
-    await window.__TAURI__.core.invoke("write_text_file", {
-      path,
-      content: "",
-    });
+    await window.__TAURI__.core.invoke("write_text_file", { path, content: "" });
     await _selectFile(path);
     await _renderAll();
-    await _sync();
     toast.show("Created " + path.split("/").pop(), "ok", 1400);
   }
+
   async function _deleteFile(filePath) {
     const name = filePath.split("/").pop();
     const confirmed = await modal.ask(
@@ -178,19 +203,17 @@ const autoexec = (() => {
     );
     if (confirmed !== "Delete") return;
     try {
-      await window.__TAURI__.core.invoke("remove_path", {
-        path: filePath,
-      });
+      await window.__TAURI__.core.invoke("remove_path", { path: filePath });
       if (_currentFile === filePath) {
         _currentFile = null;
         await _saveMeta();
       }
       await _renderAll();
-      await _sync();
     } catch {
       toast.show("Delete failed", "fail", 2000);
     }
   }
+
   async function _startRename(filePath, nameEl) {
     if (_renaming) _renaming = null;
     _renaming = filePath;
@@ -218,51 +241,37 @@ const autoexec = (() => {
         return;
       }
       try {
-        const content = await window.__TAURI__.core.invoke("read_text_file", {
-          path: filePath,
-        });
-        await window.__TAURI__.core.invoke("write_text_file", {
-          path: newPath,
-          content,
-        });
-        await window.__TAURI__.core.invoke("remove_path", {
-          path: filePath,
-        });
+        const content = await window.__TAURI__.core.invoke("read_text_file", { path: filePath });
+        await window.__TAURI__.core.invoke("write_text_file", { path: newPath, content });
+        await window.__TAURI__.core.invoke("remove_path", { path: filePath });
         if (_currentFile === filePath) {
           _currentFile = newPath;
           await _saveMeta();
         }
         await _renderAll();
-        await _sync();
+        if (_currentFile === newPath) {
+          await AutoexecEditor.loadFile(newPath);
+          _renderEditorTitle();
+        }
       } catch {
         toast.show("Rename failed", "fail", 2000);
         await _renderAll();
       }
     };
-    const cancel = async () => {
-      if (!_renaming) return;
-      _renaming = null;
-      await _renderAll();
-    };
     input.addEventListener("blur", commit);
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        input.removeEventListener("blur", commit);
-        commit();
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        input.removeEventListener("blur", commit);
-        cancel();
+        input.blur();
+      } else if (e.key === "Escape") {
+        _renaming = null;
+        _renderAll();
       }
     });
     input.focus();
   }
+
   async function _selectFile(filePath) {
-    if (AutoexecEditor.isDirty() && _currentFile) {
-      await AutoexecEditor.flushSave(_currentFile);
-    }
     _currentFile = filePath;
     await _saveMeta();
     await AutoexecEditor.loadFile(filePath);
@@ -273,6 +282,7 @@ const autoexec = (() => {
     if (editorWrap) editorWrap.style.display = "";
     if (editorEmpty) editorEmpty.style.display = "none";
   }
+
   function _renderFileList() {
     const list = document.getElementById("autoexecFileList");
     if (!list) return;
@@ -292,11 +302,7 @@ const autoexec = (() => {
         "div",
         "autoexec-file-item" + (f.path === _currentFile ? " active" : ""),
       );
-      const nameEl = DomHelpers.el(
-        "span",
-        "autoexec-file-item-name",
-        _stripLua(f.name),
-      );
+      const nameEl = DomHelpers.el("span", "autoexec-file-item-name", _stripLua(f.name));
       const actions = DomHelpers.el("span", "autoexec-file-actions");
       const renameBtn = document.createElement("button");
       renameBtn.className = "autoexec-file-action-btn";
@@ -322,13 +328,13 @@ const autoexec = (() => {
       list.appendChild(item);
     });
   }
+
   function _renderEditorTitle() {
     const nameEl = document.getElementById("autoexecEditorTitleName");
     if (!nameEl) return;
-    nameEl.textContent = _currentFile
-      ? _stripLua(_currentFile.split("/").pop())
-      : "";
+    nameEl.textContent = _currentFile ? _stripLua(_currentFile.split("/").pop()) : "";
   }
+
   async function _renderAll() {
     const files = await _listFiles();
     const list = document.getElementById("autoexecFileList");
@@ -355,6 +361,7 @@ const autoexec = (() => {
       if (editorEmpty) editorEmpty.style.display = "flex";
     }
   }
+
   function _buildView() {
     const wrap = document.getElementById("autoexecView");
     if (!wrap) return;
@@ -366,11 +373,7 @@ const autoexec = (() => {
     const titleEl = DomHelpers.el("span", "autoexec-title", "Autoexecute");
     const toggleWrap = document.createElement("label");
     toggleWrap.className = "toggle-switch autoexec-toggle";
-    const toggleLabel = DomHelpers.el(
-      "span",
-      "autoexec-toggle-label",
-      _enabled ? "ON" : "OFF",
-    );
+    const toggleLabel = DomHelpers.el("span", "autoexec-toggle-label", _enabled ? "ON" : "OFF");
     const toggleInput = document.createElement("input");
     toggleInput.type = "checkbox";
     toggleInput.checked = _enabled;
@@ -383,6 +386,7 @@ const autoexec = (() => {
       toggleLabel.textContent = _enabled ? "ON" : "OFF";
       await _saveMeta();
       await _sync();
+      await _renderAll();
       _refreshStatus();
     });
     const addBtn = document.createElement("button");
@@ -418,16 +422,12 @@ const autoexec = (() => {
     const editorEmpty = DomHelpers.el("div", "autoexec-empty");
     editorEmpty.id = "autoexecEditorEmpty";
     editorEmpty.style.display = _currentFile ? "none" : "flex";
-    editorEmpty.innerHTML =
-      SVG_SELECT_FILE + "<span>Select a file to edit</span>";
+    editorEmpty.innerHTML = SVG_SELECT_FILE + "<span>Select a file to edit</span>";
     editorCol.append(editorTitle, editorWrap, editorEmpty);
     body.append(fileList, editorCol);
     view.appendChild(body);
     const statusBar = DomHelpers.el("div", "autoexec-status");
-    const dot = DomHelpers.el(
-      "span",
-      "autoexec-status-dot" + (_enabled ? " on" : ""),
-    );
+    const dot = DomHelpers.el("span", "autoexec-status-dot" + (_enabled ? " on" : ""));
     dot.id = "autoexecStatusDot";
     const statusText = DomHelpers.el(
       "span",
@@ -439,17 +439,16 @@ const autoexec = (() => {
     view.appendChild(statusBar);
     wrap.appendChild(view);
   }
+
   function _refreshStatus() {
     const dot = document.getElementById("autoexecStatusDot");
     const text = document.getElementById("autoexecStatusText");
     if (dot) dot.className = "autoexec-status-dot" + (_enabled ? " on" : "");
-    if (text)
-      text.textContent = _enabled
-        ? "Autoexecute enabled"
-        : "Autoexecute disabled";
+    if (text) text.textContent = _enabled ? "Autoexecute enabled" : "Autoexecute disabled";
     const chk = document.getElementById("autoexecToggleChk");
     if (chk) chk.checked = _enabled;
   }
+
   async function show() {
     if (!_inited) {
       await _loadMeta();
@@ -468,6 +467,7 @@ const autoexec = (() => {
     }
     await _renderAll();
   }
+
   function hide() {
     if (AutoexecEditor.isDirty() && _currentFile) {
       window.__TAURI__.core
@@ -481,9 +481,13 @@ const autoexec = (() => {
     if (wrap) wrap.style.display = "none";
     AutoexecEditor.dispose();
   }
-  return {
-    show,
-    hide,
-    sync: _sync,
-  };
+
+  async function onExecutorChanged() {
+    if (!_inited) return;
+    _currentFile = null;
+    await _saveMeta();
+    await _renderAll();
+  }
+
+  return { show, hide, onExecutorChanged };
 })();

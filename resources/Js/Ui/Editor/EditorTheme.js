@@ -1,5 +1,4 @@
 const EditorTheme = (() => {
-  let _built = false;
   function _resolveVar(name, fallback) {
     const val = getComputedStyle(document.documentElement)
       .getPropertyValue(name)
@@ -7,8 +6,6 @@ const EditorTheme = (() => {
     return val || fallback;
   }
   function build(monaco) {
-    if (_built) return;
-    _built = true;
     const bg3 = _resolveVar("--bg3", "#1c1c1c");
     const bg4 = _resolveVar("--bg4", "#242424");
     const border = _resolveVar("--border", "#2a2a2a");
@@ -88,6 +85,7 @@ const EditorTheme = (() => {
   }
   function apply(monaco) {
     build(monaco);
+    monaco.editor.setTheme("velocity");
   }
   function currentThemeId() {
     return "velocity";

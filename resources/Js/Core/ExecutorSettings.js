@@ -19,7 +19,7 @@ const executorSettings = (() => {
       window.__TAURI__.core.invoke("clear_port_cache").catch(() => {});
       window.__TAURI__.event.emit("executor:changed", {}).catch(() => {});
       if (typeof autoexec !== "undefined") {
-        autoexec.sync().catch(() => {});
+        autoexec.onExecutorChanged().catch(() => {});
       }
     });
   }
