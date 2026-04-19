@@ -48,10 +48,10 @@ const updateChecker = (() => {
       if (showToast && typeof toast !== "undefined") {
         toast.show(`Update available: v${info.latest}`, "update", 10000, {
           label: "View release",
-          action: () =>
-            invoke("open_external", {
-              url: info.release_url,
-            }).catch(() => {}),
+          // action: () =>
+          //   invoke("open_external", {
+          //     url: info.release_url,
+          //   }).catch(() => {}),
         });
       }
     } else {
