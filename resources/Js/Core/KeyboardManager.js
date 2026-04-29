@@ -1,7 +1,7 @@
 const keyboardManager = (() => {
   const _registry = [];
-  const _MODIFIERS = new Set(["Meta", "Control", "Alt", "Shift"]);
-  let _scope = "explorer";
+  const _MODIFIERS = new Set(['Meta', 'Control', 'Alt', 'Shift']);
+  let _scope = 'explorer';
   let _paused = false;
   function _parse(keys) {
     const binding = {
@@ -11,20 +11,20 @@ const keyboardManager = (() => {
       shift: false,
       key: null,
     };
-    for (const raw of keys.split("+").map((s) => s.trim().toLowerCase())) {
-      if (raw === "cmd" || raw === "meta") {
+    for (const raw of keys.split('+').map((s) => s.trim().toLowerCase())) {
+      if (raw === 'cmd' || raw === 'meta') {
         binding.meta = true;
         continue;
       }
-      if (raw === "ctrl") {
+      if (raw === 'ctrl') {
         binding.ctrl = true;
         continue;
       }
-      if (raw === "alt") {
+      if (raw === 'alt') {
         binding.alt = true;
         continue;
       }
-      if (raw === "shift") {
+      if (raw === 'shift') {
         binding.shift = true;
         continue;
       }
@@ -33,7 +33,7 @@ const keyboardManager = (() => {
     return binding;
   }
   function _matches(binding, e) {
-    const isMac = navigator.platform.includes("Mac");
+    const isMac = navigator.platform.includes('Mac');
     const cmdHeld = isMac ? e.metaKey : e.ctrlKey;
     if (binding.meta !== cmdHeld) return false;
     if (binding.alt !== e.altKey) return false;
@@ -42,26 +42,18 @@ const keyboardManager = (() => {
   }
   function _scopeAllowed(entry) {
     if (_paused) return false;
-    if (entry.scope?.length)
-      return entry.scope.includes(_scope) || entry.scope.includes("global");
+    if (entry.scope?.length) return entry.scope.includes(_scope) || entry.scope.includes('global');
     if (entry.blacklist?.length) return !entry.blacklist.includes(_scope);
     return true;
   }
   function _monacoFocused() {
     const el = document.activeElement;
-    return !!(
-      el?.closest(".monaco-editor") || el?.classList.contains("inputarea")
-    );
+    return !!(el?.closest('.monaco-editor') || el?.classList.contains('inputarea'));
   }
   function _nativeInputFocused() {
     const el = document.activeElement;
     const tag = el?.tagName.toLowerCase();
-    return (
-      tag === "input" ||
-      tag === "textarea" ||
-      tag === "select" ||
-      el?.isContentEditable
-    );
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || el?.isContentEditable;
   }
   function registerShortcut({
     keys,
@@ -102,7 +94,7 @@ const keyboardManager = (() => {
     }
   }
   function init() {
-    document.addEventListener("keydown", _dispatch);
+    window.addEventListener('keydown', _dispatch, { capture: true });
   }
   function pause() {
     _paused = true;

@@ -1,18 +1,18 @@
-# Velocity ⚡
+# VelocityUI ⚡
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/dawnpetal/Velocity/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dawnpetal/VelocityUI/main/install.sh | bash
 ```
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/dawnpetal/Velocity/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dawnpetal/VelocityUI/main/uninstall.sh | bash
 ```
 
 > **Before anything else:** Settings → Executor, pick your executor, reload. If you skip this, execution won't work.
 
 ---
 
-Velocity is a macOS Roblox script executor built with Tauri + Rust. Fast, clean, and designed to feel like a proper native app.
+VelocityUI is a macOS Roblox script executor built with Tauri + Rust. Fast, clean, and designed to feel like a proper native app.
 
 ## Features
 
@@ -28,7 +28,7 @@ Velocity is a macOS Roblox script executor built with Tauri + Rust. Fast, clean,
 
 **Timeline** - Save up to 50 snapshots per file, then rewind whenever you need to. It's like undo + time travel for your scripts.
 
-**Multi-Instance** - Send commands to multiple Roblox clients through a JSON bridge file (`Velocity_multiexec.json`). Target clients by user ID and execute across all of them.
+**Multi-Instance** - Send commands to multiple Roblox clients through a JSON bridge file (`VelocityUI_multiexec.json`). Target clients by user ID and execute across all of them.
 
 **Search** - Search every script in your workspace instantly. Type fast, find faster.
 
@@ -52,8 +52,8 @@ The shortcut manager changes behavior depending on where you are: explorer, edit
 Requires Rust (stable), Node.js, and the Tauri CLI.
 
 ```sh
-git clone https://github.com/dawnpetal/Velocity.git
-cd Velocity
+git clone https://github.com/dawnpetal/VelocityUI.git
+cd VelocityUI
 npm install
 npm run dev
 npm run build
@@ -68,4 +68,4 @@ npm run build:dmg
 
 ## Data
 
-Everything lives in `~/Velocity/` - workspaces, execution history, autoexec scripts, settings. No telemetry, no nonsense.
+Everything lives in `~/VelocityUI/` - workspaces, execution history, autoexec scripts, settings. No telemetry, no nonsense.

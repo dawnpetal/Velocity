@@ -1,22 +1,20 @@
 const EditorMount = (() => {
-  const MONACO_CDN =
-    "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs";
+  const MONACO_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs';
   const EDITOR_OPTIONS = (settings) => ({
-    value: "",
-    language: "lua",
+    value: '',
+    language: 'lua',
     fontSize: settings.fontSize,
-    fontFamily:
-      "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', monospace",
+    fontFamily: "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', monospace",
     fontLigatures: true,
-    lineNumbers: settings.lineNumbers ? "on" : "off",
+    lineNumbers: settings.lineNumbers ? 'on' : 'off',
     minimap: {
       enabled: settings.minimap,
     },
-    wordWrap: settings.wordWrap ? "on" : "off",
-    renderWhitespace: "none",
+    wordWrap: settings.wordWrap ? 'on' : 'off',
+    renderWhitespace: 'none',
     smoothScrolling: false,
-    cursorSmoothCaretAnimation: "off",
-    cursorBlinking: "blink",
+    cursorSmoothCaretAnimation: 'off',
+    cursorBlinking: 'blink',
     bracketPairColorization: {
       enabled: false,
     },
@@ -24,7 +22,7 @@ const EditorMount = (() => {
       indentation: true,
       bracketPairs: false,
     },
-    wordBasedSuggestions: "currentDocument",
+    wordBasedSuggestions: 'currentDocument',
     suggest: {
       showKeywords: true,
       showSnippets: true,
@@ -43,14 +41,14 @@ const EditorMount = (() => {
       bottom: 12,
     },
     automaticLayout: true,
-    renderLineHighlight: "line",
-    occurrencesHighlight: "off",
+    renderLineHighlight: 'line',
+    occurrencesHighlight: 'off',
     codeLens: false,
     colorDecorators: false,
     folding: true,
     foldingHighlight: false,
-    showFoldingControls: "mouseover",
-    contextmenu: true,
+    showFoldingControls: 'mouseover',
+    contextmenu: false,
     stickyScroll: {
       enabled: false,
     },
@@ -61,10 +59,10 @@ const EditorMount = (() => {
       enabled: true,
     },
     lightbulb: {
-      enabled: "off",
+      enabled: 'off',
     },
     inlayHints: {
-      enabled: "off",
+      enabled: 'off',
     },
     inlineSuggest: {
       enabled: false,
@@ -84,7 +82,7 @@ const EditorMount = (() => {
           `)}`;
         },
       };
-      const script = document.createElement("script");
+      const script = document.createElement('script');
       script.src = `${MONACO_CDN}/loader.js`;
       script.onload = () => {
         window.require.config({
@@ -92,7 +90,7 @@ const EditorMount = (() => {
             vs: MONACO_CDN,
           },
         });
-        window.require(["vs/editor/editor.main"], () => {
+        window.require(['vs/editor/editor.main'], () => {
           resolve(window.monaco);
         });
       };
@@ -104,11 +102,11 @@ const EditorMount = (() => {
     const monaco = await _loadScript();
     const luaProvider = LuaLanguage.register(monaco);
     const webProviders = WebLanguages.registerAll(monaco);
-    const symbolProviders = new Map([["lua", luaProvider], ...webProviders]);
+    const symbolProviders = new Map([['lua', luaProvider], ...webProviders]);
     EditorTheme.build(monaco);
     const editorInstance = monaco.editor.create(containerEl, {
       ...EDITOR_OPTIONS(settings),
-      theme: "velocity",
+      theme: 'velocityui',
     });
     return {
       monaco,

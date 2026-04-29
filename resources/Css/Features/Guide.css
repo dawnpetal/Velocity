@@ -34,7 +34,7 @@
   position: fixed;
   z-index: 9001;
   pointer-events: none;
-  border-radius: 5px;
+  border-radius: 2px;
   opacity: 0;
   transition: opacity 140ms ease;
   box-shadow:
@@ -61,18 +61,13 @@
 }
 
 .guide-bar::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--accent) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
   opacity: 0.18;
   pointer-events: none;
 }
@@ -81,7 +76,7 @@
   position: absolute;
   bottom: auto;
   right: auto;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid var(--border-strong);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.5),
@@ -199,7 +194,7 @@
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid var(--border-strong);
   background: var(--bg2);
   color: var(--text3);
@@ -245,7 +240,7 @@
   flex-shrink: 0;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: 2px;
   background: var(--bg5);
   border: none;
   padding: 0;
@@ -295,7 +290,7 @@
   transform: translateY(-50%);
   height: 24px;
   padding: 0 10px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid var(--border-strong);
   background: var(--bg2);
   color: var(--text3);

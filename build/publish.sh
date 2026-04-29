@@ -19,7 +19,7 @@ die()     { echo -e "  ${RED}✗${RESET}  $*" >&2; exit 1; }
 header()  { echo -e "\n${BOLD}$*${RESET}"; }
 ask()     { echo -n "  $1 "; read -r "$2"; }
 
-header "Velocity — Publish"
+header "VelocityUI — Publish"
 
 command -v git &>/dev/null || die "git not found."
 command -v gh  &>/dev/null || die "gh not found — https://cli.github.com"
@@ -31,7 +31,7 @@ fi
 
 GH_USER=$(gh api user --jq '.login')
 GH_ID=$(gh api user --jq '.id')
-REPO_FULL="${GH_USER}/Velocity"
+REPO_FULL="${GH_USER}/VelocityUI"
 NOREPLY="${GH_ID}+${GH_USER}@users.noreply.github.com"
 
 success "Authenticated as ${GH_USER}"
@@ -52,13 +52,13 @@ if gh repo view "$REPO_FULL" &>/dev/null 2>&1; then
   if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
     info "Recreating repository..."
     gh repo delete "$REPO_FULL" --yes
-    gh repo create "Velocity" --public
+    gh repo create "VelocityUI" --public
     success "Repository recreated"
   else
     info "Continuing with existing repository (force push)"
   fi
 else
-  gh repo create "Velocity" --public
+  gh repo create "VelocityUI" --public
   success "Repository created"
 fi
 

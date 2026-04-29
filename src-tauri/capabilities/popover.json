@@ -7,18 +7,7 @@
   ],
   "permissions": [
     "core:default",
-    "core:window:allow-close",
     "core:window:allow-hide",
-    "core:window:allow-set-focus",
-    "fs:allow-read-text-file",
-    "fs:allow-write-text-file",
-    "fs:scope-home-recursive",
-    "opener:default",
-    "opener:allow-open-url",
-    "core:window:allow-start-dragging",
-    "core:window:allow-set-position",
-    "core:window:allow-show",
-    "core:window:allow-is-visible",
     "core:event:default"
   ]
 }

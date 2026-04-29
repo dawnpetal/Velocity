@@ -1,5 +1,4 @@
 pub mod accounts;
-pub mod archive;
 pub mod auth;
 pub mod executor;
 pub mod file_system;

@@ -4,7 +4,6 @@ const accountsPanel = (() => {
   let _default = null;
   let _inited = false;
   let _pollTimer = null;
-  let _launching = new Set();
   const invoke = (cmd, args) => window.__TAURI__.core.invoke(cmd, args);
   const SVG = {
     plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
@@ -26,7 +25,7 @@ const accountsPanel = (() => {
   }
   function _loadDefault() {
     try {
-      _default = localStorage.getItem("velocity-default-account");
+      _default = localStorage.getItem('velocityui-default-account');
     } catch {
       _default = null;
     }
@@ -34,13 +33,13 @@ const accountsPanel = (() => {
   function _saveDefault(userId) {
     _default = userId;
     try {
-      if (userId) localStorage.setItem("velocity-default-account", userId);
-      else localStorage.removeItem("velocity-default-account");
+      if (userId) localStorage.setItem('velocityui-default-account', userId);
+      else localStorage.removeItem('velocityui-default-account');
     } catch {}
   }
   async function _load() {
     try {
-      _accounts = (await invoke("accounts_list")) ?? [];
+      _accounts = (await invoke('accounts_list')) ?? [];
     } catch {
       _accounts = [];
     }
@@ -48,7 +47,7 @@ const accountsPanel = (() => {
   }
   async function _pollRunning() {
     try {
-      const ids = await invoke("accounts_get_running");
+      const ids = await invoke('accounts_get_running');
       const newSet = new Set(ids ?? []);
       const changed =
         newSet.size !== _running.size ||
@@ -72,38 +71,43 @@ const accountsPanel = (() => {
     }
   }
   function _updateRunningUI() {
-    document.querySelectorAll(".acc-card[data-uid]").forEach((card) => {
+    _updateSummary();
+    document.querySelectorAll('.acc-card[data-uid]').forEach((card) => {
       const uid = card.dataset.uid;
       const isRunning = _running.has(uid);
-      const isLaunching = _launching.has(uid);
-      card.classList.toggle("acc-card--running", isRunning);
-      const indicator = card.querySelector(".acc-running-dot");
-      if (indicator) indicator.style.display = isRunning ? "" : "none";
-      const launchBtn = card.querySelector(".acc-btn-launch");
-      if (launchBtn && !isLaunching) {
+      card.classList.toggle('acc-card--running', isRunning);
+      const indicator = card.querySelector('.acc-running-dot');
+      if (indicator) indicator.style.display = isRunning ? '' : 'none';
+      const status = card.querySelector('.acc-status-pill');
+      if (status) {
+        status.textContent = isRunning ? 'Running' : 'Ready';
+        status.classList.toggle('acc-status-pill--running', isRunning);
+      }
+      const launchBtn = card.querySelector('.acc-btn-launch');
+      if (launchBtn && !launchBtn.disabled) {
         launchBtn.innerHTML = isRunning ? SVG.stop : SVG.play;
-        launchBtn.title = isRunning ? "Kill instance" : "Launch instance";
-        launchBtn.classList.toggle("acc-btn-launch--running", isRunning);
+        launchBtn.title = isRunning ? 'Kill instance' : 'Launch instance';
+        launchBtn.classList.toggle('acc-btn-launch--running', isRunning);
       }
     });
-    const killAllBtn = document.getElementById("accKillAllBtn");
+    const killAllBtn = document.getElementById('accKillAllBtn');
     if (killAllBtn) {
       const anyRunning = _running.size > 0;
       killAllBtn.disabled = !anyRunning;
-      killAllBtn.style.opacity = anyRunning ? "1" : "0.35";
+      killAllBtn.style.opacity = anyRunning ? '1' : '0.35';
     }
   }
   function _buildCard(acc) {
     const uid = acc.user_id;
     const isRunning = _running.has(uid);
     const isDefault = _default === uid;
-    const card = document.createElement("div");
-    card.className = "acc-card" + (isRunning ? " acc-card--running" : "");
+    const card = document.createElement('div');
+    card.className = 'acc-card' + (isRunning ? ' acc-card--running' : '');
     card.dataset.uid = uid;
-    const pfp = document.createElement("div");
-    pfp.className = "acc-pfp";
+    const pfp = document.createElement('div');
+    pfp.className = 'acc-pfp';
     if (acc.avatar_url) {
-      const img = document.createElement("img");
+      const img = document.createElement('img');
       img.src = acc.avatar_url;
       img.alt = acc.display_name;
       img.onerror = () => {
@@ -114,149 +118,160 @@ const accountsPanel = (() => {
     } else {
       pfp.textContent = _initials(acc.display_name);
     }
-    const dot = document.createElement("span");
-    dot.className = "acc-running-dot";
-    dot.title = "Running";
-    dot.style.display = isRunning ? "" : "none";
+    const dot = document.createElement('span');
+    dot.className = 'acc-running-dot';
+    dot.title = 'Running';
+    dot.style.display = isRunning ? '' : 'none';
     pfp.appendChild(dot);
-    const info = document.createElement("div");
-    info.className = "acc-info";
-    const nameRow = document.createElement("div");
-    nameRow.className = "acc-name-row";
-    const name = document.createElement("p");
-    name.className = "acc-name";
+    const info = document.createElement('div');
+    info.className = 'acc-info';
+    const nameRow = document.createElement('div');
+    nameRow.className = 'acc-name-row';
+    const name = document.createElement('p');
+    name.className = 'acc-name';
     name.textContent = acc.display_name;
     if (isDefault) {
-      const badge = document.createElement("span");
-      badge.className = "acc-default-badge";
-      badge.textContent = "default";
+      const badge = document.createElement('span');
+      badge.className = 'acc-default-badge';
+      badge.textContent = 'default';
       nameRow.append(name, badge);
     } else {
       nameRow.append(name);
     }
-    const sub = document.createElement("p");
-    sub.className = "acc-sub";
-    sub.textContent = "@" + acc.username;
-    info.append(nameRow, sub);
-    const actions = document.createElement("div");
-    actions.className = "acc-actions";
+    const sub = document.createElement('p');
+    sub.className = 'acc-sub';
+    sub.textContent = '@' + acc.username;
+    const meta = document.createElement('div');
+    meta.className = 'acc-meta-row';
+    const statusPill = document.createElement('span');
+    statusPill.className = 'acc-status-pill' + (isRunning ? ' acc-status-pill--running' : '');
+    statusPill.textContent = isRunning ? 'Running' : 'Ready';
+    const idPill = document.createElement('span');
+    idPill.className = 'acc-id-pill';
+    idPill.textContent = `ID ${uid}`;
+    meta.append(statusPill, idPill);
+    info.append(nameRow, sub, meta);
+    const actions = document.createElement('div');
+    actions.className = 'acc-actions';
     const launchBtn = _makeBtn(
-      "acc-btn-launch" + (isRunning ? " acc-btn-launch--running" : ""),
+      'acc-btn-launch' + (isRunning ? ' acc-btn-launch--running' : ''),
       isRunning ? SVG.stop : SVG.play,
-      isRunning ? "Kill instance" : "Launch instance",
+      isRunning ? 'Kill instance' : 'Launch instance',
     );
-    launchBtn.addEventListener("click", async (e) => {
+    launchBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (_launching.has(uid)) return;
+      const alreadyLaunching = await invoke('accounts_is_launching', { userId: uid }).catch(
+        () => false,
+      );
+      if (alreadyLaunching) return;
       if (_running.has(uid)) {
         try {
-          await invoke("accounts_kill", {
+          await invoke('accounts_kill', {
             userId: uid,
           });
           await _pollRunning();
         } catch {
-          toast.show("Kill failed", "fail", 2000);
+          toast.show('Kill failed', 'fail', 2000);
         }
         return;
       }
-      _launching.add(uid);
       launchBtn.innerHTML = SVG.spinner;
       launchBtn.disabled = true;
       try {
-        await invoke("accounts_launch", {
+        await invoke('accounts_launch', {
           userId: uid,
         });
-        toast.show(`Launched ${acc.display_name}`, "ok", 1600);
+        toast.show(`Launched ${acc.display_name}`, 'ok', 1600);
         await _pollRunning();
       } catch (err) {
-        toast.show(err?.message ?? "Launch failed", "fail", 2500);
+        toast.show(err?.message ?? 'Launch failed', 'fail', 2500);
         launchBtn.innerHTML = SVG.play;
       } finally {
-        _launching.delete(uid);
         launchBtn.disabled = false;
         _updateRunningUI();
       }
     });
     const starBtn = _makeBtn(
-      "acc-action-btn" + (isDefault ? " acc-action-btn--starred" : ""),
+      'acc-action-btn' + (isDefault ? ' acc-action-btn--starred' : ''),
       isDefault ? SVG.starFill : SVG.star,
-      isDefault ? "Default account (click to unset)" : "Set as default account",
+      isDefault ? 'Default account (click to unset)' : 'Set as default account',
     );
-    starBtn.addEventListener("click", async (e) => {
+    starBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (_default === uid) {
         _saveDefault(null);
         _renderList();
-        toast.show("Default account cleared", "ok", 1400);
+        toast.show('Default account cleared', 'ok', 1400);
         return;
       }
       try {
-        await invoke("accounts_set_default", {
+        await invoke('accounts_set_default', {
           userId: uid,
         });
         _saveDefault(uid);
         _renderList();
-        toast.show(`${acc.display_name} set as default`, "ok", 1400);
+        toast.show(`${acc.display_name} set as default`, 'ok', 1400);
       } catch {
-        toast.show("Failed to set default", "fail", 2000);
+        toast.show('Failed to set default', 'fail', 2000);
       }
     });
-    const copyBtn = _makeBtn("acc-action-btn", SVG.copy, "Copy cookie");
-    copyBtn.addEventListener("click", async (e) => {
+    const copyBtn = _makeBtn('acc-action-btn', SVG.copy, 'Copy cookie');
+    copyBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       try {
-        const cookie = await invoke("accounts_get_cookie", {
+        const cookie = await invoke('accounts_get_cookie', {
           userId: uid,
         });
-        await window.__TAURI__.core.invoke("write_clipboard", {
+        await window.__TAURI__.core.invoke('write_clipboard', {
           text: cookie,
         });
-        toast.show("Cookie copied", "ok", 1200);
+        toast.show('Cookie copied', 'ok', 1200);
       } catch {
-        toast.show("Failed to copy", "fail", 2000);
+        toast.show('Failed to copy', 'fail', 2000);
       }
     });
-    const refreshBtn = _makeBtn("acc-action-btn", SVG.refresh, "Refresh info");
-    refreshBtn.addEventListener("click", async (e) => {
+    const refreshBtn = _makeBtn('acc-action-btn', SVG.refresh, 'Refresh info');
+    refreshBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       refreshBtn.disabled = true;
       try {
-        const updated = await invoke("accounts_refresh", {
+        const updated = await invoke('accounts_refresh', {
           userId: uid,
         });
         const idx = _accounts.findIndex((a) => a.user_id === updated.user_id);
         if (idx !== -1) _accounts[idx] = updated;
         _renderList();
-        toast.show("Account refreshed", "ok", 1200);
+        toast.show('Account refreshed', 'ok', 1200);
       } catch {
-        toast.show("Refresh failed", "fail", 2000);
+        toast.show('Refresh failed', 'fail', 2000);
       } finally {
         refreshBtn.disabled = false;
       }
     });
     const deleteBtn = _makeBtn(
-      "acc-action-btn acc-action-btn--danger",
+      'acc-action-btn acc-action-btn--danger',
       SVG.delete,
-      "Remove account",
+      'Remove account',
     );
-    deleteBtn.addEventListener("click", async (e) => {
+    deleteBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const confirmed = await modal.ask(
-        "Remove Account",
+        'Remove Account',
         `Remove <strong>${helpers.escapeHtml(acc.display_name)}</strong> (@${helpers.escapeHtml(acc.username)})? The stored cookie will be deleted from your keychain.`,
-        ["Remove", "Cancel"],
+        ['Remove', 'Cancel'],
       );
-      if (confirmed !== "Remove") return;
+      if (confirmed !== 'Remove') return;
       try {
-        await invoke("accounts_remove", {
+        await invoke('accounts_remove', {
           userId: uid,
         });
         _accounts = _accounts.filter((a) => a.user_id !== uid);
         if (_default === uid) _saveDefault(null);
+        _updateCount();
         _renderList();
-        toast.show("Account removed", "ok", 1400);
+        toast.show('Account removed', 'ok', 1400);
       } catch {
-        toast.show("Remove failed", "fail", 2000);
+        toast.show('Remove failed', 'fail', 2000);
       }
     });
     actions.append(launchBtn, starBtn, copyBtn, refreshBtn, deleteBtn);
@@ -264,22 +279,23 @@ const accountsPanel = (() => {
     return card;
   }
   function _makeBtn(className, html, title) {
-    const btn = document.createElement("button");
+    const btn = document.createElement('button');
     btn.className = className;
     btn.innerHTML = html;
     btn.title = title;
     return btn;
   }
   function _renderList() {
-    const list = document.getElementById("accountsList");
+    const list = document.getElementById('accountsList');
     if (!list) return;
-    list.innerHTML = "";
+    list.innerHTML = '';
+    _updateSummary();
     if (!_accounts.length) {
-      const empty = document.createElement("div");
-      empty.className = "acc-empty";
+      const empty = document.createElement('div');
+      empty.className = 'acc-empty';
       empty.innerHTML =
         SVG.user +
-        "<span>No accounts yet.<br>Add a .ROBLOSECURITY cookie below.</span>";
+        '<strong>No accounts yet</strong><span>Add a .ROBLOSECURITY cookie below to launch and manage profiles.</span>';
       list.appendChild(empty);
       return;
     }
@@ -287,135 +303,148 @@ const accountsPanel = (() => {
     _updateRunningUI();
   }
   function _buildView() {
-    const wrap = document.getElementById("accountsView");
+    const wrap = document.getElementById('accountsView');
     if (!wrap) return;
-    wrap.innerHTML = "";
-    const view = document.createElement("div");
-    view.className = "accounts-view";
-    const header = document.createElement("div");
-    header.className = "accounts-header";
-    const headerLeft = document.createElement("div");
-    headerLeft.className = "accounts-header-left";
-    const title = document.createElement("span");
-    title.className = "accounts-title";
-    title.textContent = "Accounts";
-    const countBadge = document.createElement("span");
-    countBadge.className = "accounts-count";
-    countBadge.id = "accountsCount";
-    countBadge.textContent = _accounts.length ? String(_accounts.length) : "";
-    headerLeft.append(title, countBadge);
-    const killAllBtn = document.createElement("button");
-    killAllBtn.className = "acc-kill-all-btn";
-    killAllBtn.id = "accKillAllBtn";
-    killAllBtn.innerHTML = SVG.killAll + "<span>Kill All</span>";
-    killAllBtn.title = "Kill all running Roblox instances";
+    wrap.innerHTML = '';
+    const view = document.createElement('div');
+    view.className = 'accounts-view';
+    const header = document.createElement('div');
+    header.className = 'accounts-header';
+    const headerLeft = document.createElement('div');
+    headerLeft.className = 'accounts-header-left';
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'accounts-title-wrap';
+    const title = document.createElement('span');
+    title.className = 'accounts-title';
+    title.textContent = 'Accounts';
+    const subtitle = document.createElement('span');
+    subtitle.className = 'accounts-subtitle';
+    subtitle.textContent = 'Launch vault';
+    titleWrap.append(title, subtitle);
+    const countBadge = document.createElement('span');
+    countBadge.className = 'accounts-count';
+    countBadge.id = 'accountsCount';
+    countBadge.textContent = _accounts.length ? String(_accounts.length) : '';
+    headerLeft.append(titleWrap, countBadge);
+    const killAllBtn = document.createElement('button');
+    killAllBtn.className = 'acc-kill-all-btn';
+    killAllBtn.id = 'accKillAllBtn';
+    killAllBtn.innerHTML = SVG.killAll + '<span>Kill All</span>';
+    killAllBtn.title = 'Kill all running Roblox instances';
     killAllBtn.disabled = _running.size === 0;
-    killAllBtn.style.opacity = _running.size > 0 ? "1" : "0.35";
-    killAllBtn.addEventListener("click", async () => {
-      const confirmed = await modal.ask(
-        "Kill All",
-        "Kill all running Roblox instances?",
-        ["Kill All", "Cancel"],
-      );
-      if (confirmed !== "Kill All") return;
+    killAllBtn.style.opacity = _running.size > 0 ? '1' : '0.35';
+    killAllBtn.addEventListener('click', async () => {
+      const confirmed = await modal.ask('Kill All', 'Kill all running Roblox instances?', [
+        'Kill All',
+        'Cancel',
+      ]);
+      if (confirmed !== 'Kill All') return;
       try {
-        await invoke("accounts_kill_all");
+        await invoke('accounts_kill_all');
         await _pollRunning();
-        toast.show("All instances killed", "ok", 1400);
+        toast.show('All instances killed', 'ok', 1400);
       } catch {
-        toast.show("Kill all failed", "fail", 2000);
+        toast.show('Kill all failed', 'fail', 2000);
       }
     });
     header.append(headerLeft, killAllBtn);
     view.appendChild(header);
-    const list = document.createElement("div");
-    list.className = "acc-list";
-    list.id = "accountsList";
+    const list = document.createElement('div');
+    list.className = 'acc-list';
+    list.id = 'accountsList';
     view.appendChild(list);
-    const addSection = document.createElement("div");
-    addSection.className = "acc-add-section";
-    const addLabel = document.createElement("div");
-    addLabel.className = "acc-add-label";
-    addLabel.textContent = "Add account";
-    const inputRow = document.createElement("div");
-    inputRow.className = "acc-input-row";
-    const cookieInput = document.createElement("input");
-    cookieInput.type = "password";
-    cookieInput.className = "acc-cookie-input";
-    cookieInput.id = "accCookieInput";
-    cookieInput.placeholder = ".ROBLOSECURITY cookie";
-    cookieInput.autocomplete = "off";
+    const addSection = document.createElement('div');
+    addSection.className = 'acc-add-section';
+    const addLabel = document.createElement('div');
+    addLabel.className = 'acc-add-label';
+    addLabel.textContent = 'Add account';
+    const inputRow = document.createElement('div');
+    inputRow.className = 'acc-input-row';
+    const cookieInput = document.createElement('input');
+    cookieInput.type = 'password';
+    cookieInput.className = 'acc-cookie-input';
+    cookieInput.id = 'accCookieInput';
+    cookieInput.placeholder = '.ROBLOSECURITY cookie';
+    cookieInput.autocomplete = 'off';
     cookieInput.spellcheck = false;
-    const addBtn = document.createElement("button");
-    addBtn.className = "acc-add-btn";
-    addBtn.id = "accAddBtn";
+    const addBtn = document.createElement('button');
+    addBtn.className = 'acc-add-btn';
+    addBtn.id = 'accAddBtn';
     addBtn.innerHTML = SVG.plus;
-    addBtn.title = "Add account";
+    addBtn.title = 'Add account';
     async function _handleAdd() {
       const cookie = cookieInput.value.trim();
       if (!cookie) return;
       addBtn.disabled = true;
       cookieInput.disabled = true;
       try {
-        const acc = await invoke("accounts_add", {
+        const acc = await invoke('accounts_add', {
           cookie,
         });
-        cookieInput.value = "";
+        cookieInput.value = '';
         const existing = _accounts.findIndex((a) => a.user_id === acc.user_id);
         if (existing !== -1) {
           _accounts[existing] = acc;
-          toast.show(`Updated ${acc.display_name}`, "ok", 1600);
+          toast.show(`Updated ${acc.display_name}`, 'ok', 1600);
         } else {
           _accounts.push(acc);
-          toast.show(`Added ${acc.display_name}`, "ok", 1600);
+          toast.show(`Added ${acc.display_name}`, 'ok', 1600);
         }
         _updateCount();
         _renderList();
       } catch (err) {
-        toast.show(err?.message ?? "Failed to add account", "fail", 2500);
+        toast.show(err?.message ?? 'Failed to add account', 'fail', 2500);
       } finally {
         addBtn.disabled = false;
         cookieInput.disabled = false;
         cookieInput.focus();
       }
     }
-    addBtn.addEventListener("click", _handleAdd);
-    cookieInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+    addBtn.addEventListener('click', _handleAdd);
+    cookieInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
         e.preventDefault();
         _handleAdd();
       }
     });
     inputRow.append(cookieInput, addBtn);
-    const hint = document.createElement("p");
-    hint.className = "acc-add-hint";
+    const hint = document.createElement('p');
+    hint.className = 'acc-add-hint';
     hint.textContent =
-      "Cookies are stored securely in your system keychain and never leave your device. That does not mean you should share them with anyone, be SUPER FUCKING CAREFUL with your cookies. Anyone who gets access to them can take over your Roblox account. Make sure to clear your clipboard so you don't accidentally paste your cookie somewhere. In case of a compromise, change your password ! IMMEDIATELY ! to invalidate the stolen cookie.";
+      'Stored locally in your system keychain. Never share cookies; if one leaks, change your password immediately to invalidate it.';
     addSection.append(addLabel, inputRow, hint);
     view.appendChild(addSection);
     wrap.appendChild(view);
   }
   function _updateCount() {
-    const badge = document.getElementById("accountsCount");
-    if (badge)
-      badge.textContent = _accounts.length ? String(_accounts.length) : "";
+    const badge = document.getElementById('accountsCount');
+    if (badge) badge.textContent = _accounts.length ? String(_accounts.length) : '';
+    _updateSummary();
+  }
+  function _updateSummary() {
+    const saved = document.getElementById('accSavedCount');
+    const running = document.getElementById('accRunningCount');
+    const defaultCount = document.getElementById('accDefaultCount');
+    if (saved) saved.textContent = String(_accounts.length);
+    if (running) running.textContent = String(_running.size);
+    if (defaultCount) defaultCount.textContent = _default ? '1' : '0';
   }
   async function show() {
     if (!_inited) {
       await _load();
       _inited = true;
     }
-    const wrap = document.getElementById("accountsView");
+    const wrap = document.getElementById('accountsView');
     if (!wrap) return;
-    wrap.style.display = "flex";
+    wrap.style.display = 'flex';
     _buildView();
     _renderList();
     _startPolling();
   }
   function hide() {
     _stopPolling();
-    const wrap = document.getElementById("accountsView");
-    if (wrap) wrap.style.display = "none";
+    const wrap = document.getElementById('accountsView');
+    if (wrap) wrap.style.display = 'none';
   }
   return {
     show,

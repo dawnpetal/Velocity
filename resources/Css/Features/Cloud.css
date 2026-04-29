@@ -46,7 +46,7 @@
   align-items: center;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 2px;
   width: 240px;
   flex-shrink: 0;
 }
@@ -92,7 +92,7 @@
   height: 28px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 2px;
   color: var(--text3);
   cursor: pointer;
   flex-shrink: 0;
@@ -130,7 +130,7 @@
   gap: 5px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 2px;
   color: var(--text3);
   font-family: var(--font-ui);
   font-size: 11px;
@@ -179,7 +179,7 @@
   font-size: 11px;
   font-weight: 500;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   color: var(--text2);
   cursor: pointer;
@@ -220,7 +220,7 @@
 .cloud-card {
   background: var(--bg1);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: default;
   display: flex;
   flex-direction: column;
@@ -264,7 +264,7 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: 2px;
   background: rgba(0, 0, 0, 0.52);
   color: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(4px);
@@ -310,7 +310,7 @@
   font-size: 9.5px;
   font-weight: 600;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 2px;
   line-height: 15px;
   letter-spacing: 0.2px;
 }
@@ -381,7 +381,7 @@
   width: 26px;
   height: 26px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 2px;
   background: transparent;
   color: var(--text2);
   cursor: pointer;
@@ -420,7 +420,7 @@
 .cloud-skeleton {
   background: var(--bg1);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 2px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -441,7 +441,7 @@
 
 .sk-line {
   height: 9px;
-  border-radius: 3px;
+  border-radius: 2px;
   background: var(--bg3);
 }
 
@@ -477,7 +477,7 @@
 .sk-btn {
   width: 26px;
   height: 26px;
-  border-radius: 4px;
+  border-radius: 2px;
   background: var(--bg3);
 }
 
@@ -505,7 +505,7 @@
   font-family: var(--font-ui);
   font-size: 11px;
   padding: 5px 14px;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   margin-top: 4px;
   transition:
@@ -538,7 +538,7 @@
   height: 30px;
   background: var(--bg1);
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: 2px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   z-index: 10;

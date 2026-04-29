@@ -1,17 +1,21 @@
 const uiState = (() => {
   let _sidebarWidth = null;
+  let _sidebarHidden = false;
+  let _sidebarLocked = false;
   let _panelVisible = false;
   let _sbBottomHeight = null;
-  let _activeView = "explorer";
+  let _activeView = 'explorer';
   let _fontSize = null;
   let _wordWrap = null;
   let _minimap = null;
   let _lineNumbers = null;
-  let _executor = "opium";
-  const VALID_EXECUTORS = new Set(["hydrogen", "opium"]);
+  let _executor = 'opium';
+  const VALID_EXECUTORS = new Set(['hydrogen', 'opium']);
   function snapshot() {
     return {
       sidebarWidth: _sidebarWidth,
+      sidebarHidden: _sidebarHidden,
+      sidebarLocked: _sidebarLocked,
       panelVisible: _panelVisible,
       sbBottomHeight: _sbBottomHeight,
       activeView: _activeView,
@@ -27,6 +31,8 @@ const uiState = (() => {
   function applyLoaded(loaded) {
     if (!loaded) return;
     if (loaded.sidebarWidth != null) _sidebarWidth = loaded.sidebarWidth;
+    if (loaded.sidebarHidden != null) _sidebarHidden = loaded.sidebarHidden;
+    if (loaded.sidebarLocked != null) _sidebarLocked = loaded.sidebarLocked;
     if (loaded.sbBottomHeight != null) _sbBottomHeight = loaded.sbBottomHeight;
     if (loaded.panelVisible != null) _panelVisible = loaded.panelVisible;
     if (loaded.activeView) _activeView = loaded.activeView;
@@ -39,6 +45,20 @@ const uiState = (() => {
   }
   function save() {
     persist.saveUI(snapshot()).catch(() => {});
+  }
+  function setSidebarHidden(v) {
+    _sidebarHidden = v;
+    save();
+  }
+  function getSidebarHidden() {
+    return _sidebarHidden;
+  }
+  function setSidebarLocked(v) {
+    _sidebarLocked = v;
+    save();
+  }
+  function getSidebarLocked() {
+    return _sidebarLocked;
   }
   function setSidebarWidth(px) {
     _sidebarWidth = px;
@@ -106,6 +126,10 @@ const uiState = (() => {
     get lineNumbers() {
       return _lineNumbers;
     },
+    setSidebarHidden,
+    getSidebarHidden,
+    setSidebarLocked,
+    getSidebarLocked,
     setSidebarWidth,
     setPanelVisible,
     setSbBottomHeight,

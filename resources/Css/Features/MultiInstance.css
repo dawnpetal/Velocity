@@ -11,7 +11,7 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 5px;
+  border-radius: 2px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text2);
@@ -50,7 +50,7 @@
   gap: 5px;
   height: 26px;
   padding: 0 8px;
-  border-radius: 5px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: var(--bg2);
   color: var(--text1);
@@ -72,7 +72,7 @@
 .mi-select-btn .mi-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -112,7 +112,7 @@
   min-width: 220px;
   background: var(--bg2);
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 2px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.55),
     0 2px 8px rgba(0, 0, 0, 0.35),
@@ -180,7 +180,7 @@
 .mi-item-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -233,7 +233,7 @@
   min-width: 15px;
   height: 15px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: 2px;
   background: var(--accent-dim);
   color: var(--accent);
   font-size: 9px;
@@ -267,7 +267,7 @@
 .mi-all-btn {
   margin-left: auto;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text2);
@@ -301,7 +301,7 @@
   justify-content: center;
   width: 14px;
   height: 14px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1.5px solid var(--border-strong);
   background: var(--bg1);
   flex-shrink: 0;
@@ -336,7 +336,7 @@
 
 .mi-launch-btn {
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text2);

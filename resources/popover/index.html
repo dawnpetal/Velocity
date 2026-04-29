@@ -1,195 +1,694 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Velocity</title>
+  <title>VelocityUI</title>
   <style>
-    @font-face { font-family: "JB"; font-weight: 400; src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2"); }
-    @font-face { font-family: "JB"; font-weight: 500; src: url("../fonts/JetBrainsMono-Medium.woff2") format("woff2"); }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-
-    :root {
-      --sans: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
-      --mono: "JB", ui-monospace, monospace;
-      --bg: #050505;
-      --panel: #0a0a0a;
-      --card: #111111;
-      --border: rgba(255, 255, 255, 0.04);
-      --border-hi: rgba(255, 255, 255, 0.08);
-      --text: #ffffff;
-      --text-dim: #888888;
-      --text-mute: #444444;
-      --warn: #f59e0b;
-      --ease: cubic-bezier(0.2, 1, 0.2, 1);
+    @font-face {
+      font-family: "JB";
+      font-weight: 400;
+      src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2");
     }
 
-    html, body {
-      width: 100%; height: 100%;
+    @font-face {
+      font-family: "JB";
+      font-weight: 500;
+      src: url("../fonts/JetBrainsMono-Medium.woff2") format("woff2");
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      outline: none;
+    }
+
+    :root {
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+      --mono: "JB", ui-monospace, monospace;
+      --bg: #050505;
+      --panel: #0b0b0b;
+      --card: #111;
+      --card-hi: #151515;
+      --line: rgba(255, 255, 255, 0.06);
+      --line-hi: rgba(255, 255, 255, 0.1);
+      --text: #f2f2f2;
+      --text-2: #a4a4a4;
+      --text-3: #6c6c6c;
+      --text-4: #454545;
+      --ok: #66d19e;
+      --warn: #e7b955;
+      --ease: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
       background: transparent;
-      font-family: var(--sans);
       color: var(--text);
+      font-family: var(--sans);
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
+    #shell {
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      background: transparent;
+    }
+
     #root {
-      display: flex; flex-direction: column;
-      width: 100%; height: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border-hi);
-      border-radius: 14px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      border: 1px solid var(--line-hi);
+      border-radius: 18px;
+      outline: 1px solid rgba(255, 255, 255, 0.08);
+      outline-offset: -2px;
+      background: linear-gradient(180deg, #0c0c0c, #060606 42%, #050505);
+      box-shadow: none;
+    }
+
+    .popover-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 48px;
+      padding: 10px 10px 8px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.012);
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .brand-title {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      display: block;
+      color: var(--text-3);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mode-switch {
+      display: flex;
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .mode-btn {
+      height: 26px;
+      padding: 0 9px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-3);
+      font: 700 10px var(--sans);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 140ms var(--ease), background 140ms var(--ease);
+    }
+
+    .mode-btn:hover {
+      color: var(--text-2);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .mode-btn.active {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .view {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+    }
+
+    .view[hidden] {
+      display: none;
     }
 
     #key-section {
-      padding: 16px;
-      background: linear-gradient(180deg, var(--panel) 0%, var(--bg) 100%);
-      border-bottom: 1px solid var(--border);
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.01);
       flex-shrink: 0;
     }
-    #key-section.hidden { display: none; }
 
-    .key-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .key-info { display: flex; flex-direction: column; gap: 2px; }
-    .lbl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-mute); letter-spacing: 0.05em; }
-    .val { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-    .sub { font-size: 10px; color: var(--text-dim); }
-
-    .rings { display: flex; gap: 8px; }
-    .ring-box { position: relative; width: 36px; height: 36px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); }
-    .ring-box svg { width: 100%; height: 100%; transform: rotate(-90deg); padding: 4px; }
-    .ring-track { fill: none; stroke: var(--border); stroke-width: 4; }
-    .ring-fill { fill: none; stroke-width: 4; stroke-linecap: round; stroke: var(--text-dim); transition: 0.6s var(--ease); }
-    .ring-fill.warn { stroke: var(--warn); }
-    .ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: var(--text); }
-
-    .key-actions { display: flex; gap: 6px; }
-    #key-display { 
-      flex: 1; background: var(--card); border: 1px solid var(--border);
-      padding: 8px 12px; border-radius: 8px; font-family: var(--mono);
-      font-size: 10px; color: var(--text-mute); white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; line-height: 14px;
+    #key-section.hidden {
+      display: none;
     }
+
+    .key-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .key-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .lbl {
+      color: var(--text-4);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .val {
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    .sub {
+      color: var(--text-3);
+      font-size: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rings {
+      display: flex;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .ring-box {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+    }
+
+    .ring-box svg {
+      width: 100%;
+      height: 100%;
+      padding: 4px;
+      transform: rotate(-90deg);
+    }
+
+    .ring-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 4;
+    }
+
+    .ring-fill {
+      fill: none;
+      stroke: var(--text-2);
+      stroke-width: 4;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 420ms var(--ease), stroke 160ms var(--ease);
+    }
+
+    .ring-fill.warn {
+      stroke: var(--warn);
+    }
+
+    .ring-label {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font: 800 9px var(--mono);
+    }
+
+    .key-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    #key-display {
+      flex: 1;
+      min-width: 0;
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text-3);
+      font: 500 10px/29px var(--mono);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .act-btn {
-      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-      background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
-      border-radius: 8px; cursor: pointer; transition: 0.2s var(--ease);
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text-3);
+      cursor: pointer;
+      transition: color 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
     }
-    .act-btn:hover:not(:disabled) { border-color: var(--text-dim); color: var(--text); background: var(--panel); }
-    .act-btn:disabled { opacity: 0.4; cursor: default; }
-    .act-btn svg { width: 14px; height: 14px; }
-    
-    .spinning svg { animation: spin 0.8s infinite linear; }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    #search-container { padding: 12px 12px 4px; position: relative; }
-    #search-input {
-      width: 100%; background: var(--panel); border: 1px solid var(--border);
-      border-radius: 10px; padding: 10px 14px; font-size: 13px;
-      color: var(--text); transition: 0.2s var(--ease);
+    .act-btn:hover:not(:disabled) {
+      color: var(--text);
+      background: var(--card-hi);
+      border-color: var(--line-hi);
     }
-    #search-input:focus { border-color: var(--border-hi); background: #0c0c0c; }
+
+    .act-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .act-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .spinning svg {
+      animation: spin 0.8s infinite linear;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #search-container {
+      padding: 10px 10px 4px;
+    }
+
+    #search-input {
+      width: 100%;
+      height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--text);
+      font: 500 12px var(--sans);
+      transition: background 140ms var(--ease), border-color 140ms var(--ease);
+    }
+
+    #search-input:focus {
+      background: var(--card);
+      border-color: var(--line-hi);
+    }
+
+    #search-input::placeholder {
+      color: var(--text-4);
+    }
 
     #recents {
-      display: flex; gap: 6px; padding: 8px 12px;
-      overflow-x: auto; flex-shrink: 0;
+      display: flex;
+      gap: 6px;
+      padding: 7px 10px;
+      overflow-x: auto;
+      flex-shrink: 0;
     }
-    #recents::-webkit-scrollbar { display: none; }
-    .chip {
-      padding: 5px 12px; background: var(--panel); border: 1px solid var(--border);
-      border-radius: 100px; font-size: 10px; font-weight: 600; color: var(--text-dim);
-      white-space: nowrap; cursor: pointer; transition: 0.2s var(--ease);
-    }
-    .chip:hover { background: var(--card); color: var(--text); border-color: var(--border-hi); }
 
-    #list { flex: 1; overflow-y: auto; padding: 4px 8px; position: relative; }
-    #list::-webkit-scrollbar { width: 0; }
+    #recents::-webkit-scrollbar,
+    #list::-webkit-scrollbar,
+    #command-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      max-width: 130px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.018);
+      color: var(--text-3);
+      font-size: 10px;
+      font-weight: 650;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: color 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
+    }
+
+    .chip:hover {
+      color: var(--text-2);
+      background: var(--card);
+      border-color: var(--line-hi);
+    }
+
+    #list {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 4px 7px 8px;
+    }
 
     .srow {
-      display: flex; align-items: center; padding: 10px 12px;
-      border-radius: 10px; cursor: pointer; transition: background 0.1s var(--ease);
-      margin-bottom: 2px; gap: 12px; border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      padding: 0 9px;
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: color 120ms var(--ease), background 120ms var(--ease), border-color 120ms var(--ease);
     }
-    .srow:hover { background: var(--card); border-color: var(--border); }
-    .srow:active { transform: scale(0.985); }
 
-    .srow.is-pinned { background: rgba(255,255,255,0.02); border-color: var(--border); }
-    .s-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .s-pin { color: var(--text-mute); transition: 0.2s var(--ease); padding: 4px; border-radius: 4px; }
-    .s-pin:hover { color: var(--text-dim); background: var(--panel); }
-    .srow.is-pinned .s-pin { color: var(--accent); }
+    .srow:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.045);
+      border-color: var(--line);
+    }
+
+    .srow.is-pinned {
+      background: rgba(255, 255, 255, 0.025);
+      border-color: var(--line);
+    }
+
+    .s-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .s-pin {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      color: var(--text-4);
+    }
+
+    .s-pin:hover {
+      color: var(--text-2);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .srow.is-pinned .s-pin {
+      color: var(--text-2);
+    }
 
     .loader-overlay {
-      position: absolute; inset: 0; background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      background: rgba(5, 5, 5, 0.82);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 140ms var(--ease);
     }
-    .loader-overlay.active { opacity: 0.8; pointer-events: all; }
 
-    #empty { padding: 60px 20px; text-align: center; color: var(--text-mute); font-size: 12px; line-height: 1.6; }
+    .loader-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #empty {
+      padding: 54px 18px;
+      color: var(--text-4);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .command-intro {
+      padding: 14px 14px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .command-intro strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .command-intro span {
+      display: block;
+      color: var(--text-3);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    #command-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 8px 7px 10px;
+    }
+
+    .cmd-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 8px 9px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      border-radius: 13px;
+      background: transparent;
+      color: var(--text-2);
+      text-align: left;
+      cursor: pointer;
+      transition: color 120ms var(--ease), background 120ms var(--ease), border-color 120ms var(--ease);
+    }
+
+    .cmd-row:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.045);
+      border-color: var(--line);
+    }
+
+    .cmd-icon {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text-3);
+      flex-shrink: 0;
+    }
+
+    .cmd-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .cmd-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .cmd-title {
+      display: block;
+      color: inherit;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .cmd-desc {
+      display: block;
+      margin-top: 2px;
+      color: var(--text-4);
+      font-size: 10.5px;
+      line-height: 1.3;
+    }
 
     #footer {
-      padding: 10px 16px; border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--panel); font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 34px;
+      padding: 0 13px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.018);
+      color: var(--text-4);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      flex-shrink: 0;
     }
-    .status-wrap { display: flex; align-items: center; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 10px rgba(0,255,136,0.3); margin-right: 8px; transition: 0.3s; }
-    .dot.busy { background: var(--warn); box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
+
+    .status-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--ok);
+      box-shadow: 0 0 12px rgba(102, 209, 158, 0.25);
+      transition: background 160ms var(--ease), box-shadow 160ms var(--ease);
+    }
+
+    .dot.busy {
+      background: var(--warn);
+      box-shadow: 0 0 12px rgba(231, 185, 85, 0.24);
+    }
+
+    .cmd-icon i,
+    .cmd-icon svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
+    }
   </style>
 </head>
+
 <body>
-<div id="root">
-  <div id="key-section">
-    <div class="key-header">
-      <div class="key-info">
-        <span class="lbl">Session Remaining</span>
-        <span id="exp-val" class="val">...</span>
-        <span id="exp-sub" class="sub">Validating...</span>
-      </div>
-      <div class="rings">
-        <div class="ring-box">
-          <svg viewBox="0 0 48 48"><circle class="ring-track" cx="24" cy="24" r="20"/><circle class="ring-fill" id="ring-h" cx="24" cy="24" r="20" stroke-dasharray="125.7" stroke-dashoffset="125.7"/></svg>
-          <div class="ring-label" id="ring-h-n">0</div>
+  <div id="shell">
+    <div id="root">
+      <div class="popover-top">
+        <div class="brand">
+          <span class="brand-title">VelocityUI</span>
+          <span class="brand-sub">Quick Panel</span>
         </div>
-        <div class="ring-box">
-          <svg viewBox="0 0 48 48"><circle class="ring-track" cx="24" cy="24" r="20"/><circle class="ring-fill" id="ring-d" cx="24" cy="24" r="20" stroke-dasharray="125.7" stroke-dashoffset="125.7"/></svg>
-          <div class="ring-label" id="ring-d-n">0</div>
+        <div class="mode-switch" role="tablist" aria-label="Popover sections">
+          <button class="mode-btn active" id="tab-scripts" type="button" role="tab" aria-selected="true"
+            aria-controls="scripts-view">Scripts</button>
+          <button class="mode-btn" id="tab-commands" type="button" role="tab" aria-selected="false"
+            aria-controls="commands-view">Commands</button>
         </div>
       </div>
+
+      <section class="view" id="scripts-view" role="tabpanel" aria-labelledby="tab-scripts">
+        <div id="key-section">
+          <div class="key-header">
+            <div class="key-info">
+              <span class="lbl">Session Remaining</span>
+              <span id="exp-val" class="val">...</span>
+              <span id="exp-sub" class="sub">Validating...</span>
+            </div>
+            <div class="rings">
+              <div class="ring-box">
+                <svg viewBox="0 0 48 48">
+                  <circle class="ring-track" cx="24" cy="24" r="20" />
+                  <circle class="ring-fill" id="ring-h" cx="24" cy="24" r="20" stroke-dasharray="125.7"
+                    stroke-dashoffset="125.7" />
+                </svg>
+                <div class="ring-label" id="ring-h-n">0</div>
+              </div>
+              <div class="ring-box">
+                <svg viewBox="0 0 48 48">
+                  <circle class="ring-track" cx="24" cy="24" r="20" />
+                  <circle class="ring-fill" id="ring-d" cx="24" cy="24" r="20" stroke-dasharray="125.7"
+                    stroke-dashoffset="125.7" />
+                </svg>
+                <div class="ring-label" id="ring-d-n">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="key-actions">
+            <div id="key-display">...</div>
+            <button class="act-btn" id="btn-copy" type="button" title="Copy Key" aria-label="Copy key">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+            <button class="act-btn" id="btn-refresh" type="button" title="Refresh key" aria-label="Refresh key">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                <path d="M3 21v-5h5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="search-container">
+          <input type="text" id="search-input" placeholder="Search scripts" spellcheck="false" autocomplete="off">
+        </div>
+        <div id="recents"></div>
+        <div id="list">
+          <div class="loader-overlay" id="list-loader">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              class="spinning" style="color:var(--text-3)">
+              <path d="M12 3a9 9 0 1 0 9 9" />
+            </svg>
+          </div>
+          <div id="empty">No scripts found.</div>
+        </div>
+      </section>
+
+      <section class="view" id="commands-view" role="tabpanel" aria-labelledby="tab-commands" hidden>
+        <div class="command-intro">
+          <strong>Client Commands</strong>
+          <span>Quick tools for the Roblox client. Pick one and VelocityUI sends it through your active executor.</span>
+        </div>
+        <div id="command-list"></div>
+      </section>
+
+      <div id="footer">
+        <div class="status-wrap">
+          <div class="dot" id="status-dot"></div><span id="status">Ready</span>
+        </div>
+        <div id="count">0 Items</div>
+      </div>
     </div>
-    <div class="key-actions">
-      <div id="key-display">...</div>
-      <button class="act-btn" id="btn-copy" title="Copy Key">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      </button>
-      <button class="act-btn" id="btn-refresh">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
-      </button>
-    </div>
   </div>
-
-  <div id="search-container">
-    <input type="text" id="search-input" placeholder="Search scripts..." spellcheck="false" autocomplete="off">
-  </div>
-
-  <div id="recents"></div>
-
-  <div id="list">
-    <div class="loader-overlay" id="list-loader">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="spinning" style="color:var(--text-mute)"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
-    </div>
-    <div id="empty">No scripts found.</div>
-  </div>
-
-  <div id="footer">
-    <div class="status-wrap"><div class="dot" id="status-dot"></div><span id="status">Ready</span></div>
-    <div id="count">0 Items</div>
-  </div>
-</div>
-<script src="popover.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="popover.js"></script>
 </body>
+
 </html>

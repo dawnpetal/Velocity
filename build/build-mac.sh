@@ -4,8 +4,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_NAME="Velocity"
-REPO="dawnpetal/Velocity"
+APP_NAME="VelocityUI"
+REPO="dawnpetal/VelocityUI"
 BUNDLE_DIR="src-tauri/target/release/bundle/macos"
 DIST_DIR="dist"
 DO_RELEASE=false
@@ -65,7 +65,7 @@ _zip_clean() {
   )
 }
 
-header "Velocity — macOS Build"
+header "VelocityUI — macOS Build"
 echo -e "${DIM}  repo: $REPO${RESET}\n"
 
 header "Checking prerequisites..."
@@ -106,7 +106,7 @@ if [ "$DO_RELEASE" = true ]; then
   read -r -p "  Version (e.g. 1.0.0): " VERSION
   [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Version must be semver (e.g. 1.0.0)"
   read -r -p "  Release title:         " TITLE
-  [ -z "$TITLE" ] && TITLE="Velocity v${VERSION}"
+  [ -z "$TITLE" ] && TITLE="VelocityUI v${VERSION}"
   echo "  Release notes (press Enter twice when done):"
   NOTES=""
   while IFS= read -r line; do

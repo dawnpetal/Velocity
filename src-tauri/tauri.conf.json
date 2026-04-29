@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Velocity",
-  "version": "1.0.8",
-  "identifier": "com.velocity.dev",
+  "productName": "VelocityUI",
+  "version": "1.1.0",
+  "identifier": "com.velocityui.dev",
   "build": {
     "frontendDist": "../resources"
   },
@@ -14,14 +14,14 @@
     "windows": [
       {
         "label": "main",
-        "title": "Velocity",
+        "title": "VelocityUI",
         "url": "Index.html",
         "width": 1100,
         "height": 720,
         "minWidth": 700,
         "minHeight": 600,
         "decorations": true,
-        "transparent": true,
+        "transparent": false,
         "resizable": true,
         "center": true,
         "visible": true,
@@ -42,7 +42,7 @@
         "visible": false,
         "skipTaskbar": true,
         "alwaysOnTop": true,
-        "shadow": true,
+        "shadow": false,
         "focus": false
       }
     ],

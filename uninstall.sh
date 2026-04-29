@@ -39,13 +39,13 @@ ask() {
 
 HOME_DIR="$HOME"
 CURRENT_USER="$(whoami)"
-APP_BUNDLE="/Applications/Velocity.app"
-VELOCITY_DATA="$HOME_DIR/Velocity"
-TAURI_APP_SUPPORT="$HOME_DIR/Library/Application Support/com.velocity.dev"
-TAURI_CACHE="$HOME_DIR/Library/Caches/com.velocity.dev"
-TAURI_LOGS="$HOME_DIR/Library/Logs/com.velocity.dev"
-TAURI_SAVED_STATE="$HOME_DIR/Library/Saved Application State/com.velocity.dev.savedState"
-TAURI_WEBVIEW_CACHE="$HOME_DIR/Library/WebKit/com.velocity.dev"
+APP_BUNDLE="/Applications/VelocityUI.app"
+VELOCITYUI_DATA="$HOME_DIR/VelocityUI"
+TAURI_APP_SUPPORT="$HOME_DIR/Library/Application Support/com.velocityui.dev"
+TAURI_CACHE="$HOME_DIR/Library/Caches/com.velocityui.dev"
+TAURI_LOGS="$HOME_DIR/Library/Logs/com.velocityui.dev"
+TAURI_SAVED_STATE="$HOME_DIR/Library/Saved Application State/com.velocityui.dev.savedState"
+TAURI_WEBVIEW_CACHE="$HOME_DIR/Library/WebKit/com.velocityui.dev"
 
 MODE=""
 NON_INTERACTIVE=false
@@ -69,10 +69,10 @@ clear
 echo
 echo -e "${BOLD}${CYAN}"
 echo "  ╭──────────────────────────────────────────────╮"
-echo "  │            Velocity Uninstaller              │"
+echo "  │            VelocityUI Uninstaller              │"
 echo "  ╰──────────────────────────────────────────────╯"
 echo -e "${RESET}"
-echo -e "  ${DIM}Cleanly remove Velocity from your Mac${RESET}"
+echo -e "  ${DIM}Cleanly remove VelocityUI from your Mac${RESET}"
 echo
 rule
 MAC_VER="—"
@@ -81,7 +81,7 @@ if command -v sw_vers >/dev/null 2>&1; then
 fi
 echo -e "  Running as ${BOLD}$CURRENT_USER${RESET} on macOS $MAC_VER"
 echo
-echo -e "  ${GREEN}This uninstaller only removes Velocity and its related files.${RESET}"
+echo -e "  ${GREEN}This uninstaller only removes VelocityUI and its related files.${RESET}"
 echo -e "  ${GREEN}It will never touch unrelated apps or system files.${RESET}"
 echo
 echo -e "  ${DIM}Nothing happens automatically — you will confirm before anything is deleted.${RESET}"
@@ -95,7 +95,7 @@ check() {
   fi
 }
 check "$APP_BUNDLE"
-check "$VELOCITY_DATA"
+check "$VELOCITYUI_DATA"
 check "$TAURI_APP_SUPPORT"
 check "$TAURI_CACHE"
 check "$TAURI_LOGS"
@@ -103,7 +103,7 @@ check "$TAURI_SAVED_STATE"
 check "$TAURI_WEBVIEW_CACHE"
 
 if [ ${#FOUND_PATHS[@]} -eq 0 ]; then
-  echo -e "  ${GREEN}Nothing to remove. Velocity does not appear to be installed.${RESET}"
+  echo -e "  ${GREEN}Nothing to remove. VelocityUI does not appear to be installed.${RESET}"
   echo
   exit 0
 fi
@@ -115,7 +115,7 @@ if [ -z "$MODE" ]; then
   else
     echo -e "  ${BOLD}Select uninstall mode:${RESET}"
     echo
-    echo -e "  ${CYAN}1)${RESET} ${BOLD}--clean${RESET}   Remove app + system files, keep ${DIM}~/Velocity/workspace${RESET}"
+    echo -e "  ${CYAN}1)${RESET} ${BOLD}--clean${RESET}   Remove app + system files, keep ${DIM}~/VelocityUI/workspace${RESET}"
     echo -e "  ${CYAN}2)${RESET} ${BOLD}--full${RESET}    Remove everything"
     echo -e "  ${CYAN}3)${RESET} ${BOLD}--app${RESET}     Remove app bundle only"
     echo
@@ -134,7 +134,7 @@ fi
 
 # Set removal flags based on mode
 REMOVE_APP=false
-REMOVE_VELOCITY_DATA=false
+REMOVE_VELOCITYUI_DATA=false
 REMOVE_INTERNALS=false
 REMOVE_APP_SUPPORT=false
 REMOVE_CACHE=false
@@ -154,7 +154,7 @@ case "$MODE" in
     ;;
   full)
     REMOVE_APP=true
-    REMOVE_VELOCITY_DATA=true
+    REMOVE_VELOCITYUI_DATA=true
     REMOVE_APP_SUPPORT=true
     REMOVE_CACHE=true
     REMOVE_LOGS=true
@@ -168,11 +168,11 @@ esac
 
 TOTAL_STEPS=5
 
-step 1 $TOTAL_STEPS "Closing Velocity"
-if pgrep -xq "Velocity" 2>/dev/null || pgrep -xq "VelocityBar" 2>/dev/null; then
-  warn "Velocity is running — quitting..."
-  pkill -x "Velocity" 2>/dev/null || true
-  pkill -x "VelocityBar" 2>/dev/null || true
+step 1 $TOTAL_STEPS "Closing VelocityUI"
+if pgrep -xq "VelocityUI" 2>/dev/null || pgrep -xq "VelocityUIBar" 2>/dev/null; then
+  warn "VelocityUI is running — quitting..."
+  pkill -x "VelocityUI" 2>/dev/null || true
+  pkill -x "VelocityUIBar" 2>/dev/null || true
   ok "Closed"
 else
   ok "Not running"
@@ -182,9 +182,9 @@ step 2 $TOTAL_STEPS "Mode: --${MODE}"
 echo
 case "$MODE" in
   clean)
-    echo -e "  ${RED}✗${RESET}  Velocity.app"
-    echo -e "  ${RED}✗${RESET}  ~/Velocity/internals"
-    echo -e "  ${DIM}–  ~/Velocity/workspace ${GREEN}(kept)${RESET}"
+    echo -e "  ${RED}✗${RESET}  VelocityUI.app"
+    echo -e "  ${RED}✗${RESET}  ~/VelocityUI/internals"
+    echo -e "  ${DIM}–  ~/VelocityUI/workspace ${GREEN}(kept)${RESET}"
     echo -e "  ${RED}✗${RESET}  App Support"
     echo -e "  ${RED}✗${RESET}  Cache"
     echo -e "  ${RED}✗${RESET}  Logs"
@@ -192,8 +192,8 @@ case "$MODE" in
     echo -e "  ${RED}✗${RESET}  WebKit cache"
     ;;
   full)
-    echo -e "  ${RED}✗${RESET}  Velocity.app"
-    echo -e "  ${RED}✗${RESET}  ~/Velocity"
+    echo -e "  ${RED}✗${RESET}  VelocityUI.app"
+    echo -e "  ${RED}✗${RESET}  ~/VelocityUI"
     echo -e "  ${RED}✗${RESET}  App Support"
     echo -e "  ${RED}✗${RESET}  Cache"
     echo -e "  ${RED}✗${RESET}  Logs"
@@ -201,8 +201,8 @@ case "$MODE" in
     echo -e "  ${RED}✗${RESET}  WebKit cache"
     ;;
   app)
-    echo -e "  ${RED}✗${RESET}  Velocity.app"
-    echo -e "  ${DIM}–  ~/Velocity (kept)${RESET}"
+    echo -e "  ${RED}✗${RESET}  VelocityUI.app"
+    echo -e "  ${DIM}–  ~/VelocityUI (kept)${RESET}"
     echo -e "  ${DIM}–  System files (kept)${RESET}"
     ;;
 esac
@@ -233,12 +233,12 @@ del() {
   fi
 }
 
-$REMOVE_APP && del "$APP_BUNDLE" "Velocity.app"
+$REMOVE_APP && del "$APP_BUNDLE" "VelocityUI.app"
 
 if [ "$MODE" = "clean" ]; then
-  del "$VELOCITY_DATA/internals" "~/Velocity/internals"
-elif $REMOVE_VELOCITY_DATA; then
-  del "$VELOCITY_DATA" "~/Velocity"
+  del "$VELOCITYUI_DATA/internals" "~/VelocityUI/internals"
+elif $REMOVE_VELOCITYUI_DATA; then
+  del "$VELOCITYUI_DATA" "~/VelocityUI"
 fi
 
 $REMOVE_APP_SUPPORT  && del "$TAURI_APP_SUPPORT" "App Support"
@@ -252,7 +252,7 @@ echo
 rule
 if [ "$ERRORS" -eq 0 ]; then
   echo
-  echo -e "  ${GREEN}${BOLD}✓ Velocity successfully removed${RESET}"
+  echo -e "  ${GREEN}${BOLD}✓ VelocityUI successfully removed${RESET}"
   echo -e "  ${DIM}Your system is unchanged beyond the files listed above.${RESET}"
 else
   echo

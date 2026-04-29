@@ -3,18 +3,16 @@ const WebLanguages = (() => {
     const K = monaco.languages.SymbolKind;
     return {
       provideDocumentSymbols(model) {
-        const lines = model.getValue().split("\n");
+        const lines = model.getValue().split('\n');
         const total = lines.length;
         const root = [];
         const stack = [];
         const cur = () => stack[stack.length - 1] ?? null;
         const rClass = /^(?:export\s+(?:default\s+)?)?class\s+([\w$]+)/;
-        const rFnDecl =
-          /^(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s*\*?\s+([\w$]+)\s*\(/;
+        const rFnDecl = /^(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s*\*?\s+([\w$]+)\s*\(/;
         const rArrow =
           /^(?:export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[\w$]+)\s*=>/;
-        const rFnExpr =
-          /^(?:export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s+)?function/;
+        const rFnExpr = /^(?:export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s+)?function/;
         const rObj = /^(?:export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*\{/;
         const rMethod =
           /^(\s+)(?:static\s+)?(?:async\s+)?(?:get\s+|set\s+)?([\w$#]+)\s*\([^)]*\)\s*\{/;
@@ -37,11 +35,7 @@ const WebLanguages = (() => {
           } else if ((m = rFnExpr.exec(trimmed))) {
             name = m[1];
             kind = K.Function;
-          } else if (
-            cur() &&
-            (m = rMethod.exec(raw)) &&
-            !["if", "for", "while"].includes(m[2])
-          ) {
+          } else if (cur() && (m = rMethod.exec(raw)) && !['if', 'for', 'while'].includes(m[2])) {
             name = m[2];
             kind = K.Method;
           } else if ((m = rObj.exec(trimmed))) {
@@ -59,7 +53,7 @@ const WebLanguages = (() => {
             };
             const sym = {
               name,
-              detail: "",
+              detail: '',
               kind,
               range: {
                 ...r,
@@ -97,32 +91,32 @@ const WebLanguages = (() => {
   function buildHtmlProvider(monaco) {
     const K = monaco.languages.SymbolKind;
     const VOID = new Set([
-      "area",
-      "base",
-      "br",
-      "col",
-      "embed",
-      "hr",
-      "img",
-      "input",
-      "link",
-      "meta",
-      "param",
-      "source",
-      "track",
-      "wbr",
+      'area',
+      'base',
+      'br',
+      'col',
+      'embed',
+      'hr',
+      'img',
+      'input',
+      'link',
+      'meta',
+      'param',
+      'source',
+      'track',
+      'wbr',
     ]);
     const labelFromTag = (tag, attrs) => {
       let label = tag;
       const id = attrs.match(/id=["']([^"']+)["']/);
       const cls = attrs.match(/class=["']([^"']+)["']/);
-      if (id) label += "#" + id[1].split(" ")[0];
-      else if (cls) label += "." + cls[1].trim().split(/\s+/)[0];
+      if (id) label += '#' + id[1].split(' ')[0];
+      else if (cls) label += '.' + cls[1].trim().split(/\s+/)[0];
       return label;
     };
     return {
       provideDocumentSymbols(model) {
-        const lines = model.getValue().split("\n");
+        const lines = model.getValue().split('\n');
         const root = [];
         const stack = [];
         const cur = () => stack[stack.length - 1] ?? null;
@@ -141,7 +135,7 @@ const WebLanguages = (() => {
               };
               stack.push({
                 name: labelFromTag(tag, m[2]),
-                detail: "",
+                detail: '',
                 kind: K.Module,
                 range: {
                   ...r,
@@ -153,7 +147,7 @@ const WebLanguages = (() => {
               const tag = m[1].toLowerCase();
               for (let j = stack.length - 1; j >= 0; j--) {
                 const sym = stack[j];
-                const symTag = sym.name.replace(/[#.].*/, "").toLowerCase();
+                const symTag = sym.name.replace(/[#.].*/, '').toLowerCase();
                 if (symTag === tag) {
                   sym.range = {
                     ...sym.range,
@@ -183,7 +177,7 @@ const WebLanguages = (() => {
     const rClose = /^\s*\}\s*$/;
     return {
       provideDocumentSymbols(model) {
-        const lines = model.getValue().split("\n");
+        const lines = model.getValue().split('\n');
         const root = [];
         const stack = [];
         const cur = () => stack[stack.length - 1] ?? null;
@@ -200,7 +194,7 @@ const WebLanguages = (() => {
             };
             stack.push({
               name: m[1].trim(),
-              detail: "",
+              detail: '',
               kind: K.Class,
               range: {
                 ...r,
@@ -230,7 +224,7 @@ const WebLanguages = (() => {
     const rKey = /^\s+"([^"]+)"\s*:/;
     return {
       provideDocumentSymbols(model) {
-        const lines = model.getValue().split("\n");
+        const lines = model.getValue().split('\n');
         const root = [];
         lines.forEach((raw, i) => {
           const m = rKey.exec(raw);
@@ -244,7 +238,7 @@ const WebLanguages = (() => {
           };
           root.push({
             name: m[1],
-            detail: "",
+            detail: '',
             kind: K.Property,
             range: r,
             selectionRange: r,
@@ -261,18 +255,18 @@ const WebLanguages = (() => {
     const html = buildHtmlProvider(monaco);
     const css = buildCssProvider(monaco);
     const json = buildJsonProvider(monaco);
-    for (const lang of ["javascript", "typescript"]) {
+    for (const lang of ['javascript', 'typescript']) {
       monaco.languages.registerDocumentSymbolProvider(lang, js);
       providers.set(lang, js);
     }
-    monaco.languages.registerDocumentSymbolProvider("html", html);
-    providers.set("html", html);
-    for (const lang of ["css", "scss", "less"]) {
+    monaco.languages.registerDocumentSymbolProvider('html', html);
+    providers.set('html', html);
+    for (const lang of ['css', 'scss', 'less']) {
       monaco.languages.registerDocumentSymbolProvider(lang, css);
       providers.set(lang, css);
     }
-    monaco.languages.registerDocumentSymbolProvider("json", json);
-    providers.set("json", json);
+    monaco.languages.registerDocumentSymbolProvider('json', json);
+    providers.set('json', json);
     return providers;
   }
   return {

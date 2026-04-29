@@ -1,162 +1,164 @@
 const ctxMenu = (() => {
-  const el = document.getElementById("ctxMenu");
-  let _open = false;
-  function hide() {
-    if (!_open) return;
-    _open = false;
-    el.classList.remove("open");
-  }
-  document.addEventListener("mousedown", (e) => {
-    if (_open && !el.contains(e.target)) hide();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") hide();
-  });
-  document.addEventListener("contextmenu", (e) => {
-    if (_open && !el.contains(e.target)) hide();
-  });
-  function _position(clientX, clientY) {
-    _open = true;
-    el.classList.add("open");
-    el.style.left = "0px";
-    el.style.top = "0px";
-    requestAnimationFrame(() => {
-      const { width, height } = el.getBoundingClientRect();
-      el.style.left = Math.min(clientX, window.innerWidth - width - 4) + "px";
-      el.style.top = Math.min(clientY, window.innerHeight - height - 4) + "px";
-    });
-  }
-  function _item(label, icon, onClick, danger = false) {
-    const btn = document.createElement("button");
-    btn.className = "ctx-item" + (danger ? " danger" : "");
-    btn.innerHTML = `${icon}<span>${label}</span>`;
-    btn.addEventListener("click", () => {
-      hide();
-      onClick();
-    });
-    el.appendChild(btn);
-  }
-  function _sep() {
-    el.appendChild(DomHelpers.sep());
-  }
-  function _build(e, buildFn) {
+  const invoke = window.__TAURI__.core.invoke;
+  const isMac = navigator.platform.includes('Mac');
+  const REVEAL_LABEL = isMac ? 'Reveal in Finder' : 'Open in Explorer';
+  let _token = 0;
+  let _position = null;
+
+  function _capture(e) {
     e.preventDefault();
-    el.innerHTML = "";
-    buildFn(ExplorerTree.getSvgs());
-    _position(e.clientX, e.clientY);
+    e.stopPropagation();
+    _position = { x: e.clientX, y: e.clientY };
+    _token += 1;
   }
-  const REVEAL_LABEL =
-    "Reveal in " + (navigator.platform.includes("Mac") ? "Finder" : "Explorer");
+
+  async function _menu(buildFn) {
+    const { Menu, MenuItem, PredefinedMenuItem } = window.__TAURI__.menu;
+    const sep = () => PredefinedMenuItem.new({ item: 'Separator' });
+    const item = async (text, action) => MenuItem.new({ text, action });
+    const items = [];
+    const token = _token;
+    await buildFn(items, item, sep);
+    if (token !== _token) return;
+    const menu = await Menu.new({ items });
+    const at = _position
+      ? new window.__TAURI__.dpi.LogicalPosition(_position.x, _position.y)
+      : undefined;
+    await menu.popup(at);
+  }
+
   function show(e, node) {
-    _build(e, (SVG) => {
-      if (node.type === "folder") {
-        _item("New File", SVG.newFile, () =>
-          ExplorerTree.startCreate(node, "file"),
-        );
-        _item("New Folder", SVG.newFolder, () =>
-          ExplorerTree.startCreate(node, "folder"),
-        );
-        _sep();
+    _capture(e);
+    _menu(async (items, item, sep) => {
+      if (node.type === 'folder') {
+        items.push(await item('New File', () => ExplorerTree.startCreate(node, 'file')));
+        items.push(await item('New Folder', () => ExplorerTree.startCreate(node, 'folder')));
+        items.push(await sep());
       }
-      if (node.type === "file") {
-        _item("Duplicate", SVG.duplicate, () => ExplorerTree.duplicate(node));
+      if (node.type === 'file') {
+        items.push(await item('Duplicate', () => ExplorerTree.duplicate(node)));
         if (editor.canPreview(node.name)) {
-          _item("Open Preview", SVG.preview, () => {
-            const f = state.getFile(node.id);
-            if (f) editor.openPreview(f);
-          });
+          items.push(
+            await item('Open Preview', () => {
+              const f = state.getFile(node.id);
+              if (f) editor.openPreview(f);
+            }),
+          );
         }
-        _item("Pin to Pinboard", SVG.pin, () => pinboard.pinFile(node));
-        _sep();
+        items.push(await item('Pin to Pinboard', () => pinboard.pinFile(node)));
+        items.push(await sep());
       }
-      _item("Rename", SVG.rename, () => ExplorerTree.startRename(node));
-      _item("Copy Path", SVG.copyPath, () => ExplorerTree.copyPath(node));
-      _item(REVEAL_LABEL, SVG.reveal, () => ExplorerTree.revealInFinder(node));
-      _sep();
-      _item("Delete", SVG.delete, () => ExplorerTree.confirmDelete(node), true);
+      items.push(await item('Rename', () => ExplorerTree.startRename(node)));
+      items.push(await item('Copy Path', () => ExplorerTree.copyPath(node)));
+      items.push(await item(REVEAL_LABEL, () => ExplorerTree.revealInFinder(node)));
+      items.push(await sep());
+      items.push(await item('Delete', () => ExplorerTree.confirmDelete(node)));
     });
   }
+
   function showForNodes(e, nodes) {
     if (!nodes.length) return;
     if (nodes.length === 1) {
       show(e, nodes[0]);
       return;
     }
-    _build(e, (SVG) => {
-      const header = DomHelpers.el(
-        "div",
-        "ctx-header",
-        `${nodes.length} items selected`,
-      );
-      el.appendChild(header);
-      _sep();
-      if (nodes.every((n) => n.type === "file")) {
-        _item("Copy Paths", SVG.copyPath, () => ExplorerTree.copyPaths(nodes));
-        _sep();
+    _capture(e);
+    _menu(async (items, item, sep) => {
+      if (nodes.every((n) => n.type === 'file')) {
+        items.push(await item('Copy Paths', () => ExplorerTree.copyPaths(nodes)));
+        items.push(await sep());
       }
-      _item(
-        "Delete All",
-        SVG.delete,
-        () => ExplorerTree.confirmDeleteMulti(nodes),
-        true,
+      items.push(
+        await item(`Delete ${nodes.length} Items`, () => ExplorerTree.confirmDeleteMulti(nodes)),
       );
     });
   }
+
   function showEmpty(e, rootNode) {
-    _build(e, (SVG) => {
-      _item("New File", SVG.newFile, () =>
-        ExplorerTree.startCreate(rootNode, "file"),
-      );
-      _item("New Folder", SVG.newFolder, () =>
-        ExplorerTree.startCreate(rootNode, "folder"),
-      );
-      _sep();
-      _item("Add Folder", SVG.addFolder, () =>
-        workspaceController.openFolderDialog(),
+    _capture(e);
+    _menu(async (items, item, sep) => {
+      items.push(await item('New File', () => ExplorerTree.startCreate(rootNode, 'file')));
+      items.push(await item('New Folder', () => ExplorerTree.startCreate(rootNode, 'folder')));
+      items.push(await sep());
+      items.push(
+        await item('Add Folder to Workspace', () => workspaceController.openFolderDialog()),
       );
     });
   }
+
   function showForRoot(e, rootNode) {
-    _build(e, (SVG) => {
-      _item("New File", SVG.newFile, () =>
-        ExplorerTree.startCreate(rootNode, "file"),
+    _capture(e);
+    _menu(async (items, item, sep) => {
+      items.push(await item('New File', () => ExplorerTree.startCreate(rootNode, 'file')));
+      items.push(await item('New Folder', () => ExplorerTree.startCreate(rootNode, 'folder')));
+      items.push(await sep());
+      items.push(
+        await item('Add Folder to Workspace', () => workspaceController.openFolderDialog()),
       );
-      _item("New Folder", SVG.newFolder, () =>
-        ExplorerTree.startCreate(rootNode, "folder"),
+      items.push(await item('Copy Path', () => ExplorerTree.copyPath(rootNode)));
+      items.push(await item(REVEAL_LABEL, () => ExplorerTree.revealRootInFinder(rootNode)));
+      items.push(await sep());
+      items.push(
+        await item('Remove from Workspace', () => ExplorerTree.removeFolderFromWorkspace(rootNode)),
       );
-      _sep();
-      _item("Add Folder", SVG.addFolder, () =>
-        workspaceController.openFolderDialog(),
-      );
-      _item("Copy Path", SVG.copyPath, () => ExplorerTree.copyPath(rootNode));
-      _item(REVEAL_LABEL, SVG.reveal, () =>
-        ExplorerTree.revealRootInFinder(rootNode),
-      );
-      _sep();
-      _item("Remove Folder", SVG.remove, () =>
-        ExplorerTree.removeFolderFromWorkspace(rootNode),
-      );
-      _item(
-        "Delete from Disk",
-        SVG.delete,
-        () => ExplorerTree.deleteFolderFromDisk(rootNode),
-        true,
-      );
+      items.push(await item('Delete from Disk', () => ExplorerTree.deleteFolderFromDisk(rootNode)));
     });
   }
+
   function showAddFolder(e) {
-    _build(e, (SVG) => {
-      _item("Add Folder", SVG.addFolder, () =>
-        workspaceController.openFolderDialog(),
+    _capture(e);
+    _menu(async (items, item) => {
+      items.push(
+        await item('Add Folder to Workspace', () => workspaceController.openFolderDialog()),
       );
     });
   }
-  return {
-    show,
-    showForNodes,
-    showEmpty,
-    showForRoot,
-    showAddFolder,
-    hide,
-  };
+
+  function showForTab(e, fileId) {
+    _capture(e);
+    const file = state.getFile(fileId);
+    if (!file) return;
+    _menu(async (items, item, sep) => {
+      items.push(await item('Close', () => tabs.closeTab(fileId)));
+      items.push(
+        await item('Close Others', () => {
+          state.openTabIds.filter((id) => id !== fileId).forEach((id) => tabs.closeTab(id));
+        }),
+      );
+      items.push(
+        await item('Close All', () => {
+          [...state.openTabIds].forEach((id) => tabs.closeTab(id));
+        }),
+      );
+      items.push(await sep());
+      items.push(await item('Reveal in Explorer', () => ExplorerTree.revealFile(fileId)));
+      items.push(
+        await item(REVEAL_LABEL, () => {
+          const dir = file.path.substring(0, file.path.lastIndexOf('/'));
+          invoke('open_external', { url: `file://${dir}` }).catch(() => {});
+        }),
+      );
+      items.push(await sep());
+      items.push(
+        await item('Copy Path', () => {
+          invoke('write_clipboard', { text: file.path }).catch(() => {});
+        }),
+      );
+    });
+  }
+
+  function hide() {
+    _token += 1;
+  }
+
+  window.addEventListener('blur', hide);
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (e.button !== 2) hide();
+    },
+    true,
+  );
+
+  return { show, showForNodes, showEmpty, showForRoot, showAddFolder, showForTab, hide };
 })();

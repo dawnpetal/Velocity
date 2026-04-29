@@ -31,32 +31,32 @@ const timeline = (() => {
     _syncSize(file);
   }
   function _syncSize(file) {
-    const sizeEl = document.getElementById("statusFileSize");
-    const sepEl = document.getElementById("statusFileSizeSep");
+    const sizeEl = document.getElementById('statusFileSize');
+    const sepEl = document.getElementById('statusFileSizeSep');
     if (!file || file.preview) {
-      if (sizeEl) sizeEl.style.display = "none";
-      if (sepEl) sepEl.style.display = "none";
+      if (sizeEl) sizeEl.style.display = 'none';
+      if (sepEl) sepEl.style.display = 'none';
       return;
     }
     const bytes = file.content != null ? new Blob([file.content]).size : 0;
     if (sizeEl) {
       sizeEl.textContent = FormatHelpers.fmtBytes(bytes);
-      sizeEl.style.display = "";
+      sizeEl.style.display = '';
     }
-    if (sepEl) sepEl.style.display = "";
+    if (sepEl) sepEl.style.display = '';
   }
   function refreshSize() {
     _syncSize(_activeId ? state.getFile(_activeId) : null);
   }
   function clearActive() {
     document
-      .querySelectorAll(".tl-entry-active")
-      .forEach((r) => r.classList.remove("tl-entry-active"));
+      .querySelectorAll('.tl-entry-active')
+      .forEach((r) => r.classList.remove('tl-entry-active'));
   }
   function _render() {
-    const list = document.getElementById("tlList");
+    const list = document.getElementById('tlList');
     if (!list) return;
-    list.innerHTML = "";
+    list.innerHTML = '';
     const file = _activeId ? state.getFile(_activeId) : null;
     if (!file) {
       list.innerHTML = '<div class="tl-empty">No file open</div>';
@@ -64,44 +64,49 @@ const timeline = (() => {
     }
     const h = _histories.get(_activeId);
     if (!h?.length) {
-      list.innerHTML =
-        '<div class="tl-empty">Save a file to start tracking</div>';
+      list.innerHTML = '<div class="tl-empty">Save a file to start tracking</div>';
       return;
     }
     h.forEach((entry, idx) => {
-      const row = DomHelpers.el(
-        "div",
-        "tl-entry" + (idx === 0 ? " tl-entry-latest" : ""),
-      );
-      const spine = DomHelpers.el("span", "tl-spine");
-      const dot = DomHelpers.el(
-        "span",
-        "tl-dot" + (idx === 0 ? " tl-dot-latest" : ""),
-      );
-      const info = DomHelpers.el("div", "tl-entry-info");
+      const row = DomHelpers.el('div', 'tl-entry' + (idx === 0 ? ' tl-entry-latest' : ''));
+      const spine = DomHelpers.el('span', 'tl-spine');
+      const dot = DomHelpers.el('span', 'tl-dot' + (idx === 0 ? ' tl-dot-latest' : ''));
+      const info = DomHelpers.el('div', 'tl-entry-info');
       const label = DomHelpers.el(
-        "span",
-        "tl-label",
-        idx === 0 ? "Latest save" : `Version ${h.length - idx}`,
+        'span',
+        'tl-label',
+        idx === 0 ? 'Latest save' : `Version ${h.length - idx}`,
       );
-      const time = DomHelpers.el(
-        "span",
-        "tl-time",
-        FormatHelpers.relTimeSecs(entry.at),
-      );
-      time.title = new Date(entry.at).toLocaleString();
-      info.append(label, time);
-      row.append(spine, dot, info);
-      row.addEventListener("click", () => {
-        const wasActive = row.classList.contains("tl-entry-active");
+      const time = DomHelpers.el('span', 'tl-time', FormatHelpers.relTimeSecs(entry.at));
+      const restoreBtn = DomHelpers.el('button', 'tl-restore', 'Restore');
+      restoreBtn.title = 'Restore this version';
+      restoreBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const confirmed = await modal.ask(
+          'Restore Version',
+          `Replace the current editor contents with this saved version of <strong>${helpers.escapeHtml(file.name)}</strong>?`,
+          ['Restore', 'Cancel'],
+        );
+        if (confirmed !== 'Restore') return;
+        editor.restoreTimelineContent(_activeId, entry.content);
         list
-          .querySelectorAll(".tl-entry-active")
-          .forEach((r) => r.classList.remove("tl-entry-active"));
+          .querySelectorAll('.tl-entry-active')
+          .forEach((r) => r.classList.remove('tl-entry-active'));
+        toast.show('Version restored', 'ok', 1200);
+      });
+      time.title = new Date(entry.at).toLocaleString();
+      info.append(label, time, restoreBtn);
+      row.append(spine, dot, info);
+      row.addEventListener('click', () => {
+        const wasActive = row.classList.contains('tl-entry-active');
+        list
+          .querySelectorAll('.tl-entry-active')
+          .forEach((r) => r.classList.remove('tl-entry-active'));
         if (wasActive) {
           editor.hideDiff();
           return;
         }
-        row.classList.add("tl-entry-active");
+        row.classList.add('tl-entry-active');
         editor.showDiff(
           entry.name ?? file.name,
           entry.content,
@@ -112,55 +117,59 @@ const timeline = (() => {
     });
   }
   function init() {
-    const header = document.getElementById("tlHeader");
-    const body = document.getElementById("tlBody");
-    const arrow = document.getElementById("tlArrow");
-    const panel = document.getElementById("sidebarBottom");
-    if (!header) return;
+    const header = document.getElementById('tlHeader');
+    const body = document.getElementById('tlBody');
+    const arrow = document.getElementById('tlArrow');
+    if (!header || !body) return;
+    const section = header.closest('.sb-section');
     _expanded = true;
-    arrow.classList.add("open");
-    let _savedHeight = null;
-    header.addEventListener("click", () => {
+    section?.classList.remove('is-collapsed');
+    arrow?.classList.add('open');
+    const toggle = () => {
       _expanded = !_expanded;
-      if (_expanded) {
-        body.style.display = "";
-        if (_savedHeight !== null) panel.style.height = _savedHeight;
-        panel.style.minHeight = "";
-      } else {
-        _savedHeight = panel.style.height || panel.offsetHeight + "px";
-        body.style.display = "none";
-        const headerH = header.offsetHeight;
-        const resizerH =
-          document.getElementById("sidebarBottomResizer")?.offsetHeight ?? 4;
-        panel.style.height = headerH + resizerH + "px";
-        panel.style.minHeight = headerH + resizerH + "px";
+      body.hidden = !_expanded;
+      section?.classList.toggle('is-collapsed', !_expanded);
+      arrow?.classList.toggle('open', _expanded);
+      header.setAttribute('aria-expanded', String(_expanded));
+      if (_expanded && !panel.dataset.userResized) {
+        panel.style.height = '360px';
       }
-      arrow.classList.toggle("open", _expanded);
-      header.setAttribute("aria-expanded", String(_expanded));
+      const allCollapsed = !panel.querySelector('.sb-section:not(.is-collapsed)');
+      if (allCollapsed) {
+        panel.style.height = '';
+        delete panel.dataset.userResized;
+      }
+    };
+    header.addEventListener('click', toggle);
+    header.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      toggle();
     });
     _setupResizer();
   }
   function _setupResizer() {
-    const resizer = document.getElementById("sidebarBottomResizer");
-    const panel = document.getElementById("sidebarBottom");
+    const resizer = document.getElementById('sidebarBottomResizer');
+    const panel = document.getElementById('sidebarBottom');
     if (!resizer || !panel) return;
     let startY, startH;
-    resizer.addEventListener("mousedown", (e) => {
-      if (!_expanded) return;
+    resizer.addEventListener('mousedown', (e) => {
+      const anyExpanded = panel.querySelector('.sb-section:not(.is-collapsed)');
+      if (!anyExpanded) return;
+      panel.dataset.userResized = 'true';
       startY = e.clientY;
       startH = panel.offsetHeight;
-      resizer.classList.add("dragging");
+      resizer.classList.add('dragging');
       const onMove = (e) => {
-        panel.style.height =
-          Math.max(28, Math.min(480, startH - (e.clientY - startY))) + "px";
+        panel.style.height = Math.max(86, Math.min(480, startH - (e.clientY - startY))) + 'px';
       };
       const onUp = () => {
-        resizer.classList.remove("dragging");
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("mouseup", onUp);
+        resizer.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
       };
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup", onUp);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     });
   }
   function snapshotByPath() {

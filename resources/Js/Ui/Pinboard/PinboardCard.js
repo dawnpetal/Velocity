@@ -16,92 +16,85 @@ const PinboardCard = (() => {
   };
   function buildCard(snippet, context) {
     const { activeEditorIds, onRun, onOpenInEditor, onFilterByTag } = context;
-    const card = document.createElement("div");
-    card.className = "pb-card";
+    const card = document.createElement('div');
+    card.className = 'pb-card';
     card.dataset.id = snippet.id;
-    const header = document.createElement("div");
-    header.className = "pb-card-header";
-    const labelWrap = DomHelpers.el("div", "pb-label-wrap");
-    const labelEl = DomHelpers.el("span", "pb-card-label", snippet.label);
-    labelEl.title = "Double-click to rename";
-    labelEl.addEventListener("dblclick", (e) => {
+    const header = document.createElement('div');
+    header.className = 'pb-card-header';
+    const labelWrap = DomHelpers.el('div', 'pb-label-wrap');
+    const labelEl = DomHelpers.el('span', 'pb-card-label', snippet.label);
+    labelEl.title = 'Double-click to rename';
+    labelEl.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       startInlineRename(labelEl, snippet, context);
     });
-    const tagsEl = DomHelpers.el("div", "pb-tags");
+    const tagsEl = DomHelpers.el('div', 'pb-tags');
     (snippet.tags ?? []).forEach((tag) => {
-      const tagEl = DomHelpers.el("span", "pb-tag", tag);
-      tagEl.addEventListener("click", (e) => {
+      const tagEl = DomHelpers.el('span', 'pb-tag', tag);
+      tagEl.addEventListener('click', (e) => {
         e.stopPropagation();
         onFilterByTag(tag);
       });
       tagsEl.appendChild(tagEl);
     });
     labelWrap.append(labelEl, tagsEl);
-    const meta = DomHelpers.el("div", "pb-card-meta");
+    const meta = DomHelpers.el('div', 'pb-card-meta');
     if (snippet.runCount) {
-      const runCountEl = DomHelpers.el(
-        "span",
-        "pb-meta-item",
-        snippet.runCount + "x",
-      );
-      runCountEl.title = "Times executed";
+      const runCountEl = DomHelpers.el('span', 'pb-meta-item', snippet.runCount + 'x');
+      runCountEl.title = 'Times executed';
       meta.appendChild(runCountEl);
     }
     if (snippet.lastRun) {
       const lastRunEl = DomHelpers.el(
-        "span",
-        "pb-meta-item",
+        'span',
+        'pb-meta-item',
         FormatHelpers.relTime(snippet.lastRun),
       );
-      lastRunEl.title = "Last executed";
+      lastRunEl.title = 'Last executed';
       meta.appendChild(lastRunEl);
     }
     if (activeEditorIds.has(snippet.id)) {
-      meta.appendChild(DomHelpers.el("span", "pb-editing-badge", "editing"));
+      meta.appendChild(DomHelpers.el('span', 'pb-editing-badge', 'editing'));
     }
-    const actions = DomHelpers.el("div", "pb-card-actions");
-    const actionsMeta = DomHelpers.el("div", "pb-card-actions-meta");
-    const actionsBtns = DomHelpers.el("div", "pb-card-actions-btns");
-    const runBtn = document.createElement("button");
-    runBtn.className = "pb-btn pb-btn-run";
-    runBtn.title = "Run  |  Shift+click to run and open output";
-    runBtn.innerHTML = SVG.run + "<span>Run</span>";
-    runBtn.addEventListener("click", (e) => {
+    const actions = DomHelpers.el('div', 'pb-card-actions');
+    const actionsMeta = DomHelpers.el('div', 'pb-card-actions-meta');
+    const actionsBtns = DomHelpers.el('div', 'pb-card-actions-btns');
+    const runBtn = document.createElement('button');
+    runBtn.className = 'pb-btn pb-btn-run';
+    runBtn.title = 'Run  |  Shift+click to run and open output';
+    runBtn.innerHTML = SVG.run + '<span>Run</span>';
+    runBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       onRun(snippet, e.shiftKey);
     });
-    const editBtn = document.createElement("button");
-    editBtn.className = "pb-btn pb-btn-edit";
-    editBtn.title = "Open in editor";
+    const editBtn = document.createElement('button');
+    editBtn.className = 'pb-btn pb-btn-edit';
+    editBtn.title = 'Open in editor';
     editBtn.innerHTML = SVG.edit;
-    editBtn.addEventListener("click", (e) => {
+    editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       onOpenInEditor(snippet);
     });
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "pb-btn pb-btn-copy";
-    copyBtn.title = "Copy code";
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'pb-btn pb-btn-copy';
+    copyBtn.title = 'Copy code';
     copyBtn.innerHTML = SVG.copy;
-    copyBtn.addEventListener("click", async (e) => {
+    copyBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       try {
-        await window.__TAURI__.core.invoke("write_clipboard", {
+        await window.__TAURI__.core.invoke('write_clipboard', {
           text: snippet.code,
         });
-        copyBtn.classList.add("pb-btn-flash");
-        setTimeout(
-          () => copyBtn.classList.remove("pb-btn-flash"),
-          COPY_FLASH_DURATION,
-        );
-        toast.show("Copied", "ok", 1000);
+        copyBtn.classList.add('pb-btn-flash');
+        setTimeout(() => copyBtn.classList.remove('pb-btn-flash'), COPY_FLASH_DURATION);
+        toast.show('Copied', 'ok', 1000);
       } catch {}
     });
-    const moreBtn = document.createElement("button");
-    moreBtn.className = "pb-btn pb-btn-more";
-    moreBtn.title = "More";
+    const moreBtn = document.createElement('button');
+    moreBtn.className = 'pb-btn pb-btn-more';
+    moreBtn.title = 'More';
     moreBtn.innerHTML = SVG.dots;
-    moreBtn.addEventListener("click", (e) => {
+    moreBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       showCardMenu(e, snippet, context);
     });
@@ -109,54 +102,54 @@ const PinboardCard = (() => {
     actionsBtns.append(editBtn, copyBtn, moreBtn);
     actions.append(runBtn, actionsBtns);
     header.append(labelWrap);
-    const preview = document.createElement("pre");
-    preview.className = "pb-code-preview";
+    const preview = document.createElement('pre');
+    preview.className = 'pb-code-preview';
     _renderPreviewContent(preview, snippet.code);
-    preview.addEventListener("click", () => onOpenInEditor(snippet));
-    preview.title = "Click to edit";
-    const statusBar = DomHelpers.el("div", "pb-status-bar");
-    statusBar.id = "pb-status-" + snippet.id;
+    preview.addEventListener('click', () => onOpenInEditor(snippet));
+    preview.title = 'Click to edit';
+    const statusBar = DomHelpers.el('div', 'pb-status-bar');
+    statusBar.id = 'pb-status-' + snippet.id;
     card.append(header, preview, actions, statusBar);
     return card;
   }
   function _renderPreviewContent(preview, code) {
-    const lines = code.split("\n");
-    preview.textContent = lines.slice(0, PREVIEW_LINE_LIMIT).join("\n");
+    const lines = code.split('\n');
+    preview.textContent = lines.slice(0, PREVIEW_LINE_LIMIT).join('\n');
     if (lines.length > PREVIEW_LINE_LIMIT) {
       const overflow = DomHelpers.el(
-        "span",
-        "pb-preview-more",
-        " +" + (lines.length - PREVIEW_LINE_LIMIT) + " lines",
+        'span',
+        'pb-preview-more',
+        ' +' + (lines.length - PREVIEW_LINE_LIMIT) + ' lines',
       );
       preview.appendChild(overflow);
     }
   }
   function showCardMenu(e, snippet, context) {
     const { snippets, findIdx, onSave, onRender, activeEditorIds } = context;
-    const menu = document.getElementById("ctxMenu");
+    const menu = document.getElementById('ctxMenu');
     if (!menu) return;
-    menu.innerHTML = "";
+    menu.innerHTML = '';
     const addItem = (label, icon, callback, isDanger) => {
-      const btn = document.createElement("button");
-      btn.className = "ctx-item" + (isDanger ? " danger" : "");
-      btn.innerHTML = icon + "<span>" + label + "</span>";
-      btn.addEventListener("click", () => {
-        menu.classList.remove("open");
+      const btn = document.createElement('button');
+      btn.className = 'ctx-item' + (isDanger ? ' danger' : '');
+      btn.innerHTML = icon + '<span>' + label + '</span>';
+      btn.addEventListener('click', () => {
+        menu.classList.remove('open');
         callback();
       });
       menu.appendChild(btn);
     };
-    addItem("Rename", SVG.edit, () => {
+    addItem('Rename', SVG.edit, () => {
       const labelEl = document.querySelector(
         '.pb-card[data-id="' + snippet.id + '"] .pb-card-label',
       );
       if (labelEl) startInlineRename(labelEl, snippet, context);
     });
-    addItem("Edit Tags", SVG.tag, () => editTags(snippet, context));
-    addItem("Duplicate", SVG.duplicate, () => {
+    addItem('Edit Tags', SVG.tag, () => editTags(snippet, context));
+    addItem('Duplicate', SVG.duplicate, () => {
       const duplicated = Object.assign({}, snippet, {
         id: helpers.uid(),
-        label: snippet.label + " copy",
+        label: snippet.label + ' copy',
         runCount: 0,
         lastRun: null,
         createdAt: Date.now(),
@@ -166,17 +159,17 @@ const PinboardCard = (() => {
       onRender();
     });
     menu.appendChild(DomHelpers.sep());
-    addItem("Copy Code", SVG.copy, async () => {
+    addItem('Copy Code', SVG.copy, async () => {
       try {
-        await window.__TAURI__.core.invoke("write_clipboard", {
+        await window.__TAURI__.core.invoke('write_clipboard', {
           text: snippet.code,
         });
-        toast.show("Copied", "ok", 1200);
+        toast.show('Copied', 'ok', 1200);
       } catch {}
     });
     menu.appendChild(DomHelpers.sep());
     addItem(
-      "Delete",
+      'Delete',
       SVG.delete,
       () => {
         const idx = findIdx(snippet.id);
@@ -189,31 +182,26 @@ const PinboardCard = (() => {
       },
       true,
     );
-    menu.classList.add("open");
-    menu.style.left = "0px";
-    menu.style.top = "0px";
+    menu.classList.add('open');
+    menu.style.left = '0px';
+    menu.style.top = '0px';
     requestAnimationFrame(() => {
       const { width, height } = menu.getBoundingClientRect();
-      menu.style.left =
-        Math.min(e.clientX, window.innerWidth - width - 4) + "px";
-      menu.style.top =
-        Math.min(e.clientY, window.innerHeight - height - 4) + "px";
+      menu.style.left = Math.min(e.clientX, window.innerWidth - width - 4) + 'px';
+      menu.style.top = Math.min(e.clientY, window.innerHeight - height - 4) + 'px';
     });
     const closeOnOutsideClick = (ev) => {
       if (!menu.contains(ev.target)) {
-        menu.classList.remove("open");
-        document.removeEventListener("click", closeOnOutsideClick, true);
+        menu.classList.remove('open');
+        document.removeEventListener('click', closeOnOutsideClick, true);
       }
     };
-    setTimeout(
-      () => document.addEventListener("click", closeOnOutsideClick, true),
-      0,
-    );
+    setTimeout(() => document.addEventListener('click', closeOnOutsideClick, true), 0);
   }
   function startInlineRename(labelEl, snippet, context) {
     const { snippets, findIdx, onSave, onRender } = context;
-    const input = document.createElement("input");
-    input.className = "pb-rename-input";
+    const input = document.createElement('input');
+    input.className = 'pb-rename-input';
     input.value = snippet.label;
     labelEl.replaceWith(input);
     input.focus();
@@ -227,83 +215,81 @@ const PinboardCard = (() => {
       }
       onRender();
     };
-    input.addEventListener("blur", commit, {
+    input.addEventListener('blur', commit, {
       once: true,
     });
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        input.removeEventListener("blur", commit);
+        input.removeEventListener('blur', commit);
         commit();
       }
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
-        input.removeEventListener("blur", commit);
+        input.removeEventListener('blur', commit);
         onRender();
       }
     });
   }
   function editTags(snippet, context) {
     const { snippets, findIdx, onSave, onRender } = context;
-    const box = document.getElementById("modal");
-    const titleEl = document.getElementById("modalTitle");
-    const bodyEl = document.getElementById("modalBody");
-    const actionsEl = document.getElementById("modalActions");
-    titleEl.textContent = "Edit Tags";
+    const box = document.getElementById('modal');
+    const titleEl = document.getElementById('modalTitle');
+    const bodyEl = document.getElementById('modalBody');
+    const actionsEl = document.getElementById('modalActions');
+    titleEl.textContent = 'Edit Tags';
     bodyEl.innerHTML =
       '<p style="font-size:12px;color:var(--text2);margin:0 0 8px">Comma-separated tags (e.g. debug, movement)</p><input id="pbTagInput" class="pb-tag-input" value="' +
-      helpers.escapeHtml((snippet.tags ?? []).join(", ")) +
+      helpers.escapeHtml((snippet.tags ?? []).join(', ')) +
       '" placeholder="debug, movement">';
-    actionsEl.innerHTML = "";
-    box.classList.add("open");
-    const input = document.getElementById("pbTagInput");
+    actionsEl.innerHTML = '';
+    box.classList.add('open');
+    const input = document.getElementById('pbTagInput');
     input.focus();
     input.select();
     const save = () => {
       const idx = findIdx(snippet.id);
       if (idx !== -1)
         snippets[idx].tags = input.value
-          .split(",")
+          .split(',')
           .map((t) => t.trim())
           .filter(Boolean);
       onSave().catch(() => {});
-      box.classList.remove("open");
+      box.classList.remove('open');
       onRender();
     };
-    const cancel = () => box.classList.remove("open");
-    const saveBtn = DomHelpers.btn("Save", "modal-btn primary", save);
-    const cancelBtn = DomHelpers.btn("Cancel", "modal-btn secondary", cancel);
+    const cancel = () => box.classList.remove('open');
+    const saveBtn = DomHelpers.btn('Save', 'modal-btn primary', save);
+    const cancelBtn = DomHelpers.btn('Cancel', 'modal-btn secondary', cancel);
     actionsEl.append(cancelBtn, saveBtn);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") save();
-      if (e.key === "Escape") cancel();
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') cancel();
     });
   }
   function buildEmpty(onAddNew) {
-    const el = document.createElement("div");
-    el.className = "pb-empty";
+    const el = document.createElement('div');
+    el.className = 'pb-empty';
     el.innerHTML = [
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="32" height="32">',
       '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>',
       '<polyline points="14 2 14 8 20 8"/>',
       '<line x1="12" y1="18" x2="12" y2="12"/>',
       '<line x1="9" y1="15" x2="15" y2="15"/>',
-      "</svg>",
-      "<span>No snippets yet</span>",
-      "<small>Right-click any file in the explorer to pin it, or create one here.</small>",
+      '</svg>',
+      '<span>No snippets yet</span>',
+      '<small>Right-click any file in the explorer to pin it, or create one here.</small>',
       '<button class="pb-empty-btn">New Snippet</button>',
-    ].join("");
-    el.querySelector(".pb-empty-btn").addEventListener("click", onAddNew);
+    ].join('');
+    el.querySelector('.pb-empty-btn').addEventListener('click', onAddNew);
     return el;
   }
   function updatePreview(snippetId, newCode) {
-    const card = document.querySelector(
-      '.pb-card[data-id="' + snippetId + '"]',
-    );
+    const card = document.querySelector('.pb-card[data-id="' + snippetId + '"]');
     if (!card) return;
-    const preview = card.querySelector(".pb-code-preview");
+    const preview = card.querySelector('.pb-code-preview');
     if (preview) _renderPreviewContent(preview, newCode);
-    const badge = card.querySelector(".pb-editing-badge");
+    const badge = card.querySelector('.pb-editing-badge');
     if (badge) badge.remove();
   }
   return {

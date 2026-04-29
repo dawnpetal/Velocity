@@ -39,7 +39,6 @@ pub struct UiSettings {
     pub minimap: Option<bool>,
     #[serde(rename = "lineNumbers")]
     pub line_numbers: Option<bool>,
-    
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub executor: Option<String>,
 }

@@ -1,20 +1,17 @@
 const injector = (() => {
   async function execute(code) {
-    const executor = window.__velocityExecutor ?? "hydrogen";
-    await window.__TAURI__.core.invoke("inject_script", {
-      code,
-      executor,
-    });
+    await window.__TAURI__.core.invoke('inject_script', { code });
+  }
+  async function executeWithClientBridge(code) {
+    await window.__TAURI__.core.invoke('inject_script_with_client_bridge', { code });
   }
   async function getPort() {
-    return await window.__TAURI__.core.invoke("get_active_port");
+    return await window.__TAURI__.core.invoke('get_active_port');
+  }
+  async function getClientBridgePort() {
+    return await window.__TAURI__.core.invoke('get_client_bridge_port');
   }
   function reset() {}
   async function discover() {}
-  return {
-    discover,
-    execute,
-    getPort,
-    reset,
-  };
+  return { discover, execute, executeWithClientBridge, getPort, getClientBridgePort, reset };
 })();

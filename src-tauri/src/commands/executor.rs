@@ -1,176 +1,57 @@
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
-use std::io::Write;
-use std::net::TcpStream;
-use std::sync::Mutex;
+use std::sync::Arc;
+
 use tauri::{AppHandle, Emitter, State};
-use tokio::task::JoinSet;
 
-use crate::state::{PortCache, SharedClient};
+use crate::app::AppContext;
+use crate::managers::ExecutorManager;
+use crate::models::ExecutorKind;
 
-const HYDRO_PORT_START: u16 = 6969;
-const HYDRO_PORT_END: u16 = 7069;
-const HYDRO_SECRET: &str = "0xdeadbeef";
-
-const OPIUM_PORTS: &[u16] = &[8392, 8393, 8394, 8395, 8396, 8397];
-
-async fn probe_hydro(client: &reqwest::Client, port: u16) -> Option<u16> {
-    let ok = async {
-        let text = client
-            .get(format!("http://127.0.0.1:{}/secret", port))
-            .send()
-            .await
-            .ok()?
-            .text()
-            .await
-            .ok()?;
-        Some(text.trim() == HYDRO_SECRET)
-    }
-    .await
-    .unwrap_or(false);
-    if ok {
-        Some(port)
-    } else {
-        None
-    }
-}
-
-async fn discover_hydro(client: &reqwest::Client) -> anyhow::Result<u16> {
-    let mut set = JoinSet::new();
-    for port in HYDRO_PORT_START..=HYDRO_PORT_END {
-        let c = client.clone();
-        set.spawn(async move { probe_hydro(&c, port).await });
-    }
-    while let Some(result) = set.join_next().await {
-        if let Ok(Some(port)) = result {
-            set.abort_all();
-            return Ok(port);
-        }
-    }
-    Err(anyhow::anyhow!(
-        "Hydrogen not found on ports {HYDRO_PORT_START}-{HYDRO_PORT_END}"
-    ))
-}
-
-async fn resolve_hydro_port(client: &reqwest::Client, cache: &PortCache) -> anyhow::Result<u16> {
-    let cached = *cache
-        .0
-        .lock()
-        .map_err(|_| anyhow::anyhow!("port cache poisoned"))?;
-    if let Some(port) = cached {
-        if probe_hydro(client, port).await.is_some() {
-            return Ok(port);
-        }
-        *cache
-            .0
-            .lock()
-            .map_err(|_| anyhow::anyhow!("port cache poisoned"))? = None;
-    }
-    let port = discover_hydro(client).await?;
-    *cache
-        .0
-        .lock()
-        .map_err(|_| anyhow::anyhow!("port cache poisoned"))? = Some(port);
-    Ok(port)
-}
-
-pub async fn inject_hydro_inner(
-    code: String,
-    client: &reqwest::Client,
-    cache: &PortCache,
-) -> anyhow::Result<()> {
-    let port = resolve_hydro_port(client, cache).await?;
-    let resp = client
-        .post(format!("http://127.0.0.1:{}/execute", port))
-        .header("Content-Type", "text/plain")
-        .body(code)
-        .send()
-        .await?;
-    if !resp.status().is_success() {
-        *cache
-            .0
-            .lock()
-            .map_err(|_| anyhow::anyhow!("port cache poisoned"))? = None;
-        return Err(anyhow::anyhow!(
-            "Hydrogen execute returned {}",
-            resp.status()
-        ));
-    }
-    Ok(())
-}
-
-fn opium_compress(data: &[u8]) -> anyhow::Result<Vec<u8>> {
-    let mut enc = ZlibEncoder::new(Vec::new(), Compression::default());
-    enc.write_all(data)?;
-    Ok(enc.finish()?)
-}
-
-fn build_opium_payload(code: &str) -> String {
-    let t = code.trim_start();
-    if t.starts_with("OpiumwareScript ") || t == "NULL" {
-        code.to_string()
-    } else {
-        format!("OpiumwareScript {}", code)
-    }
-}
-
-fn exec_opium_blocking(code: String) -> anyhow::Result<()> {
-    let payload = build_opium_payload(&code);
-    for &port in OPIUM_PORTS {
-        if let Ok(mut stream) = TcpStream::connect(format!("127.0.0.1:{}", port)) {
-            if payload != "NULL" {
-                let compressed = opium_compress(payload.as_bytes())?;
-                stream.write_all(&compressed)?;
-            }
-            return Ok(());
-        }
-    }
-    Err(anyhow::anyhow!(
-        "Opiumware not found on ports {:?}",
-        OPIUM_PORTS
-    ))
-}
-
-async fn exec_opium(code: String) -> anyhow::Result<()> {
-    tauri::async_runtime::spawn_blocking(move || exec_opium_blocking(code))
-        .await
-        .map_err(|e| anyhow::anyhow!("Opiumware task join error: {e}"))?
-}
-
-pub async fn exec_opium_shortcut(code: String) -> anyhow::Result<()> {
-    exec_opium(code).await
+#[tauri::command]
+pub async fn inject_script(code: String, ctx: State<'_, AppContext>) -> Result<(), String> {
+    ctx.Executor.inject(&code).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn inject_script(
+pub async fn inject_script_with_client_bridge(
     code: String,
-    port_cache: State<'_, PortCache>,
-    client: State<'_, SharedClient>,
+    app: AppHandle,
+    ctx: State<'_, AppContext>,
 ) -> Result<(), String> {
-    let kind = crate::services::load_ui_state()
-        .and_then(|ui| ui.settings.executor)
-        .unwrap_or_else(|| "opiumware".to_string())
-        .trim()
-        .to_ascii_lowercase();
-
-    match kind.as_str() {
-        "opiumware" | "opium" => exec_opium(code).await.map_err(|e| e.to_string()),
-        _ => inject_hydro_inner(code, &client.0, &port_cache)
-            .await
-            .map_err(|e| e.to_string()),
-    }
+    let wrapped = ctx
+        .ClientBridge
+        .wrap_script(app, &code)
+        .await
+        .map_err(|e| e.to_string())?;
+    ctx.Executor
+        .inject(&wrapped)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_active_port(port_cache: State<PortCache>) -> Option<u16> {
-    *port_cache.0.lock().unwrap()
+pub fn get_active_port(ctx: State<'_, AppContext>) -> Option<u16> {
+    ctx.Executor.get_active_port()
 }
 
 #[tauri::command]
-pub fn clear_port_cache(port_cache: State<PortCache>) {
-    if let Ok(mut cache) = port_cache.0.lock() {
-        *cache = None;
-    }
+pub async fn get_client_bridge_port(
+    app: AppHandle,
+    ctx: State<'_, AppContext>,
+) -> Result<u16, String> {
+    ctx.ClientBridge
+        .ensure_started(app)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn clear_port_cache(ctx: State<'_, AppContext>) {
+    ctx.Executor.clear_port_cache();
+}
+
+#[tauri::command]
+pub fn switch_executor(kind: String, ctx: State<'_, AppContext>) {
+    ctx.Executor.switch(ExecutorKind::from_setting(&kind));
 }
 
 #[tauri::command]
@@ -184,17 +65,7 @@ pub fn focus_roblox() -> Result<(), String> {
         return Ok(());
     }
     #[cfg(not(target_os = "macos"))]
-    {
-        Err("Not supported on this platform".to_string())
-    }
-}
-
-fn is_roblox_running() -> bool {
-    std::process::Command::new("pgrep")
-        .args(["-x", "RobloxPlayer"])
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+    Err("focus_roblox is not supported on this platform".to_string())
 }
 
 #[cfg(target_os = "macos")]
@@ -211,81 +82,91 @@ pub fn is_roblox_focused() -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(not(target_os = "macos"))]
+pub fn is_roblox_focused() -> bool {
+    false
+}
 
-pub fn start_autoexec_watcher(app: AppHandle) {
+fn is_roblox_running() -> bool {
+    std::process::Command::new("pgrep")
+        .args(["-x", "RobloxPlayer"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+fn autoexec_enabled() -> bool {
+    crate::paths::internals_dir()
+        .ok()
+        .map(|d| d.join("autoexec_meta.json"))
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get("enabled").and_then(|e| e.as_bool()))
+        .unwrap_or(false)
+}
+
+pub fn start_autoexec_watcher(app: AppHandle, executor: Arc<ExecutorManager>) {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .expect("autoexec runtime");
+            .expect("autoexec watcher runtime");
 
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_millis(400))
-            .build()
-            .expect("autoexec http client");
-
-        let port_cache = PortCache(Mutex::new(None));
         let mut was_running = false;
 
         loop {
             let is_running = is_roblox_running();
+
             if is_running != was_running {
                 was_running = is_running;
                 let _ = app.emit("roblox:state", serde_json::json!({ "running": is_running }));
 
-                if is_running {
-                    let meta_enabled = crate::paths::internals_dir()
-                        .ok()
-                        .map(|d| d.join("autoexec_meta.json"))
-                        .and_then(|p| std::fs::read_to_string(p).ok())
-                        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
-                        .and_then(|v| v.get("enabled").and_then(|e| e.as_bool()))
-                        .unwrap_or(false);
-
-                    if meta_enabled {
-                        let executor = crate::services::load_ui_state()
-                            .and_then(|ui| ui.settings.executor)
-                            .unwrap_or_else(|| "opium".to_string())
-                            .to_ascii_lowercase();
-
-                        let dir_opt = crate::paths::home_dir().ok().map(|home| {
-                            match executor.as_str() {
-                                "opiumware" | "opium" => home.join("Opiumware").join("autoexec"),
-                                _ => home.join("Hydrogen").join("workspace").join("autoexecute"),
-                            }
-                        });
-
-                        if let Some(dir) = dir_opt {
-                            if let Ok(entries) = std::fs::read_dir(&dir) {
-                                for entry in entries.flatten() {
-                                    let path = entry.path();
-                                    if path.extension().and_then(|e| e.to_str()) != Some("lua") {
-                                        continue;
-                                    }
-                                    if path.file_name().and_then(|n| n.to_str()) == Some("Velocity_multiexec.lua") {
-                                        continue;
-                                    }
-                                    if let Ok(code) = std::fs::read_to_string(&path) {
-                                        match executor.as_str() {
-                                            "opiumware" | "opium" => {
-                                                let _ = rt.block_on(exec_opium(code));
-                                            }
-                                            _ => {
-                                                let _ = rt.block_on(inject_hydro_inner(
-                                                    code,
-                                                    &client,
-                                                    &port_cache,
-                                                ));
-                                            }
-                                        }
-                                    }
+                if is_running && autoexec_enabled() {
+                    if let Some(dir) = executor.autoexec_dir() {
+                        if let Ok(entries) = std::fs::read_dir(&dir) {
+                            for entry in entries.flatten() {
+                                let path = entry.path();
+                                let is_lua =
+                                    path.extension().and_then(|e| e.to_str()) == Some("lua");
+                                let is_multiexec = path.file_name().and_then(|n| n.to_str())
+                                    == Some("VelocityUI_multiexec.lua");
+                                if !is_lua || is_multiexec {
+                                    continue;
+                                }
+                                if let Ok(code) = std::fs::read_to_string(&path) {
+                                    let _ = rt.block_on(executor.inject(&code));
                                 }
                             }
                         }
                     }
                 }
             }
+
             std::thread::sleep(std::time::Duration::from_secs(2));
         }
     });
+}
+
+#[tauri::command]
+pub fn get_executor_autoexec_dir(ctx: State<'_, AppContext>) -> Result<String, String> {
+    let dir = ctx
+        .Executor
+        .autoexec_dir()
+        .ok_or_else(|| "executor has no autoexec directory".to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    dir.to_str()
+        .map(String::from)
+        .ok_or_else(|| "autoexec path is not valid UTF-8".to_string())
+}
+
+#[tauri::command]
+pub async fn get_executor_status(ctx: State<'_, AppContext>) -> Result<serde_json::Value, String> {
+    let display_name = ctx.Executor.active_display_name();
+    let kind = ctx.Executor.active_extension_kind();
+    let is_alive = ctx.Executor.is_alive().await;
+    Ok(serde_json::json!({
+        "kind": format!("{:?}", kind).to_lowercase(),
+        "displayName": display_name,
+        "isAlive": is_alive,
+    }))
 }

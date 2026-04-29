@@ -1,5 +1,5 @@
 [package]
-name = "velocity"
+name = "velocityui"
 version = "1.0.0"
 edition = "2021"
 
@@ -8,15 +8,15 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["macos-private-api", "tray-icon", "devtools"] }
-tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-opener = "2"
-tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
+thiserror = "1"
+async-trait = "0.1"
 notify = "6"
 ignore = "0.4"
 regex = "1"

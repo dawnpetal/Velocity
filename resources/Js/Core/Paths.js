@@ -1,33 +1,43 @@
 const paths = (() => {
-  let _home = null;
-  let _velocity = null;
+  let _data = null;
+
   async function init() {
-    if (_home) return;
-    _home = await window.__TAURI__.core.invoke("get_home_dir");
-    _velocity = `${_home}/Velocity`;
-    try {
-      await window.__TAURI__.core.invoke("create_dir", {
-        path: _velocity,
-      });
-    } catch {}
+    if (_data) return;
+    _data = await window.__TAURI__.core.invoke('get_app_paths');
   }
+
   function _require(label) {
-    if (!_home) throw new Error(`paths.${label} accessed before paths.init()`);
+    if (!_data) throw new Error(`paths.${label} accessed before paths.init()`);
   }
+
+  function _get(key, label = key) {
+    _require(label);
+    return _data[key];
+  }
+
   function join(...parts) {
-    return parts.map((p) => p.replace(/\/+$/, "")).join("/");
+    return parts.map((p) => p.replace(/\/+$/, '')).join('/');
   }
+
   function sanitize(name) {
-    return name.replace(/[^a-zA-Z0-9_\-. ]/g, "_");
+    return name.replace(/[^a-zA-Z0-9_\-. ]/g, '_');
   }
+
   return {
     get home() {
-      _require("home");
-      return _home;
+      return _get('home');
     },
-    get velocityDir() {
-      _require("velocityDir");
-      return _velocity;
+    get velocityuiDir() {
+      return _get('velocityui', 'velocityuiDir');
+    },
+    get internals() {
+      return _get('internals');
+    },
+    get workspaces() {
+      return _get('workspaces');
+    },
+    get defaultWorkspace() {
+      return _get('defaultWorkspace');
     },
     join,
     sanitize,

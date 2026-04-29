@@ -1,11 +1,9 @@
 const editorController = (() => {
   function _syncStatus(file) {
-    document.getElementById("statusFile").textContent = file?.name ?? "";
-    const langEl = document.getElementById("statusLang");
-    if (langEl)
-      langEl.textContent = file
-        ? helpers.ext(file.name).toUpperCase() || "Plain"
-        : "";
+    const fileEl = document.getElementById('statusFile');
+    if (fileEl) fileEl.textContent = file?.name ?? '';
+    const langEl = document.getElementById('statusLang');
+    if (langEl) langEl.textContent = file ? helpers.ext(file.name).toUpperCase() || 'Plain' : '';
   }
   function renderEditor() {
     editor.render();
@@ -24,16 +22,30 @@ const editorController = (() => {
     renderEditor();
     ExplorerTree.render();
   }
+  async function _nextUntitledName() {
+    const usedNames = new Set(state.files.map((f) => (f.name ?? '').toLowerCase()));
+    let index = 1;
+    while (index <= 9999) {
+      const name = `Untitled~${index}.lua`;
+      if (!usedNames.has(name.toLowerCase())) {
+        const stat = await window.__TAURI__.core
+          .invoke('stat_path', { path: `${state.workDir}/${name}` })
+          .catch(() => ({ exists: false }));
+        if (!stat.exists) return name;
+      }
+      index += 1;
+    }
+    return `Untitled~${index}.lua`;
+  }
   async function newUntitledFile() {
     if (!state.workDir) {
-      modal.alert("No Folder Open", "Open a folder first.");
+      modal.alert('No Folder Open', 'Open a folder first.');
       return;
     }
-    const result = await fileManager
-      .createFile(state.workDir, `untitled_${Date.now()}.lua`)
-      .catch(console.error);
+    const name = await _nextUntitledName();
+    const result = await fileManager.createFile(state.workDir, name).catch(console.error);
     if (result) {
-      state.setActive(result.id);
+      state.setActive(result.id, { permanent: true, keepTabs: true });
       await workspaceController.refreshTree();
     }
   }
@@ -49,9 +61,9 @@ const editorController = (() => {
     }
   }
   function _setConnectionStatus(dotClass, text, connClass) {
-    const dot = document.getElementById("statusDot");
-    const connText = document.getElementById("statusConnText");
-    const conn = document.getElementById("statusConnection");
+    const dot = document.getElementById('statusDot');
+    const connText = document.getElementById('statusConnText');
+    const conn = document.getElementById('statusConnection');
     if (dot) dot.className = `status-dot ${dotClass}`;
     if (connText) connText.textContent = text;
     if (conn) conn.className = `status-item ${connClass}`;
@@ -59,24 +71,24 @@ const editorController = (() => {
   async function _execScript(script, filename) {
     try {
       await injector.execute(script);
-      const executor = window.__velocityExecutor ?? "hydrogen";
-      let statusText = "ok";
-      if (executor === "hydrogen") {
+      const executor = uiState.executor;
+      let statusText = 'ok';
+      if (executor === 'hydrogen') {
         const port = await injector.getPort();
-        statusText = port ? `Port ${port}` : "ok";
+        statusText = port ? `Port ${port}` : 'ok';
       }
-      _setConnectionStatus("ok", statusText, "ok");
+      _setConnectionStatus('ok', statusText, 'ok');
       await execHistory.push(script, filename);
-      eventBus.emit("script:executed", {
+      eventBus.emit('script:executed', {
         filename,
       });
     } catch (err) {
-      _setConnectionStatus("fail", "No server", "fail");
+      _setConnectionStatus('fail', 'No server', 'fail');
       injector.reset();
       const msg = err?.message || String(err);
-      if (msg) console_.log(msg, "fail");
-      if (msg) toast.show(msg, "fail", 3000);
-      eventBus.emit("script:failed", {
+      if (msg) console_.log(msg, 'fail');
+      if (msg) toast.show(msg, 'fail', 3000);
+      eventBus.emit('script:failed', {
         error: msg,
         filename,
       });
@@ -85,7 +97,7 @@ const editorController = (() => {
   async function executeScript() {
     const active = state.getActive();
     if (!active) {
-      modal.alert("Nothing to Execute", "Open a file first.");
+      modal.alert('Nothing to Execute', 'Open a file first.');
       return;
     }
     const miTargets = multiInstanceUI.getTargetsForRun?.();
@@ -96,33 +108,31 @@ const editorController = (() => {
         await multiInstance.sendScriptToMany(userIds, script);
         const n = miTargets.length;
         const label =
-          n === 1
-            ? miTargets[0].display_name || miTargets[0].username
-            : `${n} instances`;
-        toast.show(`Sent to ${label}`, "ok");
+          n === 1 ? miTargets[0].display_name || miTargets[0].username : `${n} instances`;
+        toast.show(`Sent to ${label}`, 'ok');
         await execHistory.push(script, active.name);
-        eventBus.emit("script:executed", {
+        eventBus.emit('script:executed', {
           userIds,
           filename: active.name,
         });
       } catch (err) {
-        toast.show(err.message, "fail", 3000);
+        toast.show(err.message, 'fail', 3000);
       }
       return;
     }
-    const btn = document.getElementById("btnExecute");
-    btn.disabled = true;
+    const btn = document.getElementById('btnExecute');
+    if (btn) btn.disabled = true;
     try {
-      _setConnectionStatus("warn connecting", "Scanning…", "warn");
+      _setConnectionStatus('warn connecting', 'Scanning…', 'warn');
       if (active.content === null) await fileManager.ensureContent(active.id);
       await _execScript(active.content || editor.getContent(), active.name);
     } finally {
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
     }
   }
   async function rerunScript(item) {
-    _setConnectionStatus("warn", "Scanning…", "warn");
-    console_.log(`Re-running: ${item.filename}`, "info");
+    _setConnectionStatus('warn', 'Scanning…', 'warn');
+    console_.log(`Re-running: ${item.filename}`, 'info');
     await _execScript(item.script, item.filename);
   }
   return {

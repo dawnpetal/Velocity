@@ -5,11 +5,7 @@ const EditorModels = (() => {
   function getOrCreate(monaco, file) {
     if (_models.has(file.id)) return _models.get(file.id);
     const uri = monaco.Uri.parse(`file:///${file.id}/${file.name}`);
-    const model = monaco.editor.createModel(
-      file.content,
-      LangMap.monacoLang(file.name),
-      uri,
-    );
+    const model = monaco.editor.createModel(file.content, LangMap.monacoLang(file.name), uri);
     model.onWillDispose(() => _models.delete(file.id));
     _models.set(file.id, model);
     return model;

@@ -1,29 +1,33 @@
-use std::sync::atomic::Ordering;
-use notify::{RecursiveMode, Watcher};
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, State};
 
-use crate::state::WatcherRegistry;
-use crate::types::{DirEntry, WatchEvent};
+use crate::app::AppContext;
+use crate::models::DirEntry;
 
-#[tauri::command]
-pub fn get_home_dir() -> Result<String, String> {
-    crate::paths::home_dir()
-        .map_err(|e| e.to_string())
-        .and_then(|p| {
-            p.to_str()
-                .map(String::from)
-                .ok_or_else(|| "home dir path is not valid UTF-8".to_string())
-        })
+fn path_to_string(path: std::path::PathBuf, label: &str) -> Result<String, String> {
+    path.to_str()
+        .map(String::from)
+        .ok_or_else(|| format!("{label} path is not valid UTF-8"))
 }
 
 #[tauri::command]
-pub fn get_resource_dir(app: AppHandle) -> Result<String, String> {
-    app.path()
-        .resource_dir()
-        .map_err(|e| e.to_string())?
-        .to_str()
-        .map(String::from)
-        .ok_or_else(|| "resource dir path is not valid UTF-8".to_string())
+pub fn get_app_paths() -> Result<serde_json::Value, String> {
+    let home = crate::paths::home_dir().map_err(|e| e.to_string())?;
+    let velocityui = crate::paths::velocityui_dir().map_err(|e| e.to_string())?;
+    let internals = crate::paths::internals_dir().map_err(|e| e.to_string())?;
+    let workspaces = velocityui.join("workspaces");
+    let default_workspace = crate::paths::default_workspace_dir().map_err(|e| e.to_string())?;
+
+    for dir in [&velocityui, &internals, &workspaces, &default_workspace] {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+
+    Ok(serde_json::json!({
+        "home": path_to_string(home, "home")?,
+        "velocityui": path_to_string(velocityui, "velocityui")?,
+        "internals": path_to_string(internals, "internals")?,
+        "workspaces": path_to_string(workspaces, "workspaces")?,
+        "defaultWorkspace": path_to_string(default_workspace, "default workspace")?,
+    }))
 }
 
 #[tauri::command]
@@ -48,19 +52,6 @@ pub fn read_binary_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn write_binary_file(path: String, data: String) -> Result<(), String> {
-    use base64::Engine;
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(data)
-        .map_err(|e| e.to_string())?;
-    let p = std::path::Path::new(&path);
-    if let Some(parent) = p.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    std::fs::write(p, bytes).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 pub fn read_dir(path: String) -> Result<Vec<DirEntry>, String> {
     std::fs::read_dir(&path)
         .map_err(|e| e.to_string())?
@@ -76,7 +67,10 @@ pub fn read_dir(path: String) -> Result<Vec<DirEntry>, String> {
             } else {
                 "FILE"
             };
-            Ok(DirEntry { entry: name, kind: kind.to_string() })
+            Ok(DirEntry {
+                entry: name,
+                kind: kind.to_string(),
+            })
         })
         .collect()
 }
@@ -120,62 +114,19 @@ pub fn copy_file(src: String, dest: String) -> Result<(), String> {
     if let Some(parent) = dest_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    std::fs::copy(&src, &dest).map(|_| ()).map_err(|e| e.to_string())
+    std::fs::copy(&src, &dest)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn remove_dir(path: String) -> Result<(), String> {
-    std::fs::remove_dir_all(&path).map_err(|e| e.to_string())
+pub fn watch_path(app: AppHandle, path: String, ctx: State<'_, AppContext>) -> Result<u32, String> {
+    ctx.FileSystem.watch(&app, &path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn remove_file_cmd(path: String) -> Result<(), String> {
-    std::fs::remove_file(&path).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn watch_path(
-    app: AppHandle,
-    path: String,
-    registry: State<WatcherRegistry>,
-) -> Result<u32, String> {
-    let id = registry.next_id.fetch_add(1, Ordering::SeqCst);
-    let app_handle = app.clone();
-
-    let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
-        let Ok(event) = res else { return };
-        let action = match &event.kind {
-            notify::EventKind::Create(_) => "created",
-            notify::EventKind::Remove(_) => "removed",
-            notify::EventKind::Modify(notify::event::ModifyKind::Name(_)) => "moved",
-            _ => return,
-        };
-        let path_str = event
-            .paths
-            .first()
-            .and_then(|p| p.to_str())
-            .unwrap_or("")
-            .to_string();
-        let _ = app_handle.emit("watch-event", WatchEvent {
-            id,
-            action: action.to_string(),
-            path: path_str,
-        });
-    })
-    .map_err(|e| e.to_string())?;
-
-    watcher
-        .watch(std::path::Path::new(&path), RecursiveMode::Recursive)
-        .map_err(|e| e.to_string())?;
-
-    registry.map.insert(id, watcher);
-
-    Ok(id)
-}
-
-#[tauri::command]
-pub fn unwatch_path(id: u32, registry: State<WatcherRegistry>) -> Result<(), String> {
-    registry.map.remove(&id);
+pub fn unwatch_path(id: u32, ctx: State<'_, AppContext>) -> Result<(), String> {
+    ctx.FileSystem.unwatch(id);
     Ok(())
 }
 
@@ -195,7 +146,9 @@ pub async fn show_folder_dialog(app: AppHandle, title: String) -> Result<Option<
 #[tauri::command]
 pub fn open_external(url: String, app: AppHandle) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
-    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -9,18 +9,18 @@ const PinboardOps = (() => {
   async function run(snippet, showOutput, context) {
     const { snippets, findIdx, onSave } = context;
     const card = document.querySelector(`.pb-card[data-id="${snippet.id}"]`);
-    const statusEl = card?.querySelector(".pb-status-bar");
-    const runBtn = card?.querySelector(".pb-btn-run");
-    if (runBtn) runBtn.classList.add("pb-btn-running");
+    const statusEl = card?.querySelector('.pb-status-bar');
+    const runBtn = card?.querySelector('.pb-btn-run');
+    if (runBtn) runBtn.classList.add('pb-btn-running');
     if (statusEl) {
-      statusEl.textContent = "Running\u2026";
-      statusEl.className = "pb-status-bar pb-status-running";
+      statusEl.textContent = 'Running\u2026';
+      statusEl.className = 'pb-status-bar pb-status-running';
     }
     if (showOutput) {
-      const panel = document.getElementById("bottomPanel");
+      const panel = document.getElementById('bottomPanel');
       if (panel) {
-        panel.classList.add("visible");
-        panel.classList.remove("hidden");
+        panel.classList.add('visible');
+        panel.classList.remove('hidden');
       }
     }
     const startTime = Date.now();
@@ -34,42 +34,36 @@ const PinboardOps = (() => {
         onSave().catch(() => {});
       }
       if (runBtn) {
-        runBtn.classList.remove("pb-btn-running");
-        runBtn.classList.add("pb-btn-ok");
-        setTimeout(
-          () => runBtn.classList.remove("pb-btn-ok"),
-          RUN_OK_FLASH_DURATION,
-        );
+        runBtn.classList.remove('pb-btn-running');
+        runBtn.classList.add('pb-btn-ok');
+        setTimeout(() => runBtn.classList.remove('pb-btn-ok'), RUN_OK_FLASH_DURATION);
       }
       if (statusEl) {
         statusEl.textContent = `OK \u00b7 ${elapsed}ms`;
-        statusEl.className = "pb-status-bar pb-status-ok";
+        statusEl.className = 'pb-status-bar pb-status-ok';
         setTimeout(() => {
-          if (statusEl.classList.contains("pb-status-ok")) {
-            statusEl.className = "pb-status-bar";
+          if (statusEl.classList.contains('pb-status-ok')) {
+            statusEl.className = 'pb-status-bar';
           }
         }, RUN_STATUS_OK_CLEAR_DELAY);
       }
-      toast.show(snippet.label + " executed", "ok", 1500);
+      toast.show(snippet.label + ' executed', 'ok', 1500);
     } catch (err) {
       if (runBtn) {
-        runBtn.classList.remove("pb-btn-running");
-        runBtn.classList.add("pb-btn-fail");
-        setTimeout(
-          () => runBtn.classList.remove("pb-btn-fail"),
-          RUN_FAIL_FLASH_DURATION,
-        );
+        runBtn.classList.remove('pb-btn-running');
+        runBtn.classList.add('pb-btn-fail');
+        setTimeout(() => runBtn.classList.remove('pb-btn-fail'), RUN_FAIL_FLASH_DURATION);
       }
       if (statusEl) {
-        statusEl.textContent = err.message ?? "Failed";
-        statusEl.className = "pb-status-bar pb-status-fail";
+        statusEl.textContent = err.message ?? 'Failed';
+        statusEl.className = 'pb-status-bar pb-status-fail';
         setTimeout(() => {
-          if (statusEl.classList.contains("pb-status-fail")) {
-            statusEl.className = "pb-status-bar";
+          if (statusEl.classList.contains('pb-status-fail')) {
+            statusEl.className = 'pb-status-bar';
           }
         }, RUN_STATUS_FAIL_CLEAR_DELAY);
       }
-      toast.show(err.message ?? "Execute failed", "warn");
+      toast.show(err.message ?? 'Execute failed', 'warn');
     }
   }
   function openInEditor(snippet, context) {
@@ -80,20 +74,17 @@ const PinboardOps = (() => {
     } else {
       const tabId = helpers.uid();
       const safeName =
-        (snippet.label.replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "snippet") +
-        ".lua";
-      state.addFile(tabId, safeName, "pinboard:" + snippet.id, snippet.code);
+        (snippet.label.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'snippet') + '.lua';
+      state.addFile(tabId, safeName, 'pinboard:' + snippet.id, snippet.code);
       state.setActive(tabId);
       activeEditorIds.set(snippet.id, tabId);
     }
-    const explorerBtn = document.querySelector(
-      '.activity-btn[data-view="explorer"]',
-    );
+    const explorerBtn = document.querySelector('.activity-btn[data-view="explorer"]');
     if (explorerBtn) explorerBtn.click();
     tabs.render();
-    eventBus.emit("ui:render-editor");
+    eventBus.emit('ui:render-editor');
     onRender();
-    toast.show(`Editing "${snippet.label}"`, "info", EDITOR_TOAST_DURATION);
+    toast.show(`Editing "${snippet.label}"`, 'info', EDITOR_TOAST_DURATION);
   }
   function handleEditorSave(fileId, context) {
     const { snippets, activeEditorIds, findIdx, onSave } = context;
@@ -128,14 +119,14 @@ const PinboardOps = (() => {
     const { snippets, onSave, onRender } = context;
     const file = state.getFile(node.id);
     if (!file) {
-      toast.show("File not loaded", "warn", 1500);
+      toast.show('File not loaded', 'warn', 1500);
       return;
     }
     const snippet = {
       id: helpers.uid(),
-      label: node.name.replace(/\.[^.]+$/, ""),
+      label: node.name.replace(/\.[^.]+$/, ''),
       tags: [],
-      code: file.content ?? "",
+      code: file.content ?? '',
       runCount: 0,
       lastRun: null,
       createdAt: Date.now(),
@@ -143,17 +134,12 @@ const PinboardOps = (() => {
     snippets.unshift(snippet);
     onSave().catch(() => {});
     if (onRender) onRender();
-    const activityBtn = document.querySelector(
-      '.activity-btn[data-view="pinboard"]',
-    );
+    const activityBtn = document.querySelector('.activity-btn[data-view="pinboard"]');
     if (activityBtn) {
-      activityBtn.classList.add("pb-activity-pulse");
-      setTimeout(
-        () => activityBtn.classList.remove("pb-activity-pulse"),
-        ACTIVITY_PULSE_DURATION,
-      );
+      activityBtn.classList.add('pb-activity-pulse');
+      setTimeout(() => activityBtn.classList.remove('pb-activity-pulse'), ACTIVITY_PULSE_DURATION);
     }
-    toast.show(`Pinned "${snippet.label}"`, "ok", PIN_TOAST_DURATION);
+    toast.show(`Pinned "${snippet.label}"`, 'ok', PIN_TOAST_DURATION);
   }
   return {
     run,

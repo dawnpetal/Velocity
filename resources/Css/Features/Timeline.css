@@ -48,26 +48,6 @@
   background: var(--bg3);
 }
 
-.tl-arrow {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--text3);
-  transition: transform var(--fast);
-}
-
-.tl-arrow svg {
-  width: 7px;
-  height: 7px;
-}
-
-.tl-arrow.open {
-  transform: rotate(90deg);
-}
-
 .tl-header-label {
   font-size: 10px;
   font-weight: 700;
@@ -150,7 +130,7 @@
   border-radius: 2px;
   font-size: 7.5px;
   font-weight: 800;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -172,17 +152,17 @@
   font-weight: 600;
   color: var(--text3);
   background: var(--bg3);
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 1px 5px;
   flex-shrink: 0;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
 }
 
 .tl-group-time {
   font-size: 10px;
   color: var(--text3);
   flex-shrink: 0;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
 }
 
 .tl-entries {
@@ -226,7 +206,7 @@
 .tl-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: 2px;
   border: 1.5px solid var(--text3);
   flex-shrink: 0;
   margin-right: 7px;
@@ -285,7 +265,7 @@
   font-size: 10px;
   color: var(--text3);
   flex-shrink: 0;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
   margin-left: 6px;
 }
 
@@ -327,7 +307,7 @@
   color: var(--text2);
   white-space: nowrap;
   padding: 2px 5px;
-  border-radius: 3px;
+  border-radius: 2px;
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -365,12 +345,12 @@
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-size: 9px;
   font-weight: 800;
   font-style: normal;
   letter-spacing: -0.3px;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
 }
 
 .bc-icon-fn {
@@ -418,7 +398,7 @@
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.55),
     0 2px 6px rgba(0, 0, 0, 0.3);
-  border-radius: 5px;
+  border-radius: 2px;
   overflow: hidden;
   outline: none;
   font-size: 12.5px;
@@ -435,7 +415,7 @@
   box-sizing: border-box;
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 2px;
   color: var(--text0);
   font-size: 12px;
   padding: 3px 7px;
@@ -463,7 +443,7 @@
 
 .bc-pick-list::-webkit-scrollbar-thumb {
   background: var(--bg3);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .bc-pick-row {
@@ -514,10 +494,10 @@
 .bc-pick-file-icon {
   width: 18px;
   height: 16px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-size: 8px;
   font-weight: 800;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -599,7 +579,7 @@
   font-size: 10.5px;
   color: var(--text3);
   flex-shrink: 0;
-  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
 }
 
 .bc-pick-match {

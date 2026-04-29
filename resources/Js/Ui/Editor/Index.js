@@ -14,37 +14,129 @@ const editor = (() => {
   let _diffTabId = null;
   function _setPane(which) {
     const ids = {
-      placeholder: "editorPlaceholder",
-      monaco: "monacoEditor",
-      preview: "previewPane",
-      diff: "diffEditor",
+      placeholder: 'editorPlaceholder',
+      monaco: 'monacoEditor',
+      preview: 'previewPane',
+      diff: 'diffEditor',
     };
     Object.entries(ids).forEach(([name, id]) => {
       const el = document.getElementById(id);
       if (el)
         el.style.display =
           name === which
-            ? name === "preview" || name === "placeholder"
-              ? "flex"
-              : "block"
-            : "none";
+            ? name === 'preview' || name === 'placeholder'
+              ? 'flex'
+              : 'block'
+            : 'none';
     });
-    const crumb = document.getElementById("breadcrumbBar");
-    if (crumb) crumb.style.display = which === "monaco" ? "" : "none";
+    const crumb = document.getElementById('breadcrumbBar');
+    if (crumb) crumb.style.display = which === 'monaco' ? '' : 'none';
   }
   async function _ensureReady() {
     if (_ready) return;
-    const container = document.getElementById("monacoEditor");
+    const container = document.getElementById('monacoEditor');
     const result = await EditorMount.create(container, _settings);
     _monaco = result.monaco;
     _editorInstance = result.editorInstance;
     _symbolProviders = result.symbolProviders;
     Breadcrumb.init(_editorInstance, _symbolProviders);
     EditorCommands.register(_monaco, _editorInstance);
+    _editorInstance.onContextMenu(async (e) => {
+      e.event.preventDefault();
+      e.event.stopPropagation();
+      const selection = _editorInstance.getSelection();
+      const hasSelection = selection && !selection.isEmpty();
+
+      const { Menu, MenuItem, PredefinedMenuItem, Image } = window.__TAURI__.menu;
+      const sep = () => PredefinedMenuItem.new({ item: 'Separator' });
+
+      async function iconItem(text, svgStr, action, accelerator) {
+        let icon;
+        try {
+          const size = 28;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr)}`;
+          await new Promise((res, rej) => {
+            const img = new window.Image();
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, size, size);
+              res();
+            };
+            img.onerror = rej;
+            img.src = dataUrl;
+          });
+          const bytes = Uint8Array.from(atob(canvas.toDataURL('image/png').split(',')[1]), (c) =>
+            c.charCodeAt(0),
+          );
+          icon = await Image.fromBytes(bytes);
+        } catch {}
+        return MenuItem.new({
+          text,
+          action,
+          ...(accelerator ? { accelerator } : {}),
+          ...(icon ? { icon } : {}),
+        });
+      }
+
+      const SVG = {
+        format: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="28" height="28"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>`,
+        comment: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+        goTo: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="28" height="28"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+      };
+
+      const items = [];
+      if (hasSelection) {
+        items.push(await PredefinedMenuItem.new({ item: 'Cut' }));
+        items.push(await PredefinedMenuItem.new({ item: 'Copy' }));
+        items.push(await PredefinedMenuItem.new({ item: 'Paste' }));
+        items.push(await sep());
+      } else {
+        items.push(await PredefinedMenuItem.new({ item: 'Paste' }));
+        items.push(await sep());
+      }
+      items.push(await PredefinedMenuItem.new({ item: 'SelectAll' }));
+      items.push(await sep());
+      if (hasSelection) {
+        items.push(
+          await iconItem('Format Selection', SVG.format, () =>
+            _editorInstance.trigger('keyboard', 'editor.action.formatSelection'),
+          ),
+        );
+      } else {
+        items.push(
+          await iconItem('Format Document', SVG.format, () =>
+            _editorInstance.trigger('keyboard', 'editor.action.formatDocument'),
+          ),
+        );
+      }
+      items.push(
+        await iconItem(
+          'Toggle Comment',
+          SVG.comment,
+          () => _editorInstance.trigger('keyboard', 'editor.action.commentLine'),
+          'CmdOrCtrl+/',
+        ),
+      );
+      items.push(await sep());
+      items.push(
+        await iconItem(
+          'Go to Definition',
+          SVG.goTo,
+          () => _editorInstance.trigger('keyboard', 'editor.action.revealDefinition'),
+          'F12',
+        ),
+      );
+
+      const menu = await Menu.new({ items });
+      await menu.popup();
+    });
+
     _editorInstance.onDidChangeCursorPosition((e) => {
-      const el = document.getElementById("statusCursor");
-      if (el)
-        el.textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+      const el = document.getElementById('statusCursor');
+      if (el) el.textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
       Breadcrumb.update(e.position);
     });
     _editorInstance.onDidChangeModelContent(() => {
@@ -68,19 +160,19 @@ const editor = (() => {
   }
   async function _showTextFile(file) {
     if (file.content === null) await fileManager.ensureContent(file.id);
-    _setPane("monaco");
-    document.getElementById("_velocityDeletedOverlay")?.remove();
+    _setPane('monaco');
+    document.getElementById('_velocityuiDeletedOverlay')?.remove();
     if (file.deleted) {
-      const overlay = document.createElement("div");
-      overlay.id = "_velocityDeletedOverlay";
+      const overlay = document.createElement('div');
+      overlay.id = '_velocityuiDeletedOverlay';
       overlay.style.cssText =
-        "position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:var(--bg2);pointer-events:none";
+        'position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:var(--bg2);pointer-events:none';
       overlay.innerHTML = `
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         <span style="color:var(--text2);font-size:13px">This file no longer exists on disk</span>
         <span style="color:var(--text3);font-size:11px">The file was moved or deleted externally</span>`;
-      const monacoEl = document.getElementById("monacoEditor");
-      monacoEl.style.position = "relative";
+      const monacoEl = document.getElementById('monacoEditor');
+      monacoEl.style.position = 'relative';
       monacoEl.appendChild(overlay);
       _editorInstance?.updateOptions({
         readOnly: true,
@@ -97,9 +189,8 @@ const editor = (() => {
     EditorModels.restoreViewState(file.id, _editorInstance);
     _editorInstance.focus();
     timeline.refreshSize();
-    const langEl = document.getElementById("statusLang");
-    if (langEl)
-      langEl.textContent = LangMap.extOf(file.name).toUpperCase() || "Plain";
+    const langEl = document.getElementById('statusLang');
+    if (langEl) langEl.textContent = LangMap.extOf(file.name).toUpperCase() || 'Plain';
     Breadcrumb.closePicker();
     Breadcrumb.update(
       _editorInstance.getPosition() ?? {
@@ -109,147 +200,132 @@ const editor = (() => {
     );
   }
   function _showPreviewFile(file) {
-    _setPane("preview");
-    const pane = document.getElementById("previewPane");
+    _setPane('preview');
+    const pane = document.getElementById('previewPane');
     if (!pane) return;
-    pane.innerHTML = "";
-    const langEl = document.getElementById("statusLang");
-    if (langEl)
-      langEl.textContent = LangMap.extOf(file.name).toUpperCase() + " Preview";
+    pane.innerHTML = '';
+    const langEl = document.getElementById('statusLang');
+    if (langEl) langEl.textContent = LangMap.extOf(file.name).toUpperCase() + ' Preview';
     switch (file.previewType) {
-      case "image":
+      case 'image':
         Preview.renderImage(pane, file);
         break;
-      case "svg":
+      case 'svg':
         Preview.renderSvg(pane, file);
         break;
-      case "markdown":
+      case 'markdown':
         Preview.renderMarkdown(pane, file);
         break;
-      case "html":
+      case 'html':
         Preview.renderHtml(pane, file);
         break;
-      case "video":
+      case 'video':
         Preview.renderVideo(pane, file);
         break;
       default:
-        pane.textContent = "No preview available.";
+        pane.textContent = 'No preview available.';
     }
   }
   async function openPreview(sourceFile) {
     const pt = LangMap.previewType(sourceFile.name);
     if (!pt) {
-      toast.show("No preview available for this file type", "warn");
+      toast.show('No preview available for this file type', 'warn');
       return;
     }
-    const existingId = [...state.files].find(
-      (f) => f.preview && f.path === sourceFile.path,
-    )?.id;
+    const existingId = [...state.files].find((f) => f.preview && f.path === sourceFile.path)?.id;
     if (existingId) {
       state.setActive(existingId);
       tabs.render();
-      eventBus.emit("ui:render-editor");
+      eventBus.emit('ui:render-editor');
       return;
     }
     const id = helpers.uid();
-    const isBinary = pt === "image" || pt === "video";
+    const isBinary = pt === 'image' || pt === 'video';
     let binaryData = null;
     if (isBinary) {
       try {
-        binaryData = await window.__TAURI__.core.invoke("read_binary_file", {
+        binaryData = await window.__TAURI__.core.invoke('read_binary_file', {
           path: sourceFile.path,
         });
       } catch (e) {
-        toast.show("Could not read file: " + (e.message ?? e), "fail");
+        toast.show('Could not read file: ' + (e.message ?? e), 'fail');
         return;
       }
     }
-    state.addFile(
-      id,
-      sourceFile.name + " (Preview)",
-      sourceFile.path,
-      sourceFile.content ?? "",
-      {
-        preview: true,
-        previewType: pt,
-        binaryData,
-      },
-    );
+    state.addFile(id, sourceFile.name + ' (Preview)', sourceFile.path, sourceFile.content ?? '', {
+      preview: true,
+      previewType: pt,
+      binaryData,
+    });
     state.setActive(id);
     tabs.render();
-    eventBus.emit("ui:render-editor");
+    eventBus.emit('ui:render-editor');
   }
   function render() {
     const active = state.getActive();
     if (!active) {
-      _setPane("placeholder");
+      _setPane('placeholder');
       return;
     }
     if (active.preview) {
-      if (active.previewType === "diff") {
-        _setPane("diff");
+      if (active.previewType === 'diff') {
+        _setPane('diff');
         return;
       }
       _showPreviewFile(active);
       return;
     }
     const pt = LangMap.previewType(active.name);
-    if (pt === "image") {
+    if (pt === 'image') {
       if (!active.binaryData) {
         window.__TAURI__.core
-          .invoke("read_binary_file", {
+          .invoke('read_binary_file', {
             path: active.path,
           })
           .then((binaryData) => {
             active.binaryData = binaryData;
-            active.previewType = "image";
+            active.previewType = 'image';
             _showPreviewFile(active);
           })
-          .catch((err) =>
-            toast.show("Could not read image: " + (err.message ?? err), "fail"),
-          );
+          .catch((err) => toast.show('Could not read image: ' + (err.message ?? err), 'fail'));
       } else {
-        active.previewType = "image";
+        active.previewType = 'image';
         _showPreviewFile(active);
       }
       return;
     }
-    if (pt === "svg") {
+    if (pt === 'svg') {
       if (active.content === null) {
         window.__TAURI__.core
-          .invoke("read_text_file", {
+          .invoke('read_text_file', {
             path: active.path,
           })
           .then((content) => {
             active.content = content;
-            active.previewType = "svg";
+            active.previewType = 'svg';
             _showPreviewFile(active);
           })
-          .catch((err) =>
-            toast.show("Could not read SVG: " + (err.message ?? err), "fail"),
-          );
+          .catch((err) => toast.show('Could not read SVG: ' + (err.message ?? err), 'fail'));
       } else {
-        active.previewType = "svg";
+        active.previewType = 'svg';
         _showPreviewFile(active);
       }
       return;
     }
-    if (pt === "video") {
+    if (pt === 'video') {
       if (!active.binaryData) {
         window.__TAURI__.core
-          .invoke("read_binary_file", {
+          .invoke('read_binary_file', {
             path: active.path,
           })
           .then((binaryData) => {
             active.binaryData = binaryData;
-            active.previewType = "video";
+            active.previewType = 'video';
             _showPreviewFile(active);
           })
-          .catch((err) =>
-            toast.show("Could not read video: " + (err.message ?? err), "fail"),
-          );
+          .catch((err) => toast.show('Could not read video: ' + (err.message ?? err), 'fail'));
       } else {
-        active.previewType = "video";
+        active.previewType = 'video';
         _showPreviewFile(active);
       }
       return;
@@ -264,19 +340,19 @@ const editor = (() => {
   function applyTheme() {
     if (!_ready || !_monaco) return;
     EditorTheme.apply(_monaco);
-    if (_diffEditor) _monaco.editor.setTheme("velocity");
+    if (_diffEditor) _monaco.editor.setTheme('velocityui');
   }
   function updateSettings(key, value) {
     _settings[key] = value;
     if (!_ready || !_editorInstance) return;
     const opts = {};
-    if (key === "fontSize") opts.fontSize = value;
-    if (key === "wordWrap") opts.wordWrap = value ? "on" : "off";
-    if (key === "minimap")
+    if (key === 'fontSize') opts.fontSize = value;
+    if (key === 'wordWrap') opts.wordWrap = value ? 'on' : 'off';
+    if (key === 'minimap')
       opts.minimap = {
         enabled: value,
       };
-    if (key === "lineNumbers") opts.lineNumbers = value ? "on" : "off";
+    if (key === 'lineNumbers') opts.lineNumbers = value ? 'on' : 'off';
     _editorInstance.updateOptions(opts);
   }
   function destroyTab(id) {
@@ -288,7 +364,7 @@ const editor = (() => {
   function jumpToLine(fileId, lineNum) {
     state.setActive(fileId);
     tabs.render();
-    eventBus.emit("ui:render-editor");
+    eventBus.emit('ui:render-editor');
     ExplorerTree.render();
     requestAnimationFrame(() => {
       if (!_editorInstance) return;
@@ -301,7 +377,7 @@ const editor = (() => {
     });
   }
   function getContent() {
-    return _editorInstance?.getValue() ?? "";
+    return _editorInstance?.getValue() ?? '';
   }
   function canPreview(filename) {
     return LangMap.canPreview(filename);
@@ -314,47 +390,43 @@ const editor = (() => {
       _diffTabId = null;
     }
     const tabId = helpers.uid();
-    state.addFile(tabId, filename + " (Diff)", "", "", {
+    state.addFile(tabId, filename + ' (Diff)', '', '', {
       preview: true,
-      previewType: "diff",
+      previewType: 'diff',
     });
     state.setActive(tabId);
     _diffTabId = tabId;
     tabs.render();
-    _setPane("diff");
+    _setPane('diff');
     if (!_diffEditor) {
-      _diffEditor = _monaco.editor.createDiffEditor(
-        document.getElementById("diffEditor"),
-        {
-          theme: "velocity",
-          fontSize: _settings.fontSize,
-          fontFamily:
-            "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', monospace",
-          fontLigatures: true,
-          readOnly: true,
-          renderSideBySide: true,
-          ignoreTrimWhitespace: false,
-          renderIndicators: true,
-          automaticLayout: true,
-          scrollBeyondLastLine: false,
-          padding: {
-            top: 12,
-            bottom: 12,
-          },
-          minimap: {
-            enabled: false,
-          },
-          folding: false,
-          lineNumbers: "on",
-          stickyScroll: {
-            enabled: false,
-          },
-          occurrencesHighlight: "off",
-          colorDecorators: false,
-          smoothScrolling: false,
-          renderWhitespace: "none",
+      _diffEditor = _monaco.editor.createDiffEditor(document.getElementById('diffEditor'), {
+        theme: 'velocityui',
+        fontSize: _settings.fontSize,
+        fontFamily: "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', monospace",
+        fontLigatures: true,
+        readOnly: true,
+        renderSideBySide: true,
+        ignoreTrimWhitespace: false,
+        renderIndicators: true,
+        automaticLayout: true,
+        scrollBeyondLastLine: false,
+        padding: {
+          top: 12,
+          bottom: 12,
         },
-      );
+        minimap: {
+          enabled: false,
+        },
+        folding: false,
+        lineNumbers: 'on',
+        stickyScroll: {
+          enabled: false,
+        },
+        occurrencesHighlight: 'off',
+        colorDecorators: false,
+        smoothScrolling: false,
+        renderWhitespace: 'none',
+      });
     }
     const prev = _diffEditor.getModel();
     const origModel = _monaco.editor.createModel(oldContent, lang);
@@ -376,14 +448,31 @@ const editor = (() => {
     }
     const active = state.getActive();
     if (active && !active.preview) _showTextFile(active).catch(() => {});
-    else _setPane("placeholder");
+    else _setPane('placeholder');
   }
   function isDiffTab(id) {
     return id === _diffTabId;
   }
+  function restoreTimelineContent(fileId, content) {
+    const file = state.getFile(fileId);
+    if (!file || file.preview) return;
+    if (state.activeFileId !== fileId) state.setActive(fileId, { permanent: true });
+    state.updateContent(fileId, content);
+    const model = EditorModels.getOrCreate(_monaco, file);
+    if (model.getValue() !== content) model.setValue(content);
+    _editorInstance?.setModel(model);
+    hideDiff();
+    tabs.render();
+    eventBus.emit('ui:render-editor');
+  }
+  function relayout() {
+    _editorInstance?.layout();
+  }
+
   return {
     render,
     focus,
+    relayout,
     destroyTab,
     applyTheme,
     updateSettings,
@@ -394,5 +483,6 @@ const editor = (() => {
     showDiff,
     hideDiff,
     isDiffTab,
+    restoreTimelineContent,
   };
 })();

@@ -5,57 +5,46 @@ const ExplorerDnd = (() => {
   let _ghostEl = null;
   let _currentDragOverEl = null;
   function _getIndicator() {
-    const tree = document.getElementById("fileTree");
+    const tree = document.getElementById('fileTree');
     if (!tree) return null;
-    let ind = tree.querySelector(".tree-drop-line");
+    let ind = tree.querySelector('.tree-drop-line');
     if (!ind) {
-      ind = document.createElement("div");
-      ind.className = "tree-drop-line";
-      ind.style.display = "none";
+      ind = document.createElement('div');
+      ind.className = 'tree-drop-line';
+      ind.style.display = 'none';
       tree.appendChild(ind);
     }
     return ind;
   }
   function _showDropLine(row, edge) {
     const ind = _getIndicator();
-    const tree = document.getElementById("fileTree");
+    const tree = document.getElementById('fileTree');
     if (!ind || !tree || !row) return;
     const treeRect = tree.getBoundingClientRect();
     const rowRect = row.getBoundingClientRect();
-    const indentPx =
-      parseInt(
-        row.querySelector(".tree-indent")?.style.paddingLeft || "6",
-        10,
-      ) || 6;
-    ind.style.left = indentPx + "px";
-    ind.style.right = "4px";
+    const indentPx = parseInt(row.querySelector('.tree-indent')?.style.paddingLeft || '6', 10) || 6;
+    ind.style.left = indentPx + 'px';
+    ind.style.right = '4px';
     ind.style.top =
-      (edge === "before" ? rowRect.top : rowRect.bottom) -
-      treeRect.top +
-      tree.scrollTop +
-      "px";
-    ind.style.display = "block";
+      (edge === 'before' ? rowRect.top : rowRect.bottom) - treeRect.top + tree.scrollTop + 'px';
+    ind.style.display = 'block';
   }
   function _hideDropLine() {
-    const ind = document
-      .getElementById("fileTree")
-      ?.querySelector(".tree-drop-line");
-    if (ind) ind.style.display = "none";
+    const ind = document.getElementById('fileTree')?.querySelector('.tree-drop-line');
+    if (ind) ind.style.display = 'none';
   }
   function _clearDragOver() {
     if (_currentDragOverEl) {
-      _currentDragOverEl.classList.remove("drag-over");
+      _currentDragOverEl.classList.remove('drag-over');
       _currentDragOverEl = null;
     }
-    document
-      .querySelectorAll(".drag-over")
-      .forEach((el) => el.classList.remove("drag-over"));
+    document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
   }
   function _setDragOver(el) {
     if (_currentDragOverEl === el) return;
     _clearDragOver();
     _currentDragOverEl = el;
-    el?.classList.add("drag-over");
+    el?.classList.add('drag-over');
   }
   function _clearAll() {
     _hideDropLine();
@@ -78,12 +67,10 @@ const ExplorerDnd = (() => {
     }, 700);
   }
   function _createGhost(nodes) {
-    const el = document.createElement("div");
-    el.className = "tree-drag-ghost";
-    el.textContent =
-      nodes.length === 1 ? nodes[0].name : `${nodes.length} items`;
-    el.style.cssText =
-      "position:fixed;top:-9999px;left:-9999px;pointer-events:none;z-index:9999;";
+    const el = document.createElement('div');
+    el.className = 'tree-drag-ghost';
+    el.textContent = nodes.length === 1 ? nodes[0].name : `${nodes.length} items`;
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;pointer-events:none;z-index:9999;';
     document.body.appendChild(el);
     return el;
   }
@@ -118,15 +105,15 @@ const ExplorerDnd = (() => {
   function _resolveZone(e, row, node) {
     const rect = row.getBoundingClientRect();
     const ratio = (e.clientY - rect.top) / rect.height;
-    if (node.type === "folder") {
-      if (ratio < 0.25) return "before";
-      if (ratio > 0.75) return "after";
-      return "into";
+    if (node.type === 'folder') {
+      if (ratio < 0.25) return 'before';
+      if (ratio > 0.75) return 'after';
+      return 'into';
     }
-    return ratio < 0.5 ? "before" : "after";
+    return ratio < 0.5 ? 'before' : 'after';
   }
   function _applyFeedback(zone, row, node) {
-    if (zone === "into") {
+    if (zone === 'into') {
       _hideDropLine();
       _setDragOver(row);
       _scheduleAutoExpand(node);
@@ -138,28 +125,22 @@ const ExplorerDnd = (() => {
   }
   function _attachNodeDrag(row, node) {
     row.draggable = true;
-    row.addEventListener("dragstart", (e) => {
+    row.addEventListener('dragstart', (e) => {
       const sel = ExplorerTree.getSelection();
-      const dragNodes =
-        sel.length > 0 && sel.some((n) => n.id === node.id) ? sel : [node];
+      const dragNodes = sel.length > 0 && sel.some((n) => n.id === node.id) ? sel : [node];
       ExplorerTree.setDragSrc(node.id);
       ExplorerTree.setDragNodes(dragNodes);
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData(
-        "text/plain",
-        dragNodes.map((n) => n.id).join(","),
-      );
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragNodes.map((n) => n.id).join(','));
       _ghostEl = _createGhost(dragNodes);
       e.dataTransfer.setDragImage(_ghostEl, 14, 14);
       setTimeout(() => {
         dragNodes.forEach((n) => {
-          document
-            .querySelector(`.tree-row[data-id="${n.id}"]`)
-            ?.classList.add("dragging");
+          document.querySelector(`.tree-row[data-id="${n.id}"]`)?.classList.add('dragging');
         });
       }, 0);
     });
-    row.addEventListener("dragend", () => {
+    row.addEventListener('dragend', () => {
       _clearAll();
       _clearAutoExpand();
       if (_ghostEl) {
@@ -168,9 +149,7 @@ const ExplorerDnd = (() => {
       }
       ExplorerTree.setDragSrc(null);
       ExplorerTree.setDragNodes([]);
-      document
-        .querySelectorAll(".dragging")
-        .forEach((el) => el.classList.remove("dragging"));
+      document.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
     });
   }
   function attachFileDrag(row, node) {
@@ -180,33 +159,31 @@ const ExplorerDnd = (() => {
     _attachNodeDrag(row, node);
   }
   function attachRowDrop(row, node) {
-    row.addEventListener("dragenter", (e) => {
+    row.addEventListener('dragenter', (e) => {
       e.preventDefault();
     });
-    row.addEventListener("dragover", (e) => {
+    row.addEventListener('dragover', (e) => {
       e.preventDefault();
-      const isExternal = e.dataTransfer.types.includes("Files");
-      e.dataTransfer.dropEffect = isExternal ? "copy" : "move";
+      const isExternal = e.dataTransfer.types.includes('Files');
+      e.dataTransfer.dropEffect = isExternal ? 'copy' : 'move';
       const dragNodes = ExplorerTree.getDragNodes();
       const isSelf = dragNodes.length === 1 && dragNodes[0].id === node.id;
-      const isAncestor = dragNodes.some(
-        (dn) => _isAncestorOf(dn, node.id) && dn.id !== node.id,
-      );
+      const isAncestor = dragNodes.some((dn) => _isAncestorOf(dn, node.id) && dn.id !== node.id);
       if (isSelf || isAncestor) {
-        e.dataTransfer.dropEffect = "none";
+        e.dataTransfer.dropEffect = 'none';
         _clearAll();
         return;
       }
       const zone = _resolveZone(e, row, node);
       _applyFeedback(zone, row, node);
     });
-    row.addEventListener("dragleave", (e) => {
+    row.addEventListener('dragleave', (e) => {
       if (!row.contains(e.relatedTarget)) {
-        row.classList.remove("drag-over");
+        row.classList.remove('drag-over');
         if (_currentDragOverEl === row) _currentDragOverEl = null;
       }
     });
-    row.addEventListener("drop", async (e) => {
+    row.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       _clearAll();
@@ -217,13 +194,11 @@ const ExplorerDnd = (() => {
         try {
           const zone = _resolveZone(e, row, node);
           let destDir;
-          if (zone === "into" && node.type === "folder") {
+          if (zone === 'into' && node.type === 'folder') {
             destDir = node.path;
           } else {
             const parent = _getParent(node);
-            destDir = parent
-              ? parent.path
-              : (_getContainingRoot(node)?.path ?? null);
+            destDir = parent ? parent.path : (_getContainingRoot(node)?.path ?? null);
           }
           await _externalDrop(e.dataTransfer, destDir);
         } finally {
@@ -238,27 +213,25 @@ const ExplorerDnd = (() => {
     });
   }
   function attachRootHeaderDrop(headerEl, rootNode) {
-    headerEl.addEventListener("dragenter", (e) => {
+    headerEl.addEventListener('dragenter', (e) => {
       e.preventDefault();
       _setDragOver(headerEl);
       _hideDropLine();
     });
-    headerEl.addEventListener("dragover", (e) => {
+    headerEl.addEventListener('dragover', (e) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = e.dataTransfer.types.includes("Files")
-        ? "copy"
-        : "move";
+      e.dataTransfer.dropEffect = e.dataTransfer.types.includes('Files') ? 'copy' : 'move';
       _setDragOver(headerEl);
       _hideDropLine();
       _clearAutoExpand();
     });
-    headerEl.addEventListener("dragleave", (e) => {
+    headerEl.addEventListener('dragleave', (e) => {
       if (!headerEl.contains(e.relatedTarget)) {
-        headerEl.classList.remove("drag-over");
+        headerEl.classList.remove('drag-over');
         if (_currentDragOverEl === headerEl) _currentDragOverEl = null;
       }
     });
-    headerEl.addEventListener("drop", async (e) => {
+    headerEl.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       _clearAll();
@@ -275,7 +248,7 @@ const ExplorerDnd = (() => {
       }
       const dragNodes = ExplorerTree.getDragNodes();
       if (!dragNodes.length) return;
-      await _internalDrop(dragNodes, rootNode, "into");
+      await _internalDrop(dragNodes, rootNode, 'into');
     });
   }
   async function _internalDrop(dragNodes, targetNode, zone) {
@@ -284,8 +257,8 @@ const ExplorerDnd = (() => {
       if (dragNode.id === targetNode.id) continue;
       if (_isAncestorOf(dragNode, targetNode.id)) continue;
       let destDir;
-      if (zone === "into") {
-        if (targetNode.type !== "folder") continue;
+      if (zone === 'into') {
+        if (targetNode.type !== 'folder') continue;
         destDir = targetNode.path;
       } else {
         const parent = _getParent(targetNode);
@@ -295,21 +268,21 @@ const ExplorerDnd = (() => {
           const root = _getContainingRoot(targetNode);
           destDir = root
             ? root.path
-            : targetNode.path.substring(0, targetNode.path.lastIndexOf("/"));
+            : targetNode.path.substring(0, targetNode.path.lastIndexOf('/'));
         }
       }
       const newPath = `${destDir}/${dragNode.name}`;
       if (newPath === dragNode.path) continue;
       let destExists = false;
       try {
-        const stat = await window.__TAURI__.core.invoke("stat_path", {
+        const stat = await window.__TAURI__.core.invoke('stat_path', {
           path: newPath,
         });
         destExists = !!stat.exists;
       } catch {}
       if (destExists) {
         const ok = await modal.confirm(
-          "Replace?",
+          'Replace?',
           `<strong>${helpers.escapeHtml(dragNode.name)}</strong> already exists here. Replace it?`,
         );
         if (!ok) continue;
@@ -317,112 +290,76 @@ const ExplorerDnd = (() => {
       try {
         await fileManager.rename(dragNode.path, newPath);
         dragNode.path = newPath;
-        if (dragNode.type === "file") {
+        if (dragNode.type === 'file') {
           const f = state.getFile(dragNode.id);
           if (f) f.path = newPath;
         }
         moved++;
       } catch (err) {
-        toast.show(`Could not move ${dragNode.name}`, "warn", 3000);
+        toast.show(`Could not move ${dragNode.name}`, 'warn', 3000);
         console.error(err);
       }
     }
-    if (moved > 0) eventBus.emit("ui:refresh-tree");
+    if (moved > 0) eventBus.emit('ui:refresh-tree');
   }
   async function _externalDrop(dt, destDir) {
     if (!destDir) {
-      toast.show("Open a folder first", "warn");
+      toast.show('Open a folder first', 'warn');
       return;
     }
+
     const items = Array.from(dt.items ?? []);
-    const entries = items.map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
-    if (!entries.length) return;
-    toast.show(
-      `Copying ${entries.length} item${entries.length > 1 ? "s" : ""}…`,
-      "info",
-      2000,
-    );
+    const sources = items.map((item) => item.getAsFile()).filter((f) => f?.path);
+    if (!sources.length) return;
+    toast.show(`Copying ${sources.length} item${sources.length > 1 ? 's' : ''}…`, 'info', 2000);
     let copied = 0;
-    for (const entry of entries) {
+    for (const file of sources) {
+      const srcPath = file.path;
+      const dest = `${destDir}/${file.name}`;
       try {
-        await _copyEntry(entry, `${destDir}/${entry.name}`);
+        const stat = await window.__TAURI__.core.invoke('stat_path', { path: srcPath });
+        if (stat.isDirectory) {
+          await window.__TAURI__.core.invoke('copy_path_recursive', { src: srcPath, dest });
+        } else {
+          await window.__TAURI__.core.invoke('copy_file', { src: srcPath, dest });
+        }
         copied++;
       } catch (err) {
-        console.error("External drop failed:", entry.name, err);
-        toast.show(`Failed to copy ${entry.name}`, "warn", 3000);
+        console.error('External drop failed:', file.name, err);
+        toast.show(`Failed to copy ${file.name}`, 'warn', 3000);
       }
     }
-    eventBus.emit("ui:refresh-tree");
+    eventBus.emit('ui:refresh-tree');
     toast.show(
-      `Copied ${copied}${copied < entries.length ? ` of ${entries.length}` : ""} item${copied !== 1 ? "s" : ""}`,
-      copied === entries.length ? "ok" : "warn",
+      `Copied ${copied}${copied < sources.length ? ` of ${sources.length}` : ''} item${copied !== 1 ? 's' : ''}`,
+      copied === sources.length ? 'ok' : 'warn',
       2500,
     );
   }
-  async function _copyEntry(entry, destPath) {
-    if (entry.isFile) {
-      const file = await new Promise((res, rej) => entry.file(res, rej));
-      const buf = await file.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let bin = "";
-      for (let i = 0; i < bytes.byteLength; i++)
-        bin += String.fromCharCode(bytes[i]);
-      await window.__TAURI__.core.invoke("write_binary_file", {
-        path: destPath,
-        data: btoa(bin),
-      });
-    } else if (entry.isDirectory) {
-      await window.__TAURI__.core
-        .invoke("create_dir", {
-          path: destPath,
-        })
-        .catch(() => {});
-      const reader = entry.createReader();
-      const all = [];
-      await new Promise((res, rej) => {
-        const read = () =>
-          reader.readEntries((batch) => {
-            if (!batch.length) return res();
-            all.push(...batch);
-            read();
-          }, rej);
-        read();
-      });
-      for (const child of all)
-        await _copyEntry(child, `${destPath}/${child.name}`);
-    }
-  }
   function attachRootDrop(rootEl) {
-    rootEl.addEventListener("dragenter", (e) => {
+    rootEl.addEventListener('dragenter', (e) => {
       e.preventDefault();
     });
-    rootEl.addEventListener("dragover", (e) => {
+    rootEl.addEventListener('dragover', (e) => {
       e.preventDefault();
-      const isExternal = e.dataTransfer.types.includes("Files");
-      e.dataTransfer.dropEffect = isExternal ? "copy" : "move";
-      if (
-        !e.target.closest(".tree-row") &&
-        !e.target.closest(".tree-root-header")
-      ) {
-        if (isExternal) rootEl.classList.add("tree-drop-target");
+      const isExternal = e.dataTransfer.types.includes('Files');
+      e.dataTransfer.dropEffect = isExternal ? 'copy' : 'move';
+      if (!e.target.closest('.tree-row') && !e.target.closest('.tree-root-header')) {
+        if (isExternal) rootEl.classList.add('tree-drop-target');
       }
     });
-    rootEl.addEventListener("dragleave", (e) => {
+    rootEl.addEventListener('dragleave', (e) => {
       if (!rootEl.contains(e.relatedTarget)) {
-        rootEl.classList.remove("tree-drop-target");
+        rootEl.classList.remove('tree-drop-target');
         _clearAll();
       }
     });
-    rootEl.addEventListener("drop", async (e) => {
+    rootEl.addEventListener('drop', async (e) => {
       e.preventDefault();
-      rootEl.classList.remove("tree-drop-target");
+      rootEl.classList.remove('tree-drop-target');
       _clearAll();
       _clearAutoExpand();
-      if (
-        e.target.closest(".tree-row") ||
-        e.target.closest(".tree-root-header")
-      )
-        return;
+      if (e.target.closest('.tree-row') || e.target.closest('.tree-root-header')) return;
       if (!e.dataTransfer.files.length || _handlingDrop) return;
       _handlingDrop = true;
       try {

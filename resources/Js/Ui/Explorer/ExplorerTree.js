@@ -1,11 +1,13 @@
 const ExplorerTree = (() => {
-  const rootEl = () => document.getElementById("fileTree");
+  const rootEl = () => document.getElementById('fileTree');
   let _selection = new Set();
   let _lastClickedId = null;
   let _dragSrcId = null;
   let _dragNodes = [];
   let _flatOrder = [];
-  let _structureKey = "";
+  let _structureKey = '';
+  let _vlist = null;
+  let _nodeContainer = null;
   const SVG = {
     arrow: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
     newFile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`,
@@ -55,15 +57,16 @@ const ExplorerTree = (() => {
     _setSelection([]);
   }
   function _getFileCount(node) {
-    if (node.type === "file") return 1;
+    if (node.type === 'file') return 1;
     return (node.children ?? []).reduce((n, c) => n + _getFileCount(c), 0);
   }
   function _setSelection(ids) {
     _selection = new Set(ids);
     rootEl()
-      ?.querySelectorAll(".tree-row")
+      ?.querySelectorAll('.tree-row')
       .forEach((row) => {
-        row.classList.toggle("selected", _selection.has(row.dataset.id));
+        row.classList.toggle('selected', _selection.has(row.dataset.id));
+        row.classList.toggle('active', row.dataset.id === state.activeFileId);
       });
   }
   function _getSelectionNodes() {
@@ -72,49 +75,60 @@ const ExplorerTree = (() => {
   function _buildStructureKey() {
     const parts = [];
     function walk(node) {
-      parts.push(
-        node.id + (node.type === "folder" ? (node.open ? "O" : "C") : "F"),
-      );
-      if (node.type === "folder" && node.open) {
+      parts.push(node.id + (node.type === 'folder' ? (node.open ? 'O' : 'C') : 'F'));
+      if (node.type === 'folder' && node.open) {
         for (const c of node.children) walk(c);
       }
     }
     for (const root of state.roots) {
-      parts.push("R" + root.id + (root.open ? "O" : "C"));
+      parts.push('R' + root.id + (root.open ? 'O' : 'C'));
       if (root.open) for (const c of root.children) walk(c);
     }
-    return parts.join("|");
+    return parts.join('|');
   }
   function _patchSelection() {
-    const root = rootEl();
-    if (!root) return;
-    root.querySelectorAll(".tree-row").forEach((row) => {
-      row.classList.toggle("selected", _selection.has(row.dataset.id));
+    const container = _nodeContainer ?? rootEl();
+    if (!container) return;
+    container.querySelectorAll('.tree-row').forEach((row) => {
+      row.classList.toggle('selected', _selection.has(row.dataset.id));
+      row.classList.toggle('active', row.dataset.id === state.activeFileId);
     });
   }
   function _patchUnsaved() {
-    const root = rootEl();
-    if (!root) return;
-    root.querySelectorAll(".tree-row[data-type='file']").forEach((row) => {
+    const container = _nodeContainer ?? rootEl();
+    if (!container) return;
+    container.querySelectorAll(".tree-row[data-type='file']").forEach((row) => {
       const id = row.dataset.id;
-      const meta = row.querySelector(".tree-meta");
+      const meta = row.querySelector('.tree-meta');
       if (!meta) return;
-      const existingDot = meta.querySelector(".tree-unsaved-dot");
+      const existingDot = meta.querySelector('.tree-unsaved-dot');
       const shouldHave = state.isUnsaved(id);
       if (shouldHave && !existingDot) {
-        const dot = document.createElement("span");
-        dot.className = "tree-unsaved-dot";
+        const dot = document.createElement('span');
+        dot.className = 'tree-unsaved-dot';
         meta.insertBefore(dot, meta.firstChild);
       } else if (!shouldHave && existingDot) {
         existingDot.remove();
       }
     });
   }
+  function _ensureRootContextMenu() {
+    const root = rootEl();
+    if (!root || root._ctxBound) return;
+    root._ctxBound = true;
+    root.addEventListener('contextmenu', (e) => {
+      if (e.target === root || e.target.closest('.empty-explorer')) {
+        e.preventDefault();
+        ctxMenu.showEmpty(e, state.roots[0] ?? null);
+      }
+    });
+  }
   function render() {
     const root = rootEl();
     if (!root) return;
+    _ensureRootContextMenu();
     if (!state.roots.length) {
-      _structureKey = "";
+      _structureKey = '';
       root.innerHTML = `
         <div class="empty-explorer">
           <div class="empty-explorer-icon">${SVG.folder}</div>
@@ -125,13 +139,11 @@ const ExplorerTree = (() => {
           <div class="empty-drop-hint">${SVG.upload}<span>or drag a folder here</span></div>
         </div>`;
       document
-        .getElementById("explorerOpenFolderBtn")
-        ?.addEventListener("click", () =>
-          workspaceController.openFolderDialog(),
-        );
+        .getElementById('explorerOpenFolderBtn')
+        ?.addEventListener('click', () => workspaceController.openFolderDialog());
       document
-        .getElementById("explorerResetDefaultBtn")
-        ?.addEventListener("click", () => workspaceController.resetDefault());
+        .getElementById('explorerResetDefaultBtn')
+        ?.addEventListener('click', () => workspaceController.resetDefault());
       return;
     }
     const newKey = _buildStructureKey();
@@ -141,152 +153,191 @@ const ExplorerTree = (() => {
       return;
     }
     _structureKey = newKey;
-    root.innerHTML = "";
+    root.innerHTML = '';
     _flatOrder = [];
-    const frag = document.createDocumentFragment();
-    for (const rootNode of state.roots) _renderRootNode(rootNode, frag);
-    root.appendChild(frag);
+    _vlist = null;
+    _nodeContainer = null;
+
+    const headerFrag = document.createDocumentFragment();
+    for (const rootNode of state.roots) _renderRootHeader(rootNode, headerFrag);
+    root.appendChild(headerFrag);
+
     for (const rootNode of state.roots) {
       if (rootNode.open) _buildFlatOrder(rootNode, _flatOrder);
     }
-    _selection.forEach((id) => {
-      root
-        .querySelector(`.tree-row[data-id="${id}"]`)
-        ?.classList.add("selected");
+
+    _nodeContainer = document.createElement('div');
+    _nodeContainer.className = 'tree-node-container';
+    _nodeContainer.style.position = 'relative';
+    root.appendChild(_nodeContainer);
+
+    _nodeContainer.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('.tree-row') && !e.target.closest('.tree-root-header')) {
+        e.preventDefault();
+        ctxMenu.showEmpty(e, state.roots[0] ?? null);
+      }
     });
+
+    _vlist = VirtualList.create({
+      container: _nodeContainer,
+      getCount: () => _flatOrder.length,
+      getItem: (i) => _flatOrder[i],
+      renderRow: (i, item) => {
+        if (!item) return null;
+        return _buildRow(item.node, item.depth);
+      },
+    });
+    _vlist.update(_flatOrder.length);
   }
+
   function _buildFlatOrder(rootNode, out) {
     if (!rootNode.open) return;
-    for (const child of rootNode.children) _buildFlatOrderNode(child, out);
+    for (const child of rootNode.children) _buildFlatOrderNode(child, 0, out);
   }
-  function _buildFlatOrderNode(node, out) {
-    out.push(node.id);
-    if (node.type === "folder" && node.open) {
-      for (const child of node.children) _buildFlatOrderNode(child, out);
+  function _buildFlatOrderNode(node, depth, out) {
+    out.push({ node, depth });
+    if (node.type === 'folder' && node.open) {
+      for (const child of node.children) _buildFlatOrderNode(child, depth + 1, out);
     }
   }
-  function _renderRootNode(rootNode, container) {
+  function _renderRootHeader(rootNode, container) {
     const isPrimary = state.roots.indexOf(rootNode) === 0;
-    const header = document.createElement("div");
-    header.className =
-      "tree-root-header" + (isPrimary ? "" : " tree-root-header--secondary");
-    const left = document.createElement("div");
-    left.className = "tree-root-left";
-    const arrow = document.createElement("span");
-    arrow.className = "tree-root-arrow" + (rootNode.open ? " open" : "");
+    const header = document.createElement('div');
+    header.className = 'tree-root-header' + (isPrimary ? '' : ' tree-root-header--secondary');
+    const left = document.createElement('div');
+    left.className = 'tree-root-left';
+    const arrow = document.createElement('span');
+    arrow.className = 'tree-root-arrow' + (rootNode.open ? ' open' : '');
     arrow.innerHTML = SVG.arrow;
-    const name = document.createElement("span");
-    name.className = "tree-root-name";
+    const name = document.createElement('span');
+    name.className = 'tree-root-name';
     name.textContent = rootNode.name.toUpperCase();
     left.append(arrow, name);
     if (!isPrimary) {
-      const badge = document.createElement("span");
-      badge.className = "tree-root-badge";
-      badge.textContent = "folder";
+      const badge = document.createElement('span');
+      badge.className = 'tree-root-badge';
+      badge.textContent = 'folder';
       left.appendChild(badge);
     }
-    const right = document.createElement("div");
-    right.className = "tree-root-right";
-    const count = document.createElement("span");
-    count.className = "tree-root-count";
+    const right = document.createElement('div');
+    right.className = 'tree-root-right';
+    const count = document.createElement('span');
+    count.className = 'tree-root-count';
     count.textContent = _getFileCount(rootNode);
-    const menuBtn = document.createElement("button");
-    menuBtn.className = "tree-root-menu-btn";
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'tree-root-menu-btn';
     menuBtn.innerHTML = SVG.dots;
-    menuBtn.title = "Folder options";
-    menuBtn.addEventListener("click", (e) => {
+    menuBtn.title = 'Folder options';
+    menuBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       ctxMenu.showForRoot(e, rootNode);
     });
     right.append(count, menuBtn);
     header.append(left, right);
-    header.addEventListener("click", () => {
+    header.addEventListener('click', () => {
       rootNode.open = !rootNode.open;
       render();
     });
     ExplorerDnd.attachRootHeaderDrop(header, rootNode);
     container.appendChild(header);
-    if (rootNode.open) {
-      rootNode.children.forEach((c) => _renderNode(c, 0, container));
-    }
   }
-  function _renderNode(node, depth, container) {
-    const row = document.createElement("div");
-    row.className = "tree-row";
+  function _toggleFolderInPlace(row, node, depth) {
+    const arrowEl = row.querySelector('.tree-arrow');
+    const iconEl = row.querySelector('.tree-icon > span');
+    if (arrowEl) arrowEl.classList.toggle('open', node.open);
+    if (iconEl) helpers.updateIconEl(iconEl, node.name, true, node.open);
+
+    _rebuildFlatOrder();
+    if (_vlist) _vlist.update(_flatOrder.length);
+    _patchSelection();
+    _patchUnsaved();
+    persist.saveTreeState(state.workDir).catch(() => {});
+  }
+
+  function _rebuildFlatOrder() {
+    _flatOrder = [];
+    for (const root of state.roots) {
+      if (root.open) _buildFlatOrder(root, _flatOrder);
+    }
+    if (_vlist) _vlist.update(_flatOrder.length);
+  }
+
+  function _buildRow(node, depth) {
+    const row = document.createElement('div');
+    row.className = 'tree-row';
     row.dataset.id = node.id;
     row.dataset.type = node.type;
-    const indent = document.createElement("div");
-    indent.className = "tree-indent";
+    row.classList.toggle('selected', _selection.has(node.id));
+    row.classList.toggle('active', node.id === state.activeFileId);
+    const indent = document.createElement('div');
+    indent.className = 'tree-indent';
     for (let i = 0; i < depth; i++) {
-      const guide = document.createElement("span");
-      guide.className = "tree-guide";
-      guide.style.left = i * 14 + 13 + "px";
+      const guide = document.createElement('span');
+      guide.className = 'tree-guide';
+      guide.style.left = i * 14 + 13 + 'px';
       row.appendChild(guide);
     }
-    indent.style.paddingLeft = depth * 14 + 6 + "px";
-    const arrowEl = document.createElement("span");
+    indent.style.paddingLeft = depth * 14 + 6 + 'px';
+    const arrowEl = document.createElement('span');
     arrowEl.className =
-      "tree-arrow" +
-      (node.type === "folder" ? (node.open ? " open" : "") : " leaf");
+      'tree-arrow' + (node.type === 'folder' ? (node.open ? ' open' : '') : ' leaf');
     arrowEl.innerHTML = SVG.arrow;
-    const iconEl = document.createElement("span");
-    iconEl.className = "tree-icon";
-    iconEl.appendChild(
-      helpers.fileIconImg(node.name, node.type === "folder", node.open, 15),
-    );
-    const labelEl = document.createElement("span");
-    labelEl.className = "tree-label";
+    const iconEl = document.createElement('span');
+    iconEl.className = 'tree-icon';
+    iconEl.appendChild(helpers.fileIconEl(node.name, node.type === 'folder', node.open));
+    const labelEl = document.createElement('span');
+    labelEl.className = 'tree-label';
     labelEl.textContent = node.name;
-    const metaEl = document.createElement("span");
-    metaEl.className = "tree-meta";
+    const metaEl = document.createElement('span');
+    metaEl.className = 'tree-meta';
     if (state.isUnsaved(node.id)) {
-      const dot = document.createElement("span");
-      dot.className = "tree-unsaved-dot";
+      const dot = document.createElement('span');
+      dot.className = 'tree-unsaved-dot';
       metaEl.appendChild(dot);
     }
-    if (node.type === "folder" && node.children?.length > 0) {
-      const badge = document.createElement("span");
-      badge.className = "tree-folder-count";
+    if (node.type === 'folder' && node.children?.length > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'tree-folder-count';
       badge.textContent = node.children.length;
       metaEl.appendChild(badge);
     }
     indent.append(arrowEl, iconEl, labelEl, metaEl);
     row.appendChild(indent);
-    row.addEventListener("click", (e) => {
+    row.addEventListener('click', (e) => {
       e.stopPropagation();
       if (e.ctrlKey || e.metaKey) {
         if (_selection.has(node.id)) {
           _selection.delete(node.id);
-          row.classList.remove("selected");
+          row.classList.remove('selected');
         } else {
           _selection.add(node.id);
-          row.classList.add("selected");
+          row.classList.add('selected');
         }
         _lastClickedId = node.id;
         return;
       }
       if (e.shiftKey && _lastClickedId && _lastClickedId !== node.id) {
-        const a = _flatOrder.indexOf(_lastClickedId);
-        const b = _flatOrder.indexOf(node.id);
+        const a = _flatOrder.findIndex((item) => item.node.id === _lastClickedId);
+        const b = _flatOrder.findIndex((item) => item.node.id === node.id);
         if (a !== -1 && b !== -1) {
           const lo = Math.min(a, b),
             hi = Math.max(a, b);
-          _setSelection(_flatOrder.slice(lo, hi + 1));
+          _setSelection(_flatOrder.slice(lo, hi + 1).map((item) => item.node.id));
           return;
         }
       }
       _setSelection([node.id]);
       _lastClickedId = node.id;
-      if (node.type === "folder") {
+      if (node.type === 'folder') {
         node.open = !node.open;
-        render();
+        _toggleFolderInPlace(row, node, depth);
       } else {
-        eventBus.emit("ui:open-file", {
+        eventBus.emit('ui:open-file', {
           id: node.id,
         });
       }
     });
-    row.addEventListener("contextmenu", (e) => {
+    row.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (!_selection.has(node.id)) {
@@ -296,28 +347,62 @@ const ExplorerTree = (() => {
       ctxMenu.showForNodes(e, _getSelectionNodes());
     });
     ExplorerDnd.attachRowDrop(row, node);
-    if (node.type === "file") ExplorerDnd.attachFileDrag(row, node);
-    if (node.type === "folder") ExplorerDnd.attachFolderDrag(row, node);
-    container.appendChild(row);
-    if (node.type === "folder" && node.open) {
-      node.children.forEach((c) => _renderNode(c, depth + 1, container));
-    }
+    if (node.type === 'file') ExplorerDnd.attachFileDrag(row, node);
+    if (node.type === 'folder') ExplorerDnd.attachFolderDrag(row, node);
+    return row;
   }
   function init() {
     const root = rootEl();
-    root?.addEventListener("click", (e) => {
-      if (
-        !e.target.closest(".tree-row") &&
-        !e.target.closest(".tree-root-header")
-      ) {
+    root?.addEventListener('click', (e) => {
+      if (!e.target.closest('.tree-row') && !e.target.closest('.tree-root-header')) {
         _setSelection([]);
         _lastClickedId = null;
       }
     });
     ExplorerDnd.attachRootDrop(root);
   }
+  function revealFile(id) {
+    const file = state.getFile(id);
+    if (!file) return;
+
+    function expandAncestors(nodes, targetPath) {
+      for (const node of nodes) {
+        if (node.type === 'folder') {
+          if (targetPath.startsWith(node.path + '/')) {
+            node.open = true;
+            expandAncestors(node.children ?? [], targetPath);
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    for (const root of state.roots) {
+      if (file.path.startsWith(root.path + '/')) {
+        expandAncestors(root.children ?? [], file.path);
+        break;
+      }
+    }
+
+    _flatOrder = [];
+    for (const root of state.roots) {
+      if (root.open) _buildFlatOrder(root, _flatOrder);
+    }
+    if (_vlist) _vlist.update(_flatOrder.length);
+
+    const idx = _flatOrder.findIndex((item) => item.node.id === id);
+    if (idx !== -1 && _vlist) {
+      _vlist.scrollToIndex(idx);
+    }
+
+    _selection = new Set([id]);
+    _patchSelection();
+    _lastClickedId = id;
+  }
+
   return {
     render,
+    revealFile,
     init,
     setDragSrc,
     getDragSrc,

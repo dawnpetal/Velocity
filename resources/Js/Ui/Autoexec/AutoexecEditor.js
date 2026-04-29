@@ -11,19 +11,19 @@ const AutoexecEditor = (() => {
   };
   async function loadFile(filePath) {
     _currentFilePath = filePath;
-    const wrap = document.getElementById("autoexecEditorWrap");
+    const wrap = document.getElementById('autoexecEditorWrap');
     if (!wrap) return;
-    let content = "";
+    let content = '';
     try {
-      content = await window.__TAURI__.core.invoke("read_text_file", {
+      content = await window.__TAURI__.core.invoke('read_text_file', {
         path: filePath,
       });
     } catch {
-      content = "";
+      content = '';
     }
     if (_monacoEditor) {
       if (_monacoModel) _monacoModel.dispose();
-      _monacoModel = window.monaco.editor.createModel(content, "lua");
+      _monacoModel = window.monaco.editor.createModel(content, 'lua');
       _monacoEditor.setModel(_monacoModel);
       _monacoModel.onDidChangeContent(() => {
         _dirty = true;
@@ -33,35 +33,35 @@ const AutoexecEditor = (() => {
       renderSaveIndicator(false);
       return;
     }
-    wrap.innerHTML = "";
-    const container = document.createElement("div");
-    container.style.cssText = "width:100%;height:100%;";
+    wrap.innerHTML = '';
+    const container = document.createElement('div');
+    container.style.cssText = 'width:100%;height:100%;';
     wrap.appendChild(container);
     if (!window.monaco) return;
     const monaco = window.monaco;
-    _monacoModel = monaco.editor.createModel(content, "lua");
+    _monacoModel = monaco.editor.createModel(content, 'lua');
     _monacoEditor = monaco.editor.create(container, {
       model: _monacoModel,
-      theme: "velocity",
+      theme: 'velocityui',
       fontSize: EDITOR_FONT_SIZE,
       fontFamily: "'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace",
       fontLigatures: true,
-      lineNumbers: "on",
+      lineNumbers: 'on',
       minimap: {
         enabled: false,
       },
-      wordWrap: "off",
+      wordWrap: 'off',
       scrollBeyondLastLine: false,
       automaticLayout: true,
       padding: EDITOR_PADDING,
-      renderLineHighlight: "line",
+      renderLineHighlight: 'line',
       bracketPairColorization: {
         enabled: true,
       },
       guides: {
         indentation: true,
       },
-      wordBasedSuggestions: "currentDocument",
+      wordBasedSuggestions: 'currentDocument',
       suggest: {
         showKeywords: true,
         showSnippets: true,
@@ -75,20 +75,20 @@ const AutoexecEditor = (() => {
       insertSpaces: true,
       detectIndentation: false,
       folding: true,
-      showFoldingControls: "mouseover",
+      showFoldingControls: 'mouseover',
       contextmenu: true,
-      cursorBlinking: "smooth",
-      cursorSmoothCaretAnimation: "on",
+      cursorBlinking: 'smooth',
+      cursorSmoothCaretAnimation: 'on',
     });
     _monacoModel.onDidChangeContent(() => {
       _dirty = true;
       renderSaveIndicator(true);
     });
     wrap.addEventListener(
-      "keydown",
+      'keydown',
       (e) => {
-        const isMac = navigator.platform.includes("Mac");
-        if ((isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === "s") {
+        const isMac = navigator.platform.includes('Mac');
+        if ((isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === 's') {
           e.preventDefault();
           e.stopPropagation();
           save(_currentFilePath);
@@ -102,7 +102,7 @@ const AutoexecEditor = (() => {
   async function flushSave(filePath) {
     if (!filePath || !_monacoEditor) return;
     try {
-      await window.__TAURI__.core.invoke("write_text_file", {
+      await window.__TAURI__.core.invoke('write_text_file', {
         path: filePath,
         content: _monacoEditor.getValue(),
       });
@@ -113,20 +113,20 @@ const AutoexecEditor = (() => {
   async function save(filePath) {
     if (!filePath || !_monacoEditor) return;
     try {
-      await window.__TAURI__.core.invoke("write_text_file", {
+      await window.__TAURI__.core.invoke('write_text_file', {
         path: filePath,
         content: _monacoEditor.getValue(),
       });
       _dirty = false;
       renderSaveIndicator(false);
-      toast.show("Saved", "ok", 900);
+      toast.show('Saved', 'ok', 900);
     } catch {
-      toast.show("Save failed", "fail", 2000);
+      toast.show('Save failed', 'fail', 2000);
     }
   }
   function renderSaveIndicator(isDirty) {
-    const btn = document.getElementById("autoexecSaveBtn");
-    if (btn) btn.style.opacity = isDirty ? "1" : "0";
+    const btn = document.getElementById('autoexecSaveBtn');
+    if (btn) btn.style.opacity = isDirty ? '1' : '0';
   }
   function getEditor() {
     return _monacoEditor;

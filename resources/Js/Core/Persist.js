@@ -1,35 +1,33 @@
 const persist = (() => {
   const invoke = window.__TAURI__.core.invoke;
+
   async function saveTreeState(workDir) {
     if (!workDir || !state.fileTree) return;
     const openPaths = [];
     const collect = (node) => {
-      if (node?.type === "folder" && node.open) {
+      if (node?.type === 'folder' && node.open) {
         openPaths.push(node.path);
         node.children?.forEach(collect);
       }
     };
     collect(state.fileTree);
     try {
-      await invoke("save_tree_state_cmd", {
+      await invoke('save_tree_state_cmd', {
         workDir,
-        state: {
-          openPaths,
-          activeFile: state.getActive()?.path ?? null,
-        },
+        state: { openPaths, activeFile: state.getActive()?.path ?? null },
       });
     } catch {}
   }
+
   async function loadTreeState(workDir) {
     if (!workDir) return null;
     try {
-      return await invoke("load_tree_state_cmd", {
-        workDir,
-      });
+      return await invoke('load_tree_state_cmd', { workDir });
     } catch {
       return null;
     }
   }
+
   async function saveTimeline(workDir) {
     if (!workDir) return;
     const histories = {};
@@ -38,54 +36,53 @@ const persist = (() => {
       if (h?.length) histories[f.path] = h;
     });
     try {
-      await invoke("save_timeline_cmd", {
-        workDir,
-        histories,
-      });
+      await invoke('save_timeline_cmd', { workDir, histories });
     } catch {}
   }
+
   async function loadTimeline(workDir) {
     if (!workDir) return;
     try {
-      const data = await invoke("load_timeline_cmd", {
-        workDir,
-      });
+      const data = await invoke('load_timeline_cmd', { workDir });
       if (!data) return;
       state.files.forEach((f) => {
         if (data[f.path]?.length) timeline.restoreHistory(f.id, data[f.path]);
       });
     } catch {}
   }
-  async function saveSession(data) {
-    if (!data) return;
+
+  async function saveSession(workDir) {
+    if (!workDir) return;
     try {
-      await invoke("save_session_cmd", {
-        data,
+      await invoke('save_session_cmd', {
+        data: { workDir, lastFolder: workDir },
       });
     } catch {}
   }
+
   async function loadSession() {
     try {
-      return await invoke("load_session_cmd");
+      return await invoke('load_session_cmd');
     } catch {
       return null;
     }
   }
+
   async function saveUI(snapshot) {
     if (!snapshot) return;
     try {
-      await invoke("save_ui_state_cmd", {
-        state: snapshot,
-      });
+      await invoke('save_ui_state_cmd', { state: snapshot });
     } catch {}
   }
+
   async function loadUI() {
     try {
-      return await invoke("load_ui_state_cmd");
+      return await invoke('load_ui_state_cmd');
     } catch {
       return null;
     }
   }
+
   return {
     saveTreeState,
     loadTreeState,

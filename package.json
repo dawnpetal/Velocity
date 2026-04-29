@@ -1,11 +1,14 @@
 {
-  "name": "velocity",
-  "version": "1.0.8",
+  "name": "velocityui",
+  "version": "1.1.0",
   "scripts": {
     "dev": "cargo tauri dev",
     "build": "cargo tauri build --bundles app",
     "release": "bash build/build-mac.sh --release",
-    "check": "cd src-tauri && cargo check",
+    "check": "npm run check:wiring && npm run check:js && npm run check:rust",
+    "check:wiring": "node scripts/audit-tauri-wiring.mjs",
+    "check:js": "node scripts/check-js-syntax.mjs",
+    "check:rust": "cd src-tauri && cargo check",
     "clean": "cd src-tauri && cargo clean",
     "build:dmg": "cargo tauri build"
   },

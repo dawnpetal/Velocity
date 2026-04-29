@@ -6,72 +6,72 @@ const Preview = (() => {
     return bytes;
   }
   function _tbBtn(label, onClick) {
-    const b = document.createElement("button");
-    b.className = "preview-tb-btn";
+    const b = document.createElement('button');
+    b.className = 'preview-tb-btn';
     b.textContent = label;
-    b.addEventListener("click", onClick);
+    b.addEventListener('click', onClick);
     return b;
   }
   function _buildImageUI(pane, src, name) {
     let zoom = 1;
-    const toolbar = document.createElement("div");
-    toolbar.className = "preview-toolbar";
-    const zoomVal = document.createElement("span");
-    zoomVal.className = "preview-zoom-val";
-    zoomVal.textContent = "100%";
-    const viewport = document.createElement("div");
-    viewport.className = "preview-image-viewport";
-    const img = document.createElement("img");
-    img.className = "preview-img";
+    const toolbar = document.createElement('div');
+    toolbar.className = 'preview-toolbar';
+    const zoomVal = document.createElement('span');
+    zoomVal.className = 'preview-zoom-val';
+    zoomVal.textContent = '100%';
+    const viewport = document.createElement('div');
+    viewport.className = 'preview-image-viewport';
+    const img = document.createElement('img');
+    img.className = 'preview-img';
     img.src = src;
     img.alt = name;
     img.draggable = false;
     img.onload = () => {
-      const info = document.createElement("span");
-      info.className = "preview-img-info";
+      const info = document.createElement('span');
+      info.className = 'preview-img-info';
       info.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
       toolbar.appendChild(info);
       applyZoom();
     };
     const applyZoom = () => {
-      if (zoom === "fit") {
-        img.style.maxWidth = "100%";
-        img.style.maxHeight = "100%";
-        img.style.width = "";
-        img.style.height = "";
-        zoomVal.textContent = "Fit";
+      if (zoom === 'fit') {
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.width = '';
+        img.style.height = '';
+        zoomVal.textContent = 'Fit';
       } else {
-        img.style.maxWidth = "none";
-        img.style.maxHeight = "none";
-        img.style.width = img.naturalWidth * zoom + "px";
-        img.style.height = img.naturalHeight * zoom + "px";
-        zoomVal.textContent = Math.round(zoom * 100) + "%";
+        img.style.maxWidth = 'none';
+        img.style.maxHeight = 'none';
+        img.style.width = img.naturalWidth * zoom + 'px';
+        img.style.height = img.naturalHeight * zoom + 'px';
+        zoomVal.textContent = Math.round(zoom * 100) + '%';
       }
     };
     toolbar.append(
-      _tbBtn("−", () => {
+      _tbBtn('−', () => {
         zoom = Math.max(0.1, zoom - 0.1);
         applyZoom();
       }),
       zoomVal,
-      _tbBtn("+", () => {
+      _tbBtn('+', () => {
         zoom = Math.min(8, zoom + 0.1);
         applyZoom();
       }),
-      _tbBtn("Fit", () => {
-        zoom = "fit";
+      _tbBtn('Fit', () => {
+        zoom = 'fit';
         applyZoom();
       }),
-      _tbBtn("1:1", () => {
+      _tbBtn('1:1', () => {
         zoom = 1;
         applyZoom();
       }),
     );
     viewport.addEventListener(
-      "wheel",
+      'wheel',
       (e) => {
         e.preventDefault();
-        if (zoom === "fit") zoom = 1;
+        if (zoom === 'fit') zoom = 1;
         zoom = Math.min(8, Math.max(0.1, zoom - e.deltaY * 0.001));
         applyZoom();
       },
@@ -83,7 +83,7 @@ const Preview = (() => {
     pane.append(toolbar, viewport);
   }
   function renderImage(pane, file) {
-    pane.className = "preview-pane preview-image-pane";
+    pane.className = 'preview-pane preview-image-pane';
     if (file.binaryData) {
       const mime = LangMap.mimeFor(file.name);
       const bytes = _base64ToUint8Array(file.binaryData);
@@ -102,40 +102,40 @@ const Preview = (() => {
     }
   }
   function renderSvg(pane, file) {
-    pane.className = "preview-pane preview-image-pane";
+    pane.className = 'preview-pane preview-image-pane';
     const blob = new Blob([file.content], {
-      type: "image/svg+xml",
+      type: 'image/svg+xml',
     });
     const url = URL.createObjectURL(blob);
     EditorModels.setBlobUrl(file.id, url);
     _buildImageUI(pane, url, file.name);
   }
   function renderMarkdown(pane, file) {
-    pane.className = "preview-pane preview-md-pane";
-    const scroll = document.createElement("div");
-    scroll.className = "preview-md-scroll";
-    const article = document.createElement("article");
-    article.className = "preview-md-body";
+    pane.className = 'preview-pane preview-md-pane';
+    const scroll = document.createElement('div');
+    scroll.className = 'preview-md-scroll';
+    const article = document.createElement('article');
+    article.className = 'preview-md-body';
     article.innerHTML = _mdToHtml(file.content);
     scroll.appendChild(article);
     pane.appendChild(scroll);
   }
   function renderHtml(pane, file) {
-    pane.className = "preview-pane preview-html-pane";
-    const toolbar = document.createElement("div");
-    toolbar.className = "preview-toolbar";
-    const label = document.createElement("span");
-    label.className = "preview-toolbar-label";
-    label.textContent = "HTML Preview — sandboxed, scripts disabled";
+    pane.className = 'preview-pane preview-html-pane';
+    const toolbar = document.createElement('div');
+    toolbar.className = 'preview-toolbar';
+    const label = document.createElement('span');
+    label.className = 'preview-toolbar-label';
+    label.textContent = 'HTML Preview — sandboxed, scripts disabled';
     toolbar.appendChild(label);
-    const frame = document.createElement("iframe");
-    frame.className = "preview-html-frame";
-    frame.sandbox = "allow-same-origin";
+    const frame = document.createElement('iframe');
+    frame.className = 'preview-html-frame';
+    frame.sandbox = 'allow-same-origin';
     frame.srcdoc = file.content;
     pane.append(toolbar, frame);
   }
   function renderVideo(pane, file) {
-    pane.className = "preview-pane preview-video-pane";
+    pane.className = 'preview-pane preview-video-pane';
     const mime = LangMap.mimeFor(file.name);
     const bytes = _base64ToUint8Array(file.binaryData);
     const blob = new Blob([bytes], {
@@ -143,22 +143,22 @@ const Preview = (() => {
     });
     const url = URL.createObjectURL(blob);
     EditorModels.setBlobUrl(file.id, url);
-    const toolbar = document.createElement("div");
-    toolbar.className = "preview-toolbar";
-    const label = document.createElement("span");
-    label.className = "preview-toolbar-label";
+    const toolbar = document.createElement('div');
+    toolbar.className = 'preview-toolbar';
+    const label = document.createElement('span');
+    label.className = 'preview-toolbar-label';
     label.textContent = file.name;
     toolbar.appendChild(label);
-    const viewport = document.createElement("div");
-    viewport.className = "preview-video-viewport";
-    const video = document.createElement("video");
-    video.className = "preview-video";
+    const viewport = document.createElement('div');
+    viewport.className = 'preview-video-viewport';
+    const video = document.createElement('video');
+    video.className = 'preview-video';
     video.src = url;
     video.controls = true;
-    video.style.cssText = "max-width:100%;max-height:100%";
+    video.style.cssText = 'max-width:100%;max-height:100%';
     video.onloadedmetadata = () => {
-      const info = document.createElement("span");
-      info.className = "preview-img-info";
+      const info = document.createElement('span');
+      info.className = 'preview-img-info';
       info.textContent = `${video.videoWidth} × ${video.videoHeight}  ${_fmtDuration(video.duration)}`;
       toolbar.appendChild(info);
     };
@@ -166,45 +166,44 @@ const Preview = (() => {
     pane.append(toolbar, viewport);
   }
   function _fmtDuration(secs) {
-    if (!isFinite(secs)) return "";
+    if (!isFinite(secs)) return '';
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = Math.floor(secs % 60);
     return h > 0
-      ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-      : `${m}:${String(s).padStart(2, "0")}`;
+      ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      : `${m}:${String(s).padStart(2, '0')}`;
   }
   function _mdToHtml(md) {
-    const esc = (s) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const lines = md.split("\n");
-    let html = "",
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const lines = md.split('\n');
+    let html = '',
       i = 0,
       inUl = false,
       inOl = false,
       inCode = false,
-      codeLang = "",
-      codeBuf = "";
+      codeLang = '',
+      codeBuf = '';
     const closeList = () => {
       if (inUl) {
-        html += "</ul>";
+        html += '</ul>';
         inUl = false;
       }
       if (inOl) {
-        html += "</ol>";
+        html += '</ol>';
         inOl = false;
       }
     };
     const inline = (s) =>
       esc(s)
-        .replace(/`([^`]+)`/g, "<code>$1</code>")
-        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-        .replace(/__([^_]+)__/g, "<strong>$1</strong>")
-        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-        .replace(/_([^_]+)_/g, "<em>$1</em>")
-        .replace(/~~([^~]+)~~/g, "<del>$1</del>")
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/_([^_]+)_/g, '<em>$1</em>')
+        .replace(/~~([^~]+)~~/g, '<del>$1</del>')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
-          const safe = /^(https?:|mailto:)/i.test(url.trim()) ? url : "#";
+          const safe = /^(https?:|mailto:)/i.test(url.trim()) ? url : '#';
           return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${text}</a>`;
         });
     while (i < lines.length) {
@@ -214,18 +213,18 @@ const Preview = (() => {
           closeList();
           inCode = true;
           codeLang = line.slice(3).trim();
-          codeBuf = "";
+          codeBuf = '';
         } else {
-          html += `<pre><code class="lang-${esc(codeLang)}">${esc(codeBuf.replace(/\n$/, ""))}</code></pre>`;
+          html += `<pre><code class="lang-${esc(codeLang)}">${esc(codeBuf.replace(/\n$/, ''))}</code></pre>`;
           inCode = false;
-          codeBuf = "";
-          codeLang = "";
+          codeBuf = '';
+          codeLang = '';
         }
         i++;
         continue;
       }
       if (inCode) {
-        codeBuf += line + "\n";
+        codeBuf += line + '\n';
         i++;
         continue;
       }
@@ -240,58 +239,54 @@ const Preview = (() => {
         closeList();
         const bq = [];
         while (i < lines.length && /^>\s?/.test(lines[i])) {
-          bq.push(lines[i].replace(/^>\s?/, ""));
+          bq.push(lines[i].replace(/^>\s?/, ''));
           i++;
         }
-        html += `<blockquote>${_mdToHtml(bq.join("\n"))}</blockquote>`;
+        html += `<blockquote>${_mdToHtml(bq.join('\n'))}</blockquote>`;
         continue;
       }
       if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) {
         closeList();
-        html += "<hr>";
+        html += '<hr>';
         i++;
         continue;
       }
       if (/^[\*\-\+]\s/.test(line)) {
         if (!inUl) {
           if (inOl) {
-            html += "</ol>";
+            html += '</ol>';
             inOl = false;
           }
-          html += "<ul>";
+          html += '<ul>';
           inUl = true;
         }
-        html += `<li>${inline(line.replace(/^[\*\-\+]\s/, ""))}</li>`;
+        html += `<li>${inline(line.replace(/^[\*\-\+]\s/, ''))}</li>`;
         i++;
         continue;
       }
       if (/^\d+\.\s/.test(line)) {
         if (!inOl) {
           if (inUl) {
-            html += "</ul>";
+            html += '</ul>';
             inUl = false;
           }
-          html += "<ol>";
+          html += '<ol>';
           inOl = true;
         }
-        html += `<li>${inline(line.replace(/^\d+\.\s/, ""))}</li>`;
+        html += `<li>${inline(line.replace(/^\d+\.\s/, ''))}</li>`;
         i++;
         continue;
       }
-      if (line.trim() === "") {
+      if (line.trim() === '') {
         closeList();
-        html += "<br>";
+        html += '<br>';
         i++;
         continue;
       }
-      if (
-        /\|/.test(line) &&
-        i + 1 < lines.length &&
-        /^\|?[\s\-:]+\|/.test(lines[i + 1])
-      ) {
+      if (/\|/.test(line) && i + 1 < lines.length && /^\|?[\s\-:]+\|/.test(lines[i + 1])) {
         closeList();
         const headers = line
-          .split("|")
+          .split('|')
           .filter((c, idx) => idx > 0 || c.trim())
           .map((c) => c.trim())
           .filter(Boolean);
@@ -300,7 +295,7 @@ const Preview = (() => {
         while (i < lines.length && /\|/.test(lines[i])) {
           rows.push(
             lines[i]
-              .split("|")
+              .split('|')
               .filter((c, idx) => idx > 0 || c.trim())
               .map((c) => c.trim())
               .filter(Boolean),
@@ -308,20 +303,15 @@ const Preview = (() => {
           i++;
         }
         html +=
-          "<table><thead><tr>" +
-          headers.map((h) => `<th>${inline(h)}</th>`).join("") +
-          "</tr></thead>";
+          '<table><thead><tr>' +
+          headers.map((h) => `<th>${inline(h)}</th>`).join('') +
+          '</tr></thead>';
         html +=
-          "<tbody>" +
+          '<tbody>' +
           rows
-            .map(
-              (r) =>
-                "<tr>" +
-                r.map((c) => `<td>${inline(c)}</td>`).join("") +
-                "</tr>",
-            )
-            .join("") +
-          "</tbody></table>";
+            .map((r) => '<tr>' + r.map((c) => `<td>${inline(c)}</td>`).join('') + '</tr>')
+            .join('') +
+          '</tbody></table>';
         continue;
       }
       closeList();

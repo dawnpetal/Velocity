@@ -3,8 +3,8 @@
 set -Eeuo pipefail
 trap 'echo -e "\033[31m✗ Error on line $LINENO\033[0m"; exit 1' ERR
 
-REPO="dawnpetal/Velocity"
-APP_NAME="Velocity"
+REPO="dawnpetal/VelocityUI"
+APP_NAME="VelocityUI"
 INSTALL_DIR="/Applications"
 APP_PATH="$INSTALL_DIR/$APP_NAME.app"
 TMP_DIR="/tmp/${APP_NAME}_install_$$"
@@ -103,7 +103,7 @@ sudo xattr -cr "$APP_PATH" || die "Failed to remove macOS security restrictions.
 success "Ready to launch"
 
 echo ""
-echo -e "  ${GREEN}${BOLD}Velocity ${VERSION} is ready.${RESET}"
+echo -e "  ${GREEN}${BOLD}VelocityUI ${VERSION} is ready.${RESET}"
 echo ""
 
 if [ -t 0 ]; then
@@ -112,11 +112,11 @@ if [ -t 0 ]; then
     echo ""
     info "Launching ${APP_NAME}..."
     if ! open "$APP_PATH" 2>/dev/null; then
-      warn "Could not launch automatically. Open Velocity from /Applications manually."
+      warn "Could not launch automatically. Open VelocityUI from /Applications manually."
     fi
   fi
 fi
 
-echo -e "  ${CYAN}Thank you for choosing Velocity!${RESET}"
+echo -e "  ${CYAN}Thank you for choosing VelocityUI!${RESET}"
 echo -e "  ${DIM}Always be careful when downloading software from the internet, do not trust unknown sources.${RESET}"
 echo

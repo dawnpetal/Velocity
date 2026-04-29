@@ -1,9 +1,9 @@
 const pinboard = (() => {
   let _snippets = [];
-  let _filter = "";
-  let _sortMode = "manual";
+  let _filter = '';
+  let _sortMode = 'manual';
   const _activeEditorIds = new Map();
-  const SORT_MODES = ["manual", "name", "runs", "recent"];
+  const SORT_MODES = ['manual', 'name', 'runs', 'recent'];
   const SEARCH_DEBOUNCE_MS = 100;
   const NEW_SNIPPET_PIN_TOAST_DURATION = 1800;
   const SVG = {
@@ -21,10 +21,8 @@ const pinboard = (() => {
       sortMode: _sortMode,
       activeEditorIds: _activeEditorIds,
       findIdx: _findIdx,
-      onRun: (snippet, showOutput) =>
-        PinboardOps.run(snippet, showOutput, _context()),
-      onOpenInEditor: (snippet) =>
-        PinboardOps.openInEditor(snippet, _context()),
+      onRun: (snippet, showOutput) => PinboardOps.run(snippet, showOutput, _context()),
+      onOpenInEditor: (snippet) => PinboardOps.openInEditor(snippet, _context()),
       onSave: _save,
       onRender: render,
       onFilterByTag: (tag) => {
@@ -39,7 +37,7 @@ const pinboard = (() => {
   async function _save() {
     try {
       const dir = await _dir();
-      await window.__TAURI__.core.invoke("write_text_file", {
+      await window.__TAURI__.core.invoke('write_text_file', {
         path: `${dir}/pinboard.json`,
         content: JSON.stringify({
           snippets: _snippets,
@@ -51,63 +49,63 @@ const pinboard = (() => {
   async function _load() {
     try {
       const dir = await _dir();
-      const raw = await window.__TAURI__.core.invoke("read_text_file", {
+      const raw = await window.__TAURI__.core.invoke('read_text_file', {
         path: `${dir}/pinboard.json`,
       });
       const data = JSON.parse(raw);
       _snippets = Array.isArray(data) ? data : (data.snippets ?? []);
-      _sortMode = data.sortMode ?? "manual";
+      _sortMode = data.sortMode ?? 'manual';
     } catch {
       _snippets = [
         {
           id: helpers.uid(),
-          label: "Infinite Jump",
-          tags: ["movement"],
+          label: 'Infinite Jump',
+          tags: ['movement'],
           code: [
-            "local player = game.Players.LocalPlayer",
+            'local player = game.Players.LocalPlayer',
             'local uis = game:GetService("UserInputService")',
-            "local char = player.Character or player.CharacterAdded:Wait()",
+            'local char = player.Character or player.CharacterAdded:Wait()',
             'local hum = char:WaitForChild("Humanoid")',
-            "local jumping = false",
-            "uis.InputBegan:Connect(function(i, gpe)",
-            "  if gpe then return end",
-            "  if i.KeyCode == Enum.KeyCode.Space then",
-            "    jumping = true",
-            "    task.spawn(function()",
-            "      while jumping do",
-            "        hum:ChangeState(Enum.HumanoidStateType.Jumping)",
-            "        task.wait(0.1)",
-            "      end",
-            "    end)",
-            "  end",
-            "end)",
-            "uis.InputEnded:Connect(function(i)",
-            "  if i.KeyCode == Enum.KeyCode.Space then jumping = false end",
-            "end)",
-          ].join("\n"),
+            'local jumping = false',
+            'uis.InputBegan:Connect(function(i, gpe)',
+            '  if gpe then return end',
+            '  if i.KeyCode == Enum.KeyCode.Space then',
+            '    jumping = true',
+            '    task.spawn(function()',
+            '      while jumping do',
+            '        hum:ChangeState(Enum.HumanoidStateType.Jumping)',
+            '        task.wait(0.1)',
+            '      end',
+            '    end)',
+            '  end',
+            'end)',
+            'uis.InputEnded:Connect(function(i)',
+            '  if i.KeyCode == Enum.KeyCode.Space then jumping = false end',
+            'end)',
+          ].join('\n'),
           runCount: 0,
           lastRun: null,
           createdAt: Date.now(),
         },
         {
           id: helpers.uid(),
-          label: "Print All Players",
-          tags: ["debug"],
-          code: "for _, p in ipairs(game.Players:GetPlayers()) do\n  print(p.Name, p.UserId, p.Team)\nend",
+          label: 'Print All Players',
+          tags: ['debug'],
+          code: 'for _, p in ipairs(game.Players:GetPlayers()) do\n  print(p.Name, p.UserId, p.Team)\nend',
           runCount: 0,
           lastRun: null,
           createdAt: Date.now(),
         },
         {
           id: helpers.uid(),
-          label: "Speed Boost",
-          tags: ["movement"],
+          label: 'Speed Boost',
+          tags: ['movement'],
           code: [
-            "local player = game.Players.LocalPlayer",
-            "local char = player.Character or player.CharacterAdded:Wait()",
+            'local player = game.Players.LocalPlayer',
+            'local char = player.Character or player.CharacterAdded:Wait()',
             'local hum = char:WaitForChild("Humanoid")',
-            "hum.WalkSpeed = 100",
-          ].join("\n"),
+            'hum.WalkSpeed = 100',
+          ].join('\n'),
           runCount: 0,
           lastRun: null,
           createdAt: Date.now(),
@@ -116,7 +114,7 @@ const pinboard = (() => {
     }
   }
   function _container() {
-    return document.getElementById("pinboardView");
+    return document.getElementById('pinboardView');
   }
   function _findIdx(id) {
     return _snippets.findIndex((s) => s.id === id);
@@ -132,52 +130,44 @@ const pinboard = (() => {
           (s.tags ?? []).some((t) => t.toLowerCase().includes(query)),
       );
     }
-    if (_sortMode === "name")
-      list.sort((a, b) => a.label.localeCompare(b.label));
-    else if (_sortMode === "runs")
-      list.sort((a, b) => (b.runCount ?? 0) - (a.runCount ?? 0));
-    else if (_sortMode === "recent")
-      list.sort((a, b) => (b.lastRun ?? 0) - (a.lastRun ?? 0));
+    if (_sortMode === 'name') list.sort((a, b) => a.label.localeCompare(b.label));
+    else if (_sortMode === 'runs') list.sort((a, b) => (b.runCount ?? 0) - (a.runCount ?? 0));
+    else if (_sortMode === 'recent') list.sort((a, b) => (b.lastRun ?? 0) - (a.lastRun ?? 0));
     return list;
   }
   function _buildToolbar() {
-    const bar = DomHelpers.el("div", "pb-toolbar");
-    const top = DomHelpers.el("div", "pb-toolbar-top");
-    const left = DomHelpers.el("div", "pb-toolbar-left");
-    const titleEl = DomHelpers.el("span", "pb-toolbar-title", "Pinboard");
-    const countEl = DomHelpers.el(
-      "span",
-      "pb-toolbar-count",
-      String(_snippets.length),
-    );
+    const bar = DomHelpers.el('div', 'pb-toolbar');
+    const top = DomHelpers.el('div', 'pb-toolbar-top');
+    const left = DomHelpers.el('div', 'pb-toolbar-left');
+    const titleEl = DomHelpers.el('span', 'pb-toolbar-title', 'Pinboard');
+    const countEl = DomHelpers.el('span', 'pb-toolbar-count', String(_snippets.length));
     left.append(titleEl, countEl);
-    const right = DomHelpers.el("div", "pb-toolbar-right");
-    const sortBtn = document.createElement("button");
-    sortBtn.className = "pb-toolbar-btn pb-sort-btn";
+    const right = DomHelpers.el('div', 'pb-toolbar-right');
+    const sortBtn = document.createElement('button');
+    sortBtn.className = 'pb-toolbar-btn pb-sort-btn';
     sortBtn.innerHTML = SVG.sort + `<span>${_sortMode}</span>`;
-    sortBtn.setAttribute("data-sort", _sortMode);
-    sortBtn.addEventListener("click", () => {
-      _sortMode =
-        SORT_MODES[(SORT_MODES.indexOf(_sortMode) + 1) % SORT_MODES.length];
+    sortBtn.setAttribute('data-sort', _sortMode);
+    sortBtn.addEventListener('click', () => {
+      _sortMode = SORT_MODES[(SORT_MODES.indexOf(_sortMode) + 1) % SORT_MODES.length];
       _save().catch(() => {});
       render();
     });
-    const pinBtn = document.createElement("button");
-    pinBtn.className = "pb-toolbar-btn pb-pin-btn";
-    pinBtn.innerHTML = SVG.pin + "<span>Pin</span>";
-    pinBtn.addEventListener("click", () => {
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'pb-toolbar-btn pb-pin-btn';
+    pinBtn.innerHTML = SVG.pin + '<span>Pin</span>';
+    pinBtn.addEventListener('click', () => {
       const active = state.getActive();
       if (!active) {
-        toast.show("No file open", "warn", 1500);
+        toast.show('No file open', 'warn', 1500);
         return;
       }
       if (PinboardOps.isSnippetFile(active.id, _context())) {
-        toast.show("Already a pinboard snippet", "warn", 1500);
+        toast.show('Already a pinboard snippet', 'warn', 1500);
         return;
       }
       const snippet = {
         id: helpers.uid(),
-        label: active.name.replace(/\.[^.]+$/, ""),
+        label: active.name.replace(/\.[^.]+$/, ''),
         tags: [],
         code: active.content,
         runCount: 0,
@@ -187,27 +177,23 @@ const pinboard = (() => {
       _snippets.unshift(snippet);
       _save().catch(() => {});
       render();
-      toast.show(
-        'Pinned "' + snippet.label + '"',
-        "ok",
-        NEW_SNIPPET_PIN_TOAST_DURATION,
-      );
+      toast.show('Pinned "' + snippet.label + '"', 'ok', NEW_SNIPPET_PIN_TOAST_DURATION);
     });
-    const addBtn = document.createElement("button");
-    addBtn.className = "pb-toolbar-btn pb-add-btn";
-    addBtn.innerHTML = SVG.add + "<span>New</span>";
-    addBtn.addEventListener("click", _addNew);
+    const addBtn = document.createElement('button');
+    addBtn.className = 'pb-toolbar-btn pb-add-btn';
+    addBtn.innerHTML = SVG.add + '<span>New</span>';
+    addBtn.addEventListener('click', _addNew);
     right.append(sortBtn, pinBtn, addBtn);
     top.append(left, right);
-    const searchRow = DomHelpers.el("div", "pb-search-row");
-    const searchIcon = DomHelpers.el("span", "pb-search-icon");
+    const searchRow = DomHelpers.el('div', 'pb-search-row');
+    const searchIcon = DomHelpers.el('span', 'pb-search-icon');
     searchIcon.innerHTML = SVG.search;
-    const searchInput = document.createElement("input");
-    searchInput.className = "pb-search-input";
-    searchInput.placeholder = "Filter by name, code, tag\u2026";
+    const searchInput = document.createElement('input');
+    searchInput.className = 'pb-search-input';
+    searchInput.placeholder = 'Filter by name, code, tag\u2026';
     searchInput.value = _filter;
     searchInput.addEventListener(
-      "input",
+      'input',
       helpers.debounce(() => {
         _filter = searchInput.value;
         _rerenderList();
@@ -215,11 +201,11 @@ const pinboard = (() => {
     );
     searchRow.append(searchIcon, searchInput);
     if (_filter) {
-      const clearBtn = document.createElement("button");
-      clearBtn.className = "pb-search-clear";
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'pb-search-clear';
       clearBtn.innerHTML = SVG.close;
-      clearBtn.addEventListener("click", () => {
-        _filter = "";
+      clearBtn.addEventListener('click', () => {
+        _filter = '';
         render();
       });
       searchRow.appendChild(clearBtn);
@@ -230,29 +216,27 @@ const pinboard = (() => {
   function _rerenderList() {
     const container = _container();
     if (!container) return;
-    container.querySelector(".pb-list")?.remove();
-    container.querySelector(".pb-empty")?.remove();
+    container.querySelector('.pb-list')?.remove();
+    container.querySelector('.pb-empty')?.remove();
     const visible = _visibleSnippets();
     if (!_snippets.length) {
       container.appendChild(PinboardCard.buildEmpty(_addNew));
       return;
     }
     if (!visible.length) {
-      const noMatches = DomHelpers.el("div", "pb-empty");
-      noMatches.innerHTML = SVG.search + "<span>No matches</span>";
+      const noMatches = DomHelpers.el('div', 'pb-empty');
+      noMatches.innerHTML = SVG.search + '<span>No matches</span>';
       container.appendChild(noMatches);
       return;
     }
-    const list = DomHelpers.el("div", "pb-list");
-    visible.forEach((snippet) =>
-      list.appendChild(PinboardCard.buildCard(snippet, _context())),
-    );
+    const list = DomHelpers.el('div', 'pb-list');
+    visible.forEach((snippet) => list.appendChild(PinboardCard.buildCard(snippet, _context())));
     container.appendChild(list);
   }
   function render() {
     const container = _container();
     if (!container) return;
-    container.innerHTML = "";
+    container.innerHTML = '';
     container.appendChild(_buildToolbar());
     const visible = _visibleSnippets();
     if (!_snippets.length) {
@@ -260,27 +244,22 @@ const pinboard = (() => {
       return;
     }
     if (_filter && !visible.length) {
-      const noMatches = DomHelpers.el("div", "pb-empty");
+      const noMatches = DomHelpers.el('div', 'pb-empty');
       noMatches.innerHTML =
-        SVG.search +
-        '<span>No matches for "' +
-        helpers.escapeHtml(_filter) +
-        '"</span>';
+        SVG.search + '<span>No matches for "' + helpers.escapeHtml(_filter) + '"</span>';
       container.appendChild(noMatches);
       return;
     }
-    const list = DomHelpers.el("div", "pb-list");
-    visible.forEach((snippet) =>
-      list.appendChild(PinboardCard.buildCard(snippet, _context())),
-    );
+    const list = DomHelpers.el('div', 'pb-list');
+    visible.forEach((snippet) => list.appendChild(PinboardCard.buildCard(snippet, _context())));
     container.appendChild(list);
   }
   function _addNew() {
     const snippet = {
       id: helpers.uid(),
-      label: "New Snippet",
+      label: 'New Snippet',
       tags: [],
-      code: "",
+      code: '',
       runCount: 0,
       lastRun: null,
       createdAt: Date.now(),
@@ -290,21 +269,18 @@ const pinboard = (() => {
     render();
     requestAnimationFrame(() => {
       const container = _container();
-      const card = container
-        ? container.querySelector(`.pb-card[data-id="${snippet.id}"]`)
-        : null;
-      const labelEl = card ? card.querySelector(".pb-card-label") : null;
+      const card = container ? container.querySelector(`.pb-card[data-id="${snippet.id}"]`) : null;
+      const labelEl = card ? card.querySelector('.pb-card-label') : null;
       if (labelEl) PinboardCard.startInlineRename(labelEl, snippet, _context());
     });
   }
   async function init() {
     await _load();
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener('keydown', (e) => {
       const container = _container();
-      if (!container || container.style.display === "none") return;
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
-        return;
-      if (e.key === "n" || e.key === "N") _addNew();
+      if (!container || container.style.display === 'none') return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'n' || e.key === 'N') _addNew();
     });
   }
   function show() {

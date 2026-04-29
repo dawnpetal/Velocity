@@ -1,20 +1,12 @@
 const multiInstance = (() => {
   const POLL_MS = 2000;
   const STALE_SEC = 12;
-  let _bridgePath = null;
   let _clients = [];
   let _pollTimer = null;
   let _active = false;
   let _selectedUserIds = new Set();
-  async function _resolvePaths() {
-    _bridgePath = await window.__TAURI__.core.invoke(
-      "multiinstance_get_bridge_path",
-    );
-  }
   async function _readBridge() {
-    const clients = await window.__TAURI__.core.invoke(
-      "multiinstance_get_clients",
-    );
+    const clients = await window.__TAURI__.core.invoke('multiinstance_get_clients');
     return {
       clients: clients || [],
       commands: [],
@@ -44,25 +36,25 @@ const multiInstance = (() => {
       if (!liveIds.has(id)) _selectedUserIds.delete(id);
     }
     if (prev !== next) {
-      eventBus.emit("multiinstance:clientsChanged", {
+      eventBus.emit('multiinstance:clientsChanged', {
         clients: _clients,
       });
     }
   }
   async function start() {
     if (_active) return;
-    await _resolvePaths();
+    await window.__TAURI__.core.invoke('multiinstance_install_autoexec').catch(() => {});
     _active = true;
     await _poll();
     _pollTimer = setInterval(_poll, POLL_MS);
-    eventBus.emit("multiinstance:started", {});
+    eventBus.emit('multiinstance:started', {});
   }
   function stop() {
     _active = false;
     clearInterval(_pollTimer);
     _pollTimer = null;
     _selectedUserIds.clear();
-    eventBus.emit("multiinstance:stopped", {});
+    eventBus.emit('multiinstance:stopped', {});
   }
   function getClients() {
     return _clients;
@@ -79,21 +71,19 @@ const multiInstance = (() => {
     } else {
       _selectedUserIds.add(userId);
     }
-    eventBus.emit("multiinstance:selectionChanged", {
+    eventBus.emit('multiinstance:selectionChanged', {
       selected: getSelectedIds(),
     });
   }
   function selectAll() {
-    _clients
-      .filter((c) => c.active)
-      .forEach((c) => _selectedUserIds.add(c.user_id));
-    eventBus.emit("multiinstance:selectionChanged", {
+    _clients.filter((c) => c.active).forEach((c) => _selectedUserIds.add(c.user_id));
+    eventBus.emit('multiinstance:selectionChanged', {
       selected: getSelectedIds(),
     });
   }
   function selectNone() {
     _selectedUserIds.clear();
-    eventBus.emit("multiinstance:selectionChanged", {
+    eventBus.emit('multiinstance:selectionChanged', {
       selected: getSelectedIds(),
     });
   }
@@ -101,21 +91,21 @@ const multiInstance = (() => {
     return _clients.filter((c) => _selectedUserIds.has(c.user_id));
   }
   async function sendScript(userId, scriptContent) {
-    await window.__TAURI__.core.invoke("multiinstance_send_script", {
+    await window.__TAURI__.core.invoke('multiinstance_send_script', {
       userId,
       script: scriptContent,
     });
   }
   async function sendScriptToMany(userIds, scriptContent) {
     if (!userIds?.length) return;
-    await window.__TAURI__.core.invoke("multiinstance_send_script_many", {
+    await window.__TAURI__.core.invoke('multiinstance_send_script_many', {
       userIds,
       script: scriptContent,
     });
   }
   async function launchInstance() {
-    await window.__TAURI__.core.invoke("open_external", {
-      url: "roblox-player:",
+    await window.__TAURI__.core.invoke('open_external', {
+      url: 'roblox-player:',
     });
   }
   return {

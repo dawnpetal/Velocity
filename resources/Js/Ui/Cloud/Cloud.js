@@ -1,8 +1,8 @@
 const cloud = (() => {
   const SEARCH_DEBOUNCE_MS = 500;
   const SKELETON_COUNT = 9;
-  let _mode = "recent";
-  let _query = "";
+  let _mode = 'recent';
+  let _query = '';
   let _filters = {};
   let _page = 1;
   let _total = 1;
@@ -41,9 +41,9 @@ const cloud = (() => {
     const promises = sourceKeys.map((sourceKey, index) => {
       const src = CloudSources.SOURCES[sourceKey];
       const fetch =
-        _mode === "trending"
+        _mode === 'trending'
           ? src.fetchTrending(_page, _filters)
-          : _mode === "search" && _query.trim()
+          : _mode === 'search' && _query.trim()
             ? src.fetchSearch(_query, _page, _filters)
             : src.fetchRecent(_page, _filters);
       return fetch
@@ -57,10 +57,9 @@ const cloud = (() => {
         })
         .catch((err) => {
           if (loadId !== _loadId) return;
-          console_.log(`[cloud] ${sourceKey} failed: ${err?.message}`, "fail");
+          console_.log(`[cloud] ${sourceKey} failed: ${err?.message}`, 'fail');
           settled++;
-          if (settled === sourceKeys.length && !anySuccess)
-            _renderError(err.message);
+          if (settled === sourceKeys.length && !anySuccess) _renderError(err.message);
         });
     });
     await Promise.allSettled(promises);
@@ -68,68 +67,56 @@ const cloud = (() => {
   }
   async function _getContent(script) {
     if (script.content) return script.content;
-    return CloudSources.SOURCES[script._src].fetchRaw(
-      script._slug,
-      script._rawUrl,
-    );
+    return CloudSources.SOURCES[script._src].fetchRaw(script._slug, script._rawUrl);
   }
   function _renderLoading() {
-    const list = document.getElementById("cloudList");
+    const list = document.getElementById('cloudList');
     if (!list) return;
-    let html = "";
+    let html = '';
     for (let i = 0; i < SKELETON_COUNT; i++) {
       html += `<div class="cloud-skeleton"><div class="sk-banner"></div><div class="sk-body"><div class="sk-line sk-title"></div><div class="sk-line sk-game"></div><div class="sk-line sk-tags"></div><div class="sk-footer"><div class="sk-line sk-meta"></div><div class="sk-btns"><div class="sk-btn"></div><div class="sk-btn"></div></div></div></div></div>`;
     }
     list.innerHTML = html;
   }
   function _renderError(msg) {
-    const list = document.getElementById("cloudList");
+    const list = document.getElementById('cloudList');
     if (!list) return;
     list.innerHTML = `<div class="cloud-error"><span>Failed to load scripts</span><small>${helpers.escapeHtml(msg)}</small><button class="cloud-retry-btn" id="cloudRetryBtn">Retry</button></div>`;
-    document.getElementById("cloudRetryBtn")?.addEventListener("click", _load);
+    document.getElementById('cloudRetryBtn')?.addEventListener('click', _load);
   }
   function _cardHtml(script, index) {
     const badges = [];
     if (script.verified)
-      badges.push(
-        `<span class="cloud-badge verified">${SVG.verified} Verified</span>`,
-      );
+      badges.push(`<span class="cloud-badge verified">${SVG.verified} Verified</span>`);
     if (script.isUniversal)
-      badges.push(
-        `<span class="cloud-badge universal">${SVG.universal} Universal</span>`,
-      );
-    if (script.hasKey)
-      badges.push(`<span class="cloud-badge key">${SVG.key} Key</span>`);
+      badges.push(`<span class="cloud-badge universal">${SVG.universal} Universal</span>`);
+    if (script.hasKey) badges.push(`<span class="cloud-badge key">${SVG.key} Key</span>`);
     if (script.isPatched)
-      badges.push(
-        `<span class="cloud-badge patched">${SVG.patched} Patched</span>`,
-      );
+      badges.push(`<span class="cloud-badge patched">${SVG.patched} Patched</span>`);
     if (script.scriptType)
-      badges.push(
-        `<span class="cloud-badge type">${helpers.escapeHtml(script.scriptType)}</span>`,
-      );
+      badges.push(`<span class="cloud-badge type">${helpers.escapeHtml(script.scriptType)}</span>`);
     const viewCount = FormatHelpers.fmtViews(script.views);
     const dateLabel = script.createdAt
       ? new Date(script.createdAt).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
         })
-      : "";
+      : '';
     const gameHtml = script.gameName
       ? `<div class="cloud-card-game">${helpers.escapeHtml(script.gameName)}</div>`
-      : "";
-    return `<div class="cloud-card${script.isPatched ? " patched" : ""}" data-idx="${index}">
-      <div class="cloud-card-banner${script.gameImg ? "" : " no-img"}">
-        ${script.gameImg ? `<img src="${helpers.escapeHtml(script.gameImg)}" referrerpolicy="no-referrer" alt="" loading="lazy">` : ""}
+      : '';
+    return `<div class="cloud-card${script.isPatched ? ' patched' : ''}" data-idx="${index}">
+      <div class="cloud-card-banner${script.gameImg ? '' : ' no-img'}">
+        ${script.gameImg ? `<img src="${helpers.escapeHtml(script.gameImg)}" referrerpolicy="no-referrer" alt="" loading="lazy">` : ''}
         <span class="cloud-card-provider">${helpers.escapeHtml(CloudSources.SOURCES[script._src]?.tag ?? script._src)}</span>
       </div>
       <div class="cloud-card-body">
         <div class="cloud-card-title">${helpers.escapeHtml(script.title)}</div>
         ${gameHtml}
-        <div class="cloud-card-badges">${badges.join("") || '<span class="cloud-badge type">Script</span>'}</div>
+        <div class="cloud-card-badges">${badges.join('') || '<span class="cloud-badge type">Script</span>'}</div>
         <div class="cloud-card-footer">
-          <span class="cloud-card-meta">${viewCount} views${dateLabel ? ` · ${dateLabel}` : ""}</span>
+          <span class="cloud-card-meta">${viewCount} views${dateLabel ? ` · ${dateLabel}` : ''}</span>
           <div class="cloud-card-actions">
             <button class="cloud-action-btn" data-action="copy" title="Open in editor">${SVG.copy}</button>
             <button class="cloud-action-btn execute" data-action="execute" title="Execute">${SVG.execute}</button>
@@ -139,15 +126,14 @@ const cloud = (() => {
     </div>`;
   }
   function _renderScripts(scripts) {
-    const list = document.getElementById("cloudList");
+    const list = document.getElementById('cloudList');
     if (!list) return;
     if (!scripts.length) {
-      list.innerHTML =
-        '<div class="cloud-empty"><span>No scripts found</span></div>';
+      list.innerHTML = '<div class="cloud-empty"><span>No scripts found</span></div>';
       _renderPagination();
       return;
     }
-    list.innerHTML = "";
+    list.innerHTML = '';
     const CHUNK = 10;
     let idx = 0;
     function _insertChunk() {
@@ -155,48 +141,44 @@ const cloud = (() => {
       const end = Math.min(idx + CHUNK, scripts.length);
       for (let i = idx; i < end; i++) {
         const script = scripts[i];
-        const div = document.createElement("div");
+        const div = document.createElement('div');
         div.innerHTML = _cardHtml(script, i);
         const card = div.firstElementChild;
         if (!card) continue;
-        const img = card.querySelector("img");
+        const img = card.querySelector('img');
         if (img) {
-          img.addEventListener("error", () => {
+          img.addEventListener('error', () => {
             img.remove();
-            img.closest(".cloud-card-banner")?.classList.add("no-img");
+            img.closest('.cloud-card-banner')?.classList.add('no-img');
           });
         }
-        card
-          .querySelector('[data-action="copy"]')
-          ?.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            const btn = e.currentTarget;
-            btn.classList.add("loading");
-            try {
-              await _openInEditor(script.title, await _getContent(script));
-            } catch {
-              toast.show("Failed to load script", "fail");
-            } finally {
-              btn.classList.remove("loading");
-            }
-          });
-        card
-          .querySelector('[data-action="execute"]')
-          ?.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            const btn = e.currentTarget;
-            btn.classList.add("loading");
-            try {
-              const result = await injector.execute(await _getContent(script));
-              const port = await injector.getPort();
-              toast.show(port ? `Executed on :${port}` : "Executed", "ok");
-              if (result) console_.log(result, "ok");
-            } catch (err) {
-              toast.show(err.message ?? "Execution failed", "fail", 3000);
-            } finally {
-              btn.classList.remove("loading");
-            }
-          });
+        card.querySelector('[data-action="copy"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const btn = e.currentTarget;
+          btn.classList.add('loading');
+          try {
+            await _openInEditor(script.title, await _getContent(script));
+          } catch {
+            toast.show('Failed to load script', 'fail');
+          } finally {
+            btn.classList.remove('loading');
+          }
+        });
+        card.querySelector('[data-action="execute"]')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const btn = e.currentTarget;
+          btn.classList.add('loading');
+          try {
+            const result = await injector.execute(await _getContent(script));
+            const port = await injector.getPort();
+            toast.show(port ? `Executed on :${port}` : 'Executed', 'ok');
+            if (result) console_.log(result, 'ok');
+          } catch (err) {
+            toast.show(err.message ?? 'Execution failed', 'fail', 3000);
+          } finally {
+            btn.classList.remove('loading');
+          }
+        });
         frag.appendChild(card);
       }
       list.appendChild(frag);
@@ -211,14 +193,14 @@ const cloud = (() => {
   }
   async function _openInEditor(title, scriptContent) {
     if (!state.workDir) {
-      toast.show("Open a folder first to save cloud scripts", "warn");
+      toast.show('Open a folder first to save cloud scripts', 'warn');
       return;
     }
     const safeName =
       title
-        .replace(/[^a-zA-Z0-9_\-]/g, "_")
+        .replace(/[^a-zA-Z0-9_\-]/g, '_')
         .toLowerCase()
-        .slice(0, 40) + ".lua";
+        .slice(0, 40) + '.lua';
     const result = await fileManager.createFile(state.workDir, safeName);
     const file = state.getFile(result.id);
     if (file) {
@@ -227,30 +209,30 @@ const cloud = (() => {
       await fileManager.save(result.id).catch(() => {});
     }
     state.setActive(result.id);
-    eventBus.emit("ui:refresh-tree");
+    eventBus.emit('ui:refresh-tree');
     document.querySelector('.activity-btn[data-view="explorer"]')?.click();
-    toast.show(`Opened ${safeName}`, "ok", 2000);
+    toast.show(`Opened ${safeName}`, 'ok', 2000);
   }
   function _renderPagination() {
-    const pag = document.getElementById("cloudPagination");
+    const pag = document.getElementById('cloudPagination');
     if (!pag) return;
-    if (_mode === "trending" || _total <= 1) {
-      pag.innerHTML = "";
+    if (_mode === 'trending' || _total <= 1) {
+      pag.innerHTML = '';
       return;
     }
     pag.innerHTML = `
-      <button class="cloud-page-btn" id="cloudPrev" ${_page <= 1 ? "disabled" : ""}>←</button>
+      <button class="cloud-page-btn" id="cloudPrev" ${_page <= 1 ? 'disabled' : ''}>←</button>
       <span class="cloud-page-info">${_page} / ${_total}</span>
-      <button class="cloud-page-btn" id="cloudNext" ${_page >= _total ? "disabled" : ""}>→</button>`;
-    pag.querySelector("#cloudPrev")?.addEventListener("click", () => {
+      <button class="cloud-page-btn" id="cloudNext" ${_page >= _total ? 'disabled' : ''}>→</button>`;
+    pag.querySelector('#cloudPrev')?.addEventListener('click', () => {
       _page--;
       _load();
-      document.getElementById("cloudGridWrap").scrollTop = 0;
+      document.getElementById('cloudGridWrap').scrollTop = 0;
     });
-    pag.querySelector("#cloudNext")?.addEventListener("click", () => {
+    pag.querySelector('#cloudNext')?.addEventListener('click', () => {
       _page++;
       _load();
-      document.getElementById("cloudGridWrap").scrollTop = 0;
+      document.getElementById('cloudGridWrap').scrollTop = 0;
     });
   }
   function _setMode(mode) {
@@ -258,46 +240,44 @@ const cloud = (() => {
     _page = 1;
     _total = 1;
     document
-      .querySelectorAll(".cloud-filter-btn")
-      .forEach((btn) =>
-        btn.classList.toggle("active", btn.dataset.mode === mode),
-      );
+      .querySelectorAll('.cloud-filter-btn')
+      .forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
     _load();
   }
   function _toggleFilterPanel(view) {
-    view.querySelector("#cloudFilterPanel").classList.toggle("open");
+    view.querySelector('#cloudFilterPanel').classList.toggle('open');
   }
   function _buildFilterPanel(view) {
-    const panel = view.querySelector("#cloudFilterPanel");
+    const panel = view.querySelector('#cloudFilterPanel');
     const FILTER_DEFS = [
       {
-        key: "verified",
-        label: "Verified",
+        key: 'verified',
+        label: 'Verified',
       },
       {
-        key: "universal",
-        label: "Universal",
+        key: 'universal',
+        label: 'Universal',
       },
       {
-        key: "noKey",
-        label: "No Key",
+        key: 'noKey',
+        label: 'No Key',
       },
       {
-        key: "notPatched",
-        label: "Not Patched",
+        key: 'notPatched',
+        label: 'Not Patched',
       },
     ];
     panel.innerHTML = FILTER_DEFS.map(
       (f) => `
-      <label class="cloud-filter-tag ${_filters[f.key] ? "active" : ""}" data-key="${f.key}">
+      <label class="cloud-filter-tag ${_filters[f.key] ? 'active' : ''}" data-key="${f.key}">
         ${f.label}
       </label>`,
-    ).join("");
-    panel.querySelectorAll(".cloud-filter-tag").forEach((el) => {
-      el.addEventListener("click", () => {
+    ).join('');
+    panel.querySelectorAll('.cloud-filter-tag').forEach((el) => {
+      el.addEventListener('click', () => {
         const key = el.dataset.key;
         _filters[key] = !_filters[key];
-        el.classList.toggle("active", !!_filters[key]);
+        el.classList.toggle('active', !!_filters[key]);
         _page = 1;
         _total = 1;
         _load();
@@ -305,7 +285,7 @@ const cloud = (() => {
     });
   }
   function init() {
-    const view = document.getElementById("cloudView");
+    const view = document.getElementById('cloudView');
     if (!view) return;
     view.innerHTML = `
       <div class="cloud-topbar">
@@ -329,38 +309,36 @@ const cloud = (() => {
         <div class="cloud-list" id="cloudList"></div>
         <div class="cloud-attribution">${Object.values(CloudSources.SOURCES)
           .map((s) => helpers.escapeHtml(s.label))
-          .join(" \u00b7 ")}</div>
+          .join(' \u00b7 ')}</div>
       </div>
       <div class="cloud-pagination" id="cloudPagination"></div>`;
     _buildFilterPanel(view);
     view
-      .querySelector("#cloudFilterToggle")
-      .addEventListener("click", () => _toggleFilterPanel(view));
-    view.querySelector("#cloudSearchInput").addEventListener("input", (e) => {
+      .querySelector('#cloudFilterToggle')
+      .addEventListener('click', () => _toggleFilterPanel(view));
+    view.querySelector('#cloudSearchInput').addEventListener('input', (e) => {
       _query = e.target.value;
       clearTimeout(_searchDebounce);
       if (_query.trim()) {
-        _mode = "search";
-        view
-          .querySelectorAll(".cloud-filter-btn")
-          .forEach((btn) => btn.classList.remove("active"));
+        _mode = 'search';
+        view.querySelectorAll('.cloud-filter-btn').forEach((btn) => btn.classList.remove('active'));
         _searchDebounce = setTimeout(() => {
           _page = 1;
           _total = 1;
           _load();
         }, SEARCH_DEBOUNCE_MS);
       } else {
-        _setMode("recent");
+        _setMode('recent');
       }
     });
-    view.querySelectorAll(".cloud-filter-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        view.querySelector("#cloudSearchInput").value = "";
-        _query = "";
+    view.querySelectorAll('.cloud-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        view.querySelector('#cloudSearchInput').value = '';
+        _query = '';
         _setMode(btn.dataset.mode);
       });
     });
-    _setMode("recent");
+    _setMode('recent');
   }
   return {
     init,

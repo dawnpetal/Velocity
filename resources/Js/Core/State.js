@@ -34,25 +34,26 @@ const state = (() => {
   function getActive() {
     return _activeId ? (_files.get(_activeId) ?? null) : null;
   }
-  function setActive(id) {
+  function setActive(id, opts = {}) {
     _activeId = id;
     if (!id) {
-      _emit("file:activated", {
+      _emit('file:activated', {
         id: null,
         file: null,
       });
       return;
     }
     if (!_tabs.includes(id)) {
-      if (_previewId && _previewId !== id && !_unsaved.has(_previewId)) {
+      if (_previewId && _previewId !== id && !_unsaved.has(_previewId) && !opts.keepTabs) {
         const idx = _tabs.indexOf(_previewId);
         if (idx !== -1) _tabs.splice(idx, 1);
         _unsaved.delete(_previewId);
       }
-      _previewId = id;
+      if (!opts.permanent) _previewId = id;
       _tabs.push(id);
     }
-    _emit("file:activated", {
+    if (opts.permanent && _previewId === id) _previewId = null;
+    _emit('file:activated', {
       id,
       file: _files.get(id) ?? null,
     });
@@ -64,14 +65,14 @@ const state = (() => {
     f._lines = null;
     _unsaved.add(id);
     if (_previewId === id) _previewId = null;
-    _emit("file:changed", {
+    _emit('file:changed', {
       id,
     });
   }
   function getLines(id) {
     const f = _files.get(id);
     if (!f || f.content === null) return [];
-    if (!f._lines) f._lines = f.content.split("\n");
+    if (!f._lines) f._lines = f.content.split('\n');
     return f._lines;
   }
   function markSaved(id) {
@@ -89,12 +90,12 @@ const state = (() => {
     if (_previewId === id) _previewId = null;
     if (_activeId === id) {
       _activeId = _tabs.at(-1) ?? null;
-      _emit("file:activated", {
+      _emit('file:activated', {
         id: _activeId,
         file: _activeId ? (_files.get(_activeId) ?? null) : null,
       });
     }
-    _emit("file:closed", {
+    _emit('file:closed', {
       id,
     });
   }
@@ -113,7 +114,7 @@ const state = (() => {
     _roots = [];
     _workDir = null;
     _previewId = null;
-    _emit("workspace:cleared", {});
+    _emit('workspace:cleared', {});
   }
   return {
     get files() {

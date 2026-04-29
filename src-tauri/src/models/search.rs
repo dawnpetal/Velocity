@@ -19,16 +19,3 @@ pub struct SearchOptions {
     #[serde(default)]
     pub with_highlights: bool,
 }
-
-impl From<crate::types::SearchOpts> for SearchOptions {
-    fn from(opts: crate::types::SearchOpts) -> Self {
-        Self {
-            match_case: opts.match_case,
-            whole_word: opts.whole_word,
-            is_regex: opts.is_regex,
-            include_globs: opts.include_globs,
-            exclude_globs: opts.exclude_globs,
-            with_highlights: false,
-        }
-    }
-}
