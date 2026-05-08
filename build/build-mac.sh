@@ -103,8 +103,16 @@ if [ "$DO_RELEASE" = true ]; then
 
   header "Release details"
   echo ""
-  read -r -p "  Version (e.g. 1.0.0): " VERSION
-  [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Version must be semver (e.g. 1.0.0)"
+  read -r -p "  Version (e.g. 1.0.0 or 1.1.1-alpha.1): " VERSION
+  [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)?)?$ ]] || die "Version must be semver (e.g. 1.0.0 or 1.1.1-alpha.1)"
+
+  IS_PRERELEASE=false
+  [[ "$VERSION" =~ - ]] && IS_PRERELEASE=true
+
+  if [ "$IS_PRERELEASE" = true ]; then
+    warn "Pre-release detected — this will be marked as a pre-release on GitHub."
+  fi
+
   read -r -p "  Release title:         " TITLE
   [ -z "$TITLE" ] && TITLE="VelocityUI v${VERSION}"
   echo "  Release notes (press Enter twice when done):"
@@ -116,9 +124,10 @@ if [ "$DO_RELEASE" = true ]; then
   NOTES=$(echo -e "$NOTES" | sed 's/\\n$//')
 
   echo ""
-  info "Version : v${VERSION}"
-  info "Title   : ${TITLE}"
-  info "Notes   : ${NOTES:-"(none)"}"
+  info "Version    : v${VERSION}"
+  info "Pre-release: ${IS_PRERELEASE}"
+  info "Title      : ${TITLE}"
+  info "Notes      : ${NOTES:-"(none)"}"
   echo ""
   read -r -p "  Looks good? (y/n): " CONFIRM
   [[ "$CONFIRM" =~ ^[Yy]$ ]] || { warn "Aborted."; exit 0; }
@@ -150,27 +159,39 @@ if [ "$DO_RELEASE" = true ]; then
 
 ---
 **Installation**
-\`\`\`bash
-curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | bash
-\`\`\`
-Or download the zip below and drag **${APP_NAME}.app** to /Applications.
 
-To open the app, you may need to manually remove the gatekeeper restriction via: 
+**Option 1 — Installer script** *(recommended)*
 \`\`\`bash
-xattr -cr ./Applications/${APP_NAME}.app
+curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | bash -s -- --v${VERSION}
+\`\`\`
+
+**Option 2 — Manual**
+Download the zip below, unzip it, and drag **${APP_NAME}.app** to /Applications. Then run:
+\`\`\`bash
+xattr -cr /Applications/${APP_NAME}.app
 \`\`\`
 
 **SHA-256** \`${CHECKSUM}\`"
 
   header "Creating GitHub release v${VERSION}..."
+
+  PRERELEASE_FLAG=""
+  [ "$IS_PRERELEASE" = true ] && PRERELEASE_FLAG="--prerelease"
+
   gh release create "v${VERSION}" \
     "$ZIP_PATH" \
     --repo "$REPO" \
     --title "$TITLE" \
-    --notes "$RELEASE_NOTES"
+    --notes "$RELEASE_NOTES" \
+    $PRERELEASE_FLAG
 
   echo ""
-  success "Released → https://github.com/${REPO}/releases/tag/v${VERSION}"
+  if [ "$IS_PRERELEASE" = true ]; then
+    success "Pre-release published → https://github.com/${REPO}/releases/tag/v${VERSION}"
+    warn "This release is marked as pre-release. Only testers checking 'pre-releases' will see it."
+  else
+    success "Released → https://github.com/${REPO}/releases/tag/v${VERSION}"
+  fi
 
 else
 
