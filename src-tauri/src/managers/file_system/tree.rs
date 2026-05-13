@@ -92,6 +92,7 @@ fn build_recursive(path: &Path) -> VelocityUIResult<FileNode> {
                     uuid::Uuid::new_v4().to_string(),
                     entry_name_str.to_string(),
                     entry_path_str,
+                    meta.len(),
                 ))
             }
         })

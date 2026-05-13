@@ -168,6 +168,8 @@ const LuaLanguage = (() => {
     'RaycastParams',
     'OverlapParams',
     'RaycastResult',
+    'Vector3int16',
+    'Vector2int16',
   ];
   const STATIC_NAMESPACES = {
     Instance: ['new'],
@@ -196,6 +198,11 @@ const LuaLanguage = (() => {
     PhysicalProperties: ['new'],
     RaycastParams: ['new'],
     OverlapParams: ['new'],
+    Random: ['new'],
+    DateTime: ['now', 'fromUnixTimestamp', 'fromUnixTimestampMillis', 'fromIsoDate'],
+    Vector3int16: ['new'],
+    Vector2int16: ['new'],
+    Drawing: ['new'],
     BrickColor: ['new', 'palette', 'random', 'White', 'Black', 'Red', 'Yellow', 'Green', 'Blue'],
   };
   const STD_MEMBERS = {
@@ -1825,6 +1832,41 @@ const LuaLanguage = (() => {
       provideCompletionItems(model, position) {
         const lineText = model.getLineContent(position.lineNumber);
         const textBefore = lineText.slice(0, position.column - 1);
+        const word = model.getWordUntilPosition(position);
+        let range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+        const K = monaco.languages.CompletionItemKind;
+        const InsertAsSnippet = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
+        const orphanMemberSearch = textBefore.match(/(^|[^A-Za-z0-9_])(\.\w*)$/);
+        if (orphanMemberSearch) {
+          range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: position.column - orphanMemberSearch[2].length,
+            endColumn: position.column,
+          };
+          return {
+            suggestions: [
+              ..._datatypeGlobalSuggestions(DATATYPE_SIGS, range, K, InsertAsSnippet),
+              ...EXECUTOR_COMPLETIONS.filter((item) => item.label.includes('.')).map((item) => ({
+                label: item.label,
+                kind: K.Function,
+                detail: item.detail,
+                documentation: {
+                  value: item.documentation,
+                },
+                insertText: item.insertText,
+                insertTextRules: item.snippet ? InsertAsSnippet : undefined,
+                range,
+                sortText: '2_' + item.label,
+              })),
+            ],
+          };
+        }
         if (/[.:]\s*\w*$/.test(textBefore) && typeof RobloxAPI !== 'undefined') {
           const forType = _resolveExprType(textBefore, model, position.lineNumber);
           if (forType && RobloxAPI.getClass(forType))
@@ -1841,37 +1883,35 @@ const LuaLanguage = (() => {
             suggestions: [],
           };
         const nsMatch = textBefore.match(/\b(\w+)\.\w*$/);
-        if (nsMatch && STATIC_NAMESPACES[nsMatch[1]]) {
-          const members = STATIC_NAMESPACES[nsMatch[1]];
-          const word = model.getWordUntilPosition(position);
-          const range = {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn,
-          };
+        if (nsMatch && STATIC_NAMESPACES[nsMatch[1]])
           return {
-            suggestions: members.map((name) => ({
-              label: name,
-              kind: monaco.languages.CompletionItemKind.Method,
-              detail: nsMatch[1] + '.' + name,
-              documentation: {
-                value: '`' + nsMatch[1] + '.' + name + '`',
-              },
-              insertText: name,
+            suggestions: _staticNamespaceSuggestions(
+              nsMatch[1],
+              STATIC_NAMESPACES[nsMatch[1]],
+              DATATYPE_SIGS,
+              EXECUTOR_COMPLETIONS,
               range,
-            })),
+              K,
+              InsertAsSnippet,
+            ),
           };
+        if (nsMatch) {
+          const executorMembers = _executorNamespaceSuggestions(
+            nsMatch[1],
+            EXECUTOR_COMPLETIONS,
+            range,
+            K,
+            InsertAsSnippet,
+          );
+          if (executorMembers.length)
+            return {
+              suggestions: executorMembers,
+            };
         }
-        const word = model.getWordUntilPosition(position);
-        const range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn,
-        };
-        const K = monaco.languages.CompletionItemKind;
-        const InsertAsSnippet = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
+        if (_hasMemberOwner(textBefore))
+          return {
+            suggestions: [],
+          };
         return {
           suggestions: [
             ...KEYWORDS.map((l) => ({
@@ -1886,6 +1926,7 @@ const LuaLanguage = (() => {
               insertText: l,
               range,
             })),
+            ..._datatypeGlobalSuggestions(DATATYPE_SIGS, range, K, InsertAsSnippet),
             ...EXECUTOR_COMPLETIONS.map((c) => ({
               label: c.label,
               kind: K.Function,
@@ -1896,98 +1937,17 @@ const LuaLanguage = (() => {
               insertText: c.insertText,
               insertTextRules: c.snippet ? InsertAsSnippet : undefined,
               range,
+              sortText: c.label.includes('.') ? '2_' + c.label : '3_' + c.label,
             })),
-            ...SNIPPETS.map((s) => ({
-              label: s.label,
+            ...SNIPPETS.map((snippet) => ({
+              label: snippet.label,
               kind: K.Snippet,
-              insertText: s.insertText,
-              detail: s.detail,
+              insertText: snippet.insertText,
+              detail: snippet.detail,
               insertTextRules: InsertAsSnippet,
               range,
             })),
           ],
-        };
-      },
-    });
-    monaco.languages.registerCompletionItemProvider('lua', {
-      triggerCharacters: ['.', ':'],
-      provideCompletionItems(model, position) {
-        if (typeof RobloxAPI === 'undefined')
-          return {
-            suggestions: [],
-          };
-        const lineText = model.getLineContent(position.lineNumber);
-        const textBefore = lineText.slice(0, position.column - 1);
-        if (!/[.:]\s*\w*$/.test(textBefore))
-          return {
-            suggestions: [],
-          };
-        const sepMatch = textBefore.match(/([.:])[\w]*$/);
-        const sep = sepMatch ? sepMatch[1] : '.';
-        const className = _resolveExprType(textBefore, model, position.lineNumber);
-        if (!className)
-          return {
-            suggestions: [],
-          };
-        const cls = RobloxAPI.getClass(className);
-        if (!cls)
-          return {
-            suggestions: [],
-          };
-        const word = model.getWordUntilPosition(position);
-        const range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn,
-        };
-        const K = monaco.languages.CompletionItemKind;
-        const InsertAsSnippet = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
-        const suggestions = [];
-        if (sep === '.') {
-          cls.p.forEach(([name, type]) => {
-            suggestions.push({
-              label: name,
-              kind: K.Property,
-              detail: type,
-              documentation: {
-                value: '**' + name + '**: `' + type + '`',
-              },
-              insertText: name,
-              sortText: '0_' + name,
-              range,
-            });
-          });
-        }
-        cls.m.forEach(([name, ret, args]) => {
-          suggestions.push({
-            label: name,
-            kind: K.Method,
-            detail: (args || '()') + ' -> ' + ret,
-            documentation: {
-              value: '**' + name + '**' + (args || '()') + ': `' + ret + '`',
-            },
-            insertText: args ? name + '(' + _argsToSnippet(args) + ')' : name + '()',
-            insertTextRules: args ? InsertAsSnippet : undefined,
-            sortText: '1_' + name,
-            range,
-          });
-        });
-        cls.e.forEach(([name, sig]) => {
-          suggestions.push({
-            label: name,
-            kind: K.Event,
-            detail: 'RBXScriptSignal ' + sig,
-            documentation: {
-              value: '**' + name + '**: event `' + sig + '`',
-            },
-            insertText: name,
-            sortText: '2_' + name,
-            range,
-          });
-        });
-        return {
-          suggestions,
         };
       },
     });
@@ -2328,6 +2288,41 @@ const LuaLanguage = (() => {
         doc: 'Creates a new OverlapParams object.',
       },
       {
+        name: 'Random.new',
+        params: ['seed: number?'],
+        doc: 'Creates a Random object with an optional seed.',
+      },
+      {
+        name: 'DateTime.now',
+        params: [],
+        doc: 'Returns the current DateTime.',
+      },
+      {
+        name: 'DateTime.fromUnixTimestamp',
+        params: ['unixTimestamp: number'],
+        doc: 'Creates a DateTime from a Unix timestamp in seconds.',
+      },
+      {
+        name: 'DateTime.fromUnixTimestampMillis',
+        params: ['unixTimestampMillis: number'],
+        doc: 'Creates a DateTime from a Unix timestamp in milliseconds.',
+      },
+      {
+        name: 'DateTime.fromIsoDate',
+        params: ['isoDate: string'],
+        doc: 'Creates a DateTime from an ISO 8601 date string.',
+      },
+      {
+        name: 'Vector3int16.new',
+        params: ['x: number', 'y: number', 'z: number'],
+        doc: 'Creates a Vector3int16.',
+      },
+      {
+        name: 'Vector2int16.new',
+        params: ['x: number', 'y: number'],
+        doc: 'Creates a Vector2int16.',
+      },
+      {
         name: 'PhysicalProperties.new',
         params: [
           'density: number',
@@ -2574,135 +2569,123 @@ const LuaLanguage = (() => {
         return null;
       },
     });
-    monaco.languages.registerCompletionItemProvider('lua', {
-      provideCompletionItems(model, position) {
-        const currentLine = position.lineNumber;
-        const fullText = model.getValue();
-        const lines = fullText.split('\n');
-        const word = model.getWordUntilPosition(position);
-        const range = {
-          startLineNumber: currentLine,
-          endLineNumber: currentLine,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn,
-        };
-        const K = monaco.languages.CompletionItemKind;
-        const InsertAsSnippet = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
-        const seen = new Set([...KEYWORDS, ...BUILTINS, ...EXECUTOR_GLOBALS, ...ROBLOX_GLOBALS]);
-        const suggestions = [];
-        const localVarRe = /\blocal\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*(?:=|$)/g;
-        const assignRe = /^([a-zA-Z_]\w*)\s*=/;
-        const localFuncRe = /\blocal\s+function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)/g;
-        const funcRe = /\bfunction\s+([a-zA-Z_][\w.]*)\s*\(([^)]*)\)/g;
-        const forVarRe = /\bfor\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*(?:=|in)\b/g;
-        const paramRe = /\bfunction\s*(?:[\w.]*\s*)?\(([^)]*)\)/g;
-        let m;
-        while ((m = localFuncRe.exec(fullText)) !== null) {
-          const name = m[1];
-          const args = m[2].trim();
-          if (seen.has(name)) continue;
-          seen.add(name);
-          suggestions.push({
-            label: name,
-            kind: K.Function,
-            detail: 'local function ' + name + '(' + args + ')',
-            insertText: args ? name + '(${1})' : name + '()',
-            insertTextRules: args ? InsertAsSnippet : undefined,
-            sortText: '0_' + name,
-            range,
-          });
-        }
-        while ((m = funcRe.exec(fullText)) !== null) {
-          const name = m[1];
-          const args = m[2].trim();
-          if (seen.has(name)) continue;
-          seen.add(name);
-          suggestions.push({
-            label: name,
-            kind: K.Function,
-            detail: 'function ' + name + '(' + args + ')',
-            insertText: args ? name + '(${1})' : name + '()',
-            insertTextRules: args ? InsertAsSnippet : undefined,
-            sortText: '0_' + name,
-            range,
-          });
-        }
-        while ((m = localVarRe.exec(fullText)) !== null) {
-          const names = m[1].split(',').map((s) => s.trim());
-          for (const name of names) {
-            if (!name || seen.has(name)) continue;
-            seen.add(name);
-            suggestions.push({
-              label: name,
-              kind: K.Variable,
-              detail: 'local ' + name,
-              insertText: name,
-              sortText: '1_' + name,
-              range,
-            });
-          }
-        }
-        for (let i = 0; i < lines.length; i++) {
-          if (i === currentLine - 1) continue;
-          const line = lines[i].trim();
-          const am = line.match(assignRe);
-          if (am) {
-            const name = am[1];
-            if (!seen.has(name)) {
-              seen.add(name);
-              suggestions.push({
-                label: name,
-                kind: K.Variable,
-                detail: name,
-                insertText: name,
-                sortText: '2_' + name,
-                range,
-              });
-            }
-          }
-        }
-        while ((m = forVarRe.exec(fullText)) !== null) {
-          const names = m[1].split(',').map((s) => s.trim());
-          for (const name of names) {
-            if (!name || seen.has(name)) continue;
-            seen.add(name);
-            suggestions.push({
-              label: name,
-              kind: K.Variable,
-              detail: 'for variable',
-              insertText: name,
-              sortText: '2_' + name,
-              range,
-            });
-          }
-        }
-        while ((m = paramRe.exec(fullText)) !== null) {
-          const params = m[1]
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean);
-          for (const name of params) {
-            if (!name || seen.has(name) || name === '...') continue;
-            seen.add(name);
-            suggestions.push({
-              label: name,
-              kind: K.Variable,
-              detail: 'parameter',
-              insertText: name,
-              sortText: '2_' + name,
-              range,
-            });
-          }
-        }
-        return {
-          suggestions,
-        };
-      },
-    });
     const symbolProvider = _buildSymbolProvider(monaco);
     monaco.languages.registerDocumentSymbolProvider('lua', symbolProvider);
     return symbolProvider;
   }
+  function _hasMemberOwner(textBefore) {
+    return /\b[A-Za-z_]\w*(?:[.:][A-Za-z_]\w*)*\s*[.:]\s*\w*$/.test(textBefore);
+  }
+
+  function _staticNamespaceSuggestions(
+    namespace,
+    members,
+    datatypeSigs,
+    executorCompletions,
+    range,
+    K,
+    InsertAsSnippet,
+  ) {
+    const executorByName = new Map(executorCompletions.map((item) => [item.label, item]));
+    const sigByName = new Map(datatypeSigs.map((item) => [item.name, item]));
+    return members.map((name) => {
+      const fullName = namespace + '.' + name;
+      const executor = executorByName.get(fullName);
+      if (executor) return _executorSuggestion(executor, name, range, K, InsertAsSnippet, '0_');
+      const sig = sigByName.get(fullName);
+      if (sig) return _datatypeMemberSuggestion(sig, name, range, K, InsertAsSnippet, '0_');
+      return {
+        label: name,
+        kind: /^[A-Z]/.test(name) ? K.Property : K.Method,
+        detail: fullName,
+        documentation: {
+          value: '`' + fullName + '`',
+        },
+        insertText: name,
+        sortText: '1_' + name,
+        range,
+      };
+    });
+  }
+
+  function _executorNamespaceSuggestions(
+    namespace,
+    executorCompletions,
+    range,
+    K,
+    InsertAsSnippet,
+  ) {
+    const prefix = namespace + '.';
+    return executorCompletions
+      .filter((item) => item.label.startsWith(prefix))
+      .map((item) =>
+        _executorSuggestion(item, item.label.slice(prefix.length), range, K, InsertAsSnippet, '0_'),
+      );
+  }
+
+  function _datatypeGlobalSuggestions(datatypeSigs, range, K, InsertAsSnippet) {
+    return datatypeSigs.map((sig) => ({
+      label: sig.name,
+      kind: K.Function,
+      detail: '(' + sig.params.join(', ') + ')',
+      documentation: {
+        value: sig.doc,
+      },
+      insertText: _callInsertText(sig.name, sig.params),
+      insertTextRules: sig.params.length ? InsertAsSnippet : undefined,
+      sortText: '1_' + sig.name,
+      range,
+    }));
+  }
+
+  function _datatypeMemberSuggestion(sig, label, range, K, InsertAsSnippet, sortPrefix) {
+    return {
+      label,
+      kind: sig.params.length || /^[a-z]/.test(label) ? K.Method : K.Property,
+      detail: sig.name + '(' + sig.params.join(', ') + ')',
+      documentation: {
+        value: sig.doc,
+      },
+      insertText: _callInsertText(label, sig.params),
+      insertTextRules: sig.params.length ? InsertAsSnippet : undefined,
+      sortText: sortPrefix + label,
+      range,
+    };
+  }
+
+  function _executorSuggestion(item, label, range, K, InsertAsSnippet, sortPrefix) {
+    const insertText = item.label.includes('.')
+      ? item.insertText.slice(item.label.lastIndexOf('.') + 1)
+      : item.insertText;
+    return {
+      label,
+      kind: K.Function,
+      detail: item.detail,
+      documentation: {
+        value: item.documentation,
+      },
+      insertText,
+      insertTextRules: item.snippet ? InsertAsSnippet : undefined,
+      sortText: sortPrefix + label,
+      range,
+    };
+  }
+
+  function _callInsertText(name, params) {
+    if (!params.length) return name + '()';
+    return (
+      name +
+      '(' +
+      params
+        .map(
+          (param, index) =>
+            '${' + (index + 1) + ':' + param.split(':')[0].replace(/[?]/g, '').trim() + '}',
+        )
+        .join(', ') +
+      ')'
+    );
+  }
+
   function _resolveExprType(textBefore, model, lineNumber) {
     if (typeof RobloxAPI === 'undefined') return null;
     const expr = textBefore.replace(/[.:]\s*\w*$/, '').trimEnd();
@@ -2780,6 +2763,21 @@ const LuaLanguage = (() => {
       .split(',')
       .map((p, i) => '${' + (i + 1) + ':' + p.trim().split(':')[0].replace(/[?]/g, '').trim() + '}')
       .join(', ');
+  }
+
+  function _offsetAt(text, position) {
+    let line = 1;
+    let column = 1;
+    for (let i = 0; i < text.length; i++) {
+      if (line === position.lineNumber && column === position.column) return i;
+      if (text[i] === '\n') {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    return text.length;
   }
   return {
     register,

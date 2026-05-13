@@ -63,13 +63,13 @@ const search = (() => {
 
   function _pathToId(path) {
     if (!path) return null;
-    const f = state.files.find((f) => f.path === path);
+    const f = state.findByPath(path);
     return f ? f.id : null;
   }
 
   async function _openByPath(path, lineNum) {
     if (!path) return;
-    let file = state.files.find((f) => f.path === path);
+    let file = state.findByPath(path);
     if (!file) {
       const id = helpers.uid();
       const name = helpers.basename(path);

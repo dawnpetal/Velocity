@@ -19,6 +19,7 @@ const PinboardCard = (() => {
     const card = document.createElement('div');
     card.className = 'pb-card';
     card.dataset.id = snippet.id;
+    card.addEventListener('contextmenu', (e) => showCardMenu(e, snippet, context));
     const header = document.createElement('div');
     header.className = 'pb-card-header';
     const labelWrap = DomHelpers.el('div', 'pb-label-wrap');
@@ -102,6 +103,7 @@ const PinboardCard = (() => {
     actionsBtns.append(editBtn, copyBtn, moreBtn);
     actions.append(runBtn, actionsBtns);
     header.append(labelWrap);
+    if (actionsMeta.childNodes.length) header.append(actionsMeta);
     const preview = document.createElement('pre');
     preview.className = 'pb-code-preview';
     _renderPreviewContent(preview, snippet.code);
@@ -126,6 +128,56 @@ const PinboardCard = (() => {
   }
   function showCardMenu(e, snippet, context) {
     const { snippets, findIdx, onSave, onRender, activeEditorIds } = context;
+    const rename = () => {
+      const labelEl = document.querySelector(
+        '.pb-card[data-id="' + snippet.id + '"] .pb-card-label',
+      );
+      if (labelEl) startInlineRename(labelEl, snippet, context);
+    };
+    const duplicate = () => {
+      const duplicated = Object.assign({}, snippet, {
+        id: helpers.uid(),
+        label: snippet.label + ' copy',
+        runCount: 0,
+        lastRun: null,
+        createdAt: Date.now(),
+      });
+      snippets.splice(findIdx(snippet.id) + 1, 0, duplicated);
+      onSave().catch(() => {});
+      onRender();
+    };
+    const copyCode = async () => {
+      try {
+        await window.__TAURI__.core.invoke('write_clipboard', {
+          text: snippet.code,
+        });
+        toast.show('Copied', 'ok', 1200);
+      } catch {}
+    };
+    const remove = () => {
+      const idx = findIdx(snippet.id);
+      if (idx !== -1) {
+        activeEditorIds.delete(snippet.id);
+        snippets.splice(idx, 1);
+        onSave().catch(() => {});
+        onRender();
+      }
+    };
+    const nativeItems = [
+      { label: 'Rename', action: rename },
+      { label: 'Edit Tags', action: () => editTags(snippet, context) },
+      { label: 'Duplicate', action: duplicate },
+      { separator: true },
+      { label: 'Copy Code', action: copyCode },
+      { separator: true },
+      { label: 'Delete', action: remove },
+    ];
+    if (typeof ctxMenu !== 'undefined' && ctxMenu.showItems) {
+      ctxMenu.showItems(e, nativeItems);
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
     const menu = document.getElementById('ctxMenu');
     if (!menu) return;
     menu.innerHTML = '';
@@ -139,49 +191,13 @@ const PinboardCard = (() => {
       });
       menu.appendChild(btn);
     };
-    addItem('Rename', SVG.edit, () => {
-      const labelEl = document.querySelector(
-        '.pb-card[data-id="' + snippet.id + '"] .pb-card-label',
-      );
-      if (labelEl) startInlineRename(labelEl, snippet, context);
-    });
+    addItem('Rename', SVG.edit, rename);
     addItem('Edit Tags', SVG.tag, () => editTags(snippet, context));
-    addItem('Duplicate', SVG.duplicate, () => {
-      const duplicated = Object.assign({}, snippet, {
-        id: helpers.uid(),
-        label: snippet.label + ' copy',
-        runCount: 0,
-        lastRun: null,
-        createdAt: Date.now(),
-      });
-      snippets.splice(findIdx(snippet.id) + 1, 0, duplicated);
-      onSave().catch(() => {});
-      onRender();
-    });
+    addItem('Duplicate', SVG.duplicate, duplicate);
     menu.appendChild(DomHelpers.sep());
-    addItem('Copy Code', SVG.copy, async () => {
-      try {
-        await window.__TAURI__.core.invoke('write_clipboard', {
-          text: snippet.code,
-        });
-        toast.show('Copied', 'ok', 1200);
-      } catch {}
-    });
+    addItem('Copy Code', SVG.copy, copyCode);
     menu.appendChild(DomHelpers.sep());
-    addItem(
-      'Delete',
-      SVG.delete,
-      () => {
-        const idx = findIdx(snippet.id);
-        if (idx !== -1) {
-          activeEditorIds.delete(snippet.id);
-          snippets.splice(idx, 1);
-          onSave().catch(() => {});
-          onRender();
-        }
-      },
-      true,
-    );
+    addItem('Delete', SVG.delete, remove, true);
     menu.classList.add('open');
     menu.style.left = '0px';
     menu.style.top = '0px';

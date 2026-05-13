@@ -124,6 +124,10 @@ const ExplorerDnd = (() => {
     }
   }
   function _attachNodeDrag(row, node) {
+    if (autoexec.isProtectedRootNode(node)) {
+      row.draggable = false;
+      return;
+    }
     row.draggable = true;
     row.addEventListener('dragstart', (e) => {
       const sel = ExplorerTree.getSelection();
@@ -254,6 +258,7 @@ const ExplorerDnd = (() => {
   async function _internalDrop(dragNodes, targetNode, zone) {
     let moved = 0;
     for (const dragNode of dragNodes) {
+      if (autoexec.isProtectedRootNode(dragNode)) continue;
       if (dragNode.id === targetNode.id) continue;
       if (_isAncestorOf(dragNode, targetNode.id)) continue;
       let destDir;
@@ -270,6 +275,14 @@ const ExplorerDnd = (() => {
             ? root.path
             : targetNode.path.substring(0, targetNode.path.lastIndexOf('/'));
         }
+      }
+      if (autoexec.isInsideProtectedArea(destDir) && dragNode.type === 'folder') {
+        toast.show('Autoexecute only accepts Lua files', 'info', 1500);
+        continue;
+      }
+      if (autoexec.isInsideProtectedArea(destDir) && !dragNode.name.endsWith('.lua')) {
+        toast.show('Autoexecute only accepts .lua files', 'info', 1500);
+        continue;
       }
       const newPath = `${destDir}/${dragNode.name}`;
       if (newPath === dragNode.path) continue;
@@ -311,6 +324,7 @@ const ExplorerDnd = (() => {
     const items = Array.from(dt.items ?? []);
     const sources = items.map((item) => item.getAsFile()).filter((f) => f?.path);
     if (!sources.length) return;
+    const autoexecDrop = autoexec.isInsideProtectedArea(destDir);
     toast.show(`Copying ${sources.length} item${sources.length > 1 ? 's' : ''}…`, 'info', 2000);
     let copied = 0;
     for (const file of sources) {
@@ -318,6 +332,10 @@ const ExplorerDnd = (() => {
       const dest = `${destDir}/${file.name}`;
       try {
         const stat = await window.__TAURI__.core.invoke('stat_path', { path: srcPath });
+        if (autoexecDrop && (stat.isDirectory || !file.name.endsWith('.lua'))) {
+          toast.show('Autoexecute only accepts .lua files', 'info', 1500);
+          continue;
+        }
         if (stat.isDirectory) {
           await window.__TAURI__.core.invoke('copy_path_recursive', { src: srcPath, dest });
         } else {

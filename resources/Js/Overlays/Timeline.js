@@ -122,24 +122,31 @@ const timeline = (() => {
     const arrow = document.getElementById('tlArrow');
     if (!header || !body) return;
     const section = header.closest('.sb-section');
-    _expanded = true;
-    section?.classList.remove('is-collapsed');
-    arrow?.classList.add('open');
-    const toggle = () => {
-      _expanded = !_expanded;
+    const panel = document.getElementById('sidebarBottom');
+    _expanded = !uiState.timelineCollapsed;
+    const sync = () => {
       body.hidden = !_expanded;
       section?.classList.toggle('is-collapsed', !_expanded);
       arrow?.classList.toggle('open', _expanded);
       header.setAttribute('aria-expanded', String(_expanded));
-      if (_expanded && !panel.dataset.userResized) {
-        panel.style.height = '360px';
-      }
+    };
+    const toggle = () => {
+      _expanded = !_expanded;
+      uiState.setTimelineCollapsed(!_expanded);
+      sync();
+      if (!panel) return;
+      if (_expanded && !panel.dataset.userResized) panel.style.height = '360px';
       const allCollapsed = !panel.querySelector('.sb-section:not(.is-collapsed)');
       if (allCollapsed) {
         panel.style.height = '';
         delete panel.dataset.userResized;
       }
     };
+    header._syncTimelineChrome = () => {
+      _expanded = !uiState.timelineCollapsed;
+      sync();
+    };
+    sync();
     header.addEventListener('click', toggle);
     header.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -164,6 +171,7 @@ const timeline = (() => {
         panel.style.height = Math.max(86, Math.min(480, startH - (e.clientY - startY))) + 'px';
       };
       const onUp = () => {
+        uiState.setSbBottomHeight(panel.offsetHeight);
         resizer.classList.remove('dragging');
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
@@ -186,8 +194,13 @@ const timeline = (() => {
     });
     _render();
   }
+  function syncChrome() {
+    document.getElementById('tlHeader')?._syncTimelineChrome?.();
+  }
+
   return {
     init,
+    syncChrome,
     recordSave,
     setFile,
     refreshSize,

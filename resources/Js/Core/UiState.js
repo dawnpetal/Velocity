@@ -1,13 +1,15 @@
 const uiState = (() => {
-  let _sidebarWidth = null;
+  let _sidebarWidth = 200;
   let _sidebarHidden = false;
   let _sidebarLocked = false;
   let _panelVisible = false;
-  let _sbBottomHeight = null;
+  let _sbBottomHeight = 100;
   let _activeView = 'explorer';
-  let _fontSize = null;
-  let _wordWrap = null;
-  let _minimap = null;
+  let _outlineCollapsed = true;
+  let _timelineCollapsed = true;
+  let _fontSize = 12;
+  let _wordWrap = true;
+  let _minimap = false;
   let _lineNumbers = null;
   let _executor = 'opium';
   const VALID_EXECUTORS = new Set(['hydrogen', 'opium']);
@@ -18,7 +20,9 @@ const uiState = (() => {
       sidebarLocked: _sidebarLocked,
       panelVisible: _panelVisible,
       sbBottomHeight: _sbBottomHeight,
-      activeView: _activeView,
+      activeView: _activeView === 'datatree' ? 'explorer' : _activeView,
+      outlineCollapsed: _outlineCollapsed,
+      timelineCollapsed: _timelineCollapsed,
       settings: {
         fontSize: _fontSize,
         wordWrap: _wordWrap,
@@ -30,12 +34,15 @@ const uiState = (() => {
   }
   function applyLoaded(loaded) {
     if (!loaded) return;
-    if (loaded.sidebarWidth != null) _sidebarWidth = loaded.sidebarWidth;
+    if (loaded.sidebarWidth != null) _sidebarWidth = Math.max(200, loaded.sidebarWidth);
     if (loaded.sidebarHidden != null) _sidebarHidden = loaded.sidebarHidden;
     if (loaded.sidebarLocked != null) _sidebarLocked = loaded.sidebarLocked;
     if (loaded.sbBottomHeight != null) _sbBottomHeight = loaded.sbBottomHeight;
     if (loaded.panelVisible != null) _panelVisible = loaded.panelVisible;
-    if (loaded.activeView) _activeView = loaded.activeView;
+    if (loaded.activeView)
+      _activeView = loaded.activeView === 'datatree' ? 'explorer' : loaded.activeView;
+    if (loaded.outlineCollapsed != null) _outlineCollapsed = !!loaded.outlineCollapsed;
+    if (loaded.timelineCollapsed != null) _timelineCollapsed = !!loaded.timelineCollapsed;
     const s = loaded.settings ?? {};
     if (s.fontSize != null) _fontSize = s.fontSize;
     if (s.wordWrap != null) _wordWrap = s.wordWrap;
@@ -61,7 +68,7 @@ const uiState = (() => {
     return _sidebarLocked;
   }
   function setSidebarWidth(px) {
-    _sidebarWidth = px;
+    _sidebarWidth = Math.max(200, px);
     save();
   }
   function setPanelVisible(v) {
@@ -73,7 +80,15 @@ const uiState = (() => {
     save();
   }
   function setActiveView(v) {
-    _activeView = v;
+    _activeView = v === 'datatree' ? 'explorer' : v;
+    save();
+  }
+  function setOutlineCollapsed(v) {
+    _outlineCollapsed = !!v;
+    save();
+  }
+  function setTimelineCollapsed(v) {
+    _timelineCollapsed = !!v;
     save();
   }
   function setFontSize(n) {
@@ -114,6 +129,12 @@ const uiState = (() => {
     get activeView() {
       return _activeView;
     },
+    get outlineCollapsed() {
+      return _outlineCollapsed;
+    },
+    get timelineCollapsed() {
+      return _timelineCollapsed;
+    },
     get fontSize() {
       return _fontSize;
     },
@@ -134,6 +155,8 @@ const uiState = (() => {
     setPanelVisible,
     setSbBottomHeight,
     setActiveView,
+    setOutlineCollapsed,
+    setTimelineCollapsed,
     setFontSize,
     setWordWrap,
     setMinimap,

@@ -1,10 +1,13 @@
 use regex::Regex;
+use std::io::BufRead;
 
 use crate::error::{VelocityUIError, VelocityUIResult};
 use crate::models::{SearchOptions, SearchResultLine};
 
 const MAX_PER_FILE: usize = 500;
 const MAX_FILES: usize = 200;
+const MAX_FILE_BYTES: u64 = 12 * 1024 * 1024;
+const MAX_LINE_CHARS: usize = 1400;
 
 pub struct SearchManager;
 
@@ -32,26 +35,42 @@ impl SearchManager {
             }
 
             let path = entry.path().to_string_lossy().to_string();
-            let Ok(content) = std::fs::read_to_string(entry.path()) else {
+            let Ok(meta) = entry.metadata() else { continue };
+            if meta.len() > MAX_FILE_BYTES {
+                continue;
+            }
+            let Ok(file) = std::fs::File::open(entry.path()) else {
                 continue;
             };
-
+            let mut reader = std::io::BufReader::new(file);
+            let mut line = String::new();
+            let mut line_num: u32 = 0;
             let mut hit_count: usize = 0;
-            for (i, line) in content.lines().enumerate() {
-                if !re.is_match(line) {
+
+            loop {
+                line.clear();
+                let Ok(bytes) = reader.read_line(&mut line) else {
+                    break;
+                };
+                if bytes == 0 {
+                    break;
+                }
+                line_num += 1;
+                if line.as_bytes().contains(&0) || !re.is_match(&line) {
                     continue;
                 }
 
+                let display = Self::clip_line(line.trim_end_matches(|c| c == '\r' || c == '\n'));
                 let highlighted = if opts.with_highlights {
-                    Some(Self::highlight(line, &re))
+                    Some(Self::highlight(&display, &re))
                 } else {
                     None
                 };
 
                 results.push(SearchResultLine {
                     path: path.clone(),
-                    line_num: (i + 1) as u32,
-                    text: line.to_string(),
+                    line_num,
+                    text: display,
                     highlighted,
                 });
 
@@ -118,6 +137,15 @@ impl SearchManager {
         Ok(ignore::WalkBuilder::new(work_dir)
             .overrides(overrides)
             .build())
+    }
+
+    fn clip_line(line: &str) -> String {
+        if line.chars().count() <= MAX_LINE_CHARS {
+            return line.to_string();
+        }
+        let mut out: String = line.chars().take(MAX_LINE_CHARS).collect();
+        out.push('…');
+        out
     }
 
     fn highlight(line: &str, re: &Regex) -> String {

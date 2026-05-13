@@ -5,6 +5,9 @@ const Preview = (() => {
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     return bytes;
   }
+  function _fileSrc(file) {
+    return window.__TAURI__?.core?.convertFileSrc?.(file.path) || file.path;
+  }
   function _tbBtn(label, onClick) {
     const b = document.createElement('button');
     b.className = 'preview-tb-btn';
@@ -94,11 +97,7 @@ const Preview = (() => {
       EditorModels.setBlobUrl(file.id, url);
       _buildImageUI(pane, url, file.name);
     } else {
-      _buildImageUI(
-        pane,
-        `data:image/${LangMap.extOf(file.name)};base64,${btoa(file.content)}`,
-        file.name,
-      );
+      _buildImageUI(pane, _fileSrc(file), file.name);
     }
   }
   function renderSvg(pane, file) {
@@ -136,13 +135,16 @@ const Preview = (() => {
   }
   function renderVideo(pane, file) {
     pane.className = 'preview-pane preview-video-pane';
-    const mime = LangMap.mimeFor(file.name);
-    const bytes = _base64ToUint8Array(file.binaryData);
-    const blob = new Blob([bytes], {
-      type: mime,
-    });
-    const url = URL.createObjectURL(blob);
-    EditorModels.setBlobUrl(file.id, url);
+    let url = _fileSrc(file);
+    if (file.binaryData) {
+      const mime = LangMap.mimeFor(file.name);
+      const bytes = _base64ToUint8Array(file.binaryData);
+      const blob = new Blob([bytes], {
+        type: mime,
+      });
+      url = URL.createObjectURL(blob);
+      EditorModels.setBlobUrl(file.id, url);
+    }
     const toolbar = document.createElement('div');
     toolbar.className = 'preview-toolbar';
     const label = document.createElement('span');

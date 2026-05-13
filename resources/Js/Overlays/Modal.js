@@ -72,6 +72,21 @@ const modal = (() => {
       );
     });
   }
+  function confirmInApp(title, body) {
+    return new Promise((resolve) => {
+      _open(title, body);
+      _actionsEl().append(
+        _btn('Cancel', 'secondary', () => {
+          close();
+          resolve(false);
+        }),
+        _btn('Delete', 'danger', () => {
+          close();
+          resolve(true);
+        }),
+      );
+    });
+  }
   function ask(title, body, choices) {
     if (choices.length === 2 && window.__TAURI__?.dialog?.confirm) {
       return window.__TAURI__.dialog
@@ -110,6 +125,7 @@ const modal = (() => {
   }
   return {
     confirm,
+    confirmInApp,
     ask,
     alert,
     close,

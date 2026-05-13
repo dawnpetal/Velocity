@@ -36,19 +36,58 @@ pub fn read_text_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn read_text_file_preview(path: String, max_bytes: u64) -> Result<serde_json::Value, String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+    let size = file.metadata().map_err(|e| e.to_string())?.len();
+    let limit = max_bytes.min(size) as usize;
+    let mut bytes = vec![0; limit];
+    if limit > 0 {
+        file.read_exact(&mut bytes).map_err(|e| e.to_string())?;
+    }
+    let content = String::from_utf8_lossy(&bytes).into_owned();
+    Ok(serde_json::json!({
+        "content": content,
+        "truncated": size > max_bytes,
+        "size": size,
+    }))
+}
+
+#[tauri::command]
+pub fn read_text_file_from(
+    path: String,
+    offset: u64,
+    max_bytes: u64,
+) -> Result<serde_json::Value, String> {
+    use std::io::{Read, Seek, SeekFrom};
+    let mut file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+    let size = file.metadata().map_err(|e| e.to_string())?.len();
+    let start = offset.min(size);
+    file.seek(SeekFrom::Start(start))
+        .map_err(|e| e.to_string())?;
+    let limit = max_bytes.min(size.saturating_sub(start)) as usize;
+    let mut bytes = vec![0; limit];
+    if limit > 0 {
+        file.read_exact(&mut bytes).map_err(|e| e.to_string())?;
+    }
+    let next_offset = start + limit as u64;
+    let content = String::from_utf8_lossy(&bytes).into_owned();
+    Ok(serde_json::json!({
+        "content": content,
+        "offset": start,
+        "nextOffset": next_offset,
+        "size": size,
+        "truncated": next_offset < size,
+    }))
+}
+
+#[tauri::command]
 pub fn write_text_file(path: String, content: String) -> Result<(), String> {
     let p = std::path::Path::new(&path);
     if let Some(parent) = p.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     std::fs::write(p, content).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn read_binary_file(path: String) -> Result<String, String> {
-    use base64::Engine;
-    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
 }
 
 #[tauri::command]
@@ -87,6 +126,7 @@ pub fn stat_path(path: String) -> Result<serde_json::Value, String> {
             "exists": true,
             "isFile": m.is_file(),
             "isDirectory": m.is_dir(),
+            "size": m.len(),
         })),
         Err(_) => Ok(serde_json::json!({ "exists": false })),
     }

@@ -14,7 +14,7 @@ const editorController = (() => {
   function openFile(id) {
     let fileId = id;
     if (!state.getFile(id)) {
-      const match = state.files.find((f) => f.path === id);
+      const match = state.findByPath(id);
       if (match) fileId = match.id;
     }
     state.setActive(fileId);
@@ -37,16 +37,44 @@ const editorController = (() => {
     }
     return `Untitled~${index}.lua`;
   }
+  function _insertCreatedFileNode(result) {
+    const root = state.roots.find((item) => item.path === state.workDir) ?? state.fileTree;
+    if (!root?.children || root.children.some((item) => item.path === result.path)) return;
+    root.children.push({
+      id: result.id,
+      name: result.name || helpers.basename(result.path),
+      path: result.path,
+      type: 'file',
+      open: false,
+      size: 0,
+      children: [],
+    });
+    root.children.sort((a, b) => {
+      const autoA = autoexec.isProtectedRootNode?.(a) ? 1 : 0;
+      const autoB = autoexec.isProtectedRootNode?.(b) ? 1 : 0;
+      if (autoA !== autoB) return autoA - autoB;
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+      return String(a.name || '').localeCompare(String(b.name || ''), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    });
+  }
   async function newUntitledFile() {
     if (!state.workDir) {
       modal.alert('No Folder Open', 'Open a folder first.');
       return;
     }
     const name = await _nextUntitledName();
+    workspaceController.suppressWatcher?.(1200);
     const result = await fileManager.createFile(state.workDir, name).catch(console.error);
     if (result) {
+      _insertCreatedFileNode(result);
       state.setActive(result.id, { permanent: true, keepTabs: true });
-      await workspaceController.refreshTree();
+      ExplorerTree.render();
+      tabs.render();
+      renderEditor();
+      persist.saveTreeState(state.workDir).catch(() => {});
     }
   }
   function onFileSaved(id) {
@@ -68,12 +96,15 @@ const editorController = (() => {
     if (connText) connText.textContent = text;
     if (conn) conn.className = `status-item ${connClass}`;
   }
-  async function _execScript(script, filename) {
+  async function _execScript(script, filename, options = {}) {
+    const bridge = !!options.bridge;
+    const sessionId = options.sessionId ?? null;
     try {
-      await injector.execute(script);
+      if (bridge) await injector.executeWithClientBridge(script);
+      else await injector.execute(script);
       const executor = uiState.executor;
-      let statusText = 'ok';
-      if (executor === 'hydrogen') {
+      let statusText = bridge ? 'Bridge' : 'ok';
+      if (!bridge && executor === 'hydrogen') {
         const port = await injector.getPort();
         statusText = port ? `Port ${port}` : 'ok';
       }
@@ -81,6 +112,8 @@ const editorController = (() => {
       await execHistory.push(script, filename);
       eventBus.emit('script:executed', {
         filename,
+        bridge,
+        sessionId,
       });
     } catch (err) {
       _setConnectionStatus('fail', 'No server', 'fail');
@@ -91,6 +124,8 @@ const editorController = (() => {
       eventBus.emit('script:failed', {
         error: msg,
         filename,
+        bridge,
+        sessionId,
       });
     }
   }
@@ -130,6 +165,16 @@ const editorController = (() => {
       if (btn) btn.disabled = false;
     }
   }
+  async function executeScriptWithBridge() {
+    const active = state.getActive();
+    if (!active) {
+      modal.alert('Nothing to Execute', 'Open a file first.');
+      return;
+    }
+    _setConnectionStatus('warn connecting', 'Bridge…', 'warn');
+    if (active.content === null) await fileManager.ensureContent(active.id);
+    await _execScript(active.content || editor.getContent(), active.name, { bridge: true });
+  }
   async function rerunScript(item) {
     _setConnectionStatus('warn', 'Scanning…', 'warn');
     console_.log(`Re-running: ${item.filename}`, 'info');
@@ -141,6 +186,7 @@ const editorController = (() => {
     newUntitledFile,
     onFileSaved,
     executeScript,
+    executeScriptWithBridge,
     rerunScript,
   };
 })();

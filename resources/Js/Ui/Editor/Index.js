@@ -3,7 +3,7 @@ const editor = (() => {
   let _editorInstance = null;
   let _symbolProviders = null;
   let _settings = {
-    fontSize: 13,
+    fontSize: 12,
     wordWrap: true,
     minimap: false,
     lineNumbers: true,
@@ -12,6 +12,9 @@ const editor = (() => {
   let _pendingFile = null;
   let _diffEditor = null;
   let _diffTabId = null;
+  let _runtimeDecorations = [];
+  let _inlineHintDecorations = [];
+  let _inlineHintTimer = null;
   function _setPane(which) {
     const ids = {
       placeholder: 'editorPlaceholder',
@@ -32,6 +35,100 @@ const editor = (() => {
     const crumb = document.getElementById('breadcrumbBar');
     if (crumb) crumb.style.display = which === 'monaco' ? '' : 'none';
   }
+  const LARGE_FILE_LIMIT = 20 * 1024 * 1024;
+  const LARGE_LINE_LIMIT = 300 * 1000;
+  function _countLines(text) {
+    if (!text) return 1;
+    let lines = 1;
+    for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) === 10) lines += 1;
+    return lines;
+  }
+  function _fileProfile(file) {
+    const text = file?.content ?? '';
+    const size = file?.size ?? new Blob([text]).size;
+    const lines = file?._lineCount ?? _countLines(text);
+    if (file) file._lineCount = lines;
+    return {
+      size,
+      lines,
+      large: file?.largePreview || size > LARGE_FILE_LIMIT || lines > LARGE_LINE_LIMIT,
+      readonly: !!file?.largePreview,
+    };
+  }
+  function _applyFileProfile(file) {
+    if (!_editorInstance || !file) return;
+    const profile = _fileProfile(file);
+    const opts = profile.large
+      ? {
+          readOnly: profile.readonly,
+          minimap: { enabled: false },
+          folding: false,
+          wordBasedSuggestions: 'off',
+          occurrencesHighlight: 'off',
+          selectionHighlight: false,
+          codeLens: false,
+          colorDecorators: false,
+          links: false,
+          bracketPairColorization: { enabled: false },
+          guides: { indentation: true, bracketPairs: false, bracketPairsHorizontal: false },
+          stickyScroll: { enabled: false },
+          quickSuggestions: false,
+          hover: { enabled: false },
+        }
+      : {
+          readOnly: false,
+          minimap: { enabled: _settings.minimap },
+          folding: true,
+          wordBasedSuggestions: 'matchingDocuments',
+          occurrencesHighlight: 'singleFile',
+          selectionHighlight: true,
+          codeLens: false,
+          colorDecorators: true,
+          links: true,
+          bracketPairColorization: { enabled: true, independentColorPoolPerBracketType: true },
+          guides: {
+            indentation: true,
+            highlightActiveIndentation: true,
+            bracketPairs: false,
+            bracketPairsHorizontal: false,
+          },
+          quickSuggestions: { other: true, comments: false, strings: false },
+          hover: { enabled: true, delay: 300, sticky: true, above: false },
+        };
+    _editorInstance.updateOptions(opts);
+    const fileSize = document.getElementById('statusFileSize');
+    if (fileSize) {
+      fileSize.textContent = file.largePreview
+        ? `${FormatHelpers.fmtBytes(profile.size)} preview`
+        : FormatHelpers.fmtBytes(profile.size);
+      fileSize.title = file.largePreview
+        ? 'Huge file preview. Only the first 5 MB are loaded to keep the UI responsive.'
+        : `${profile.lines.toLocaleString()} lines`;
+    }
+    const fileEl = document.getElementById('statusFile');
+    if (fileEl) fileEl.classList.toggle('status-file-large', profile.large);
+  }
+  function _syncStatusDetails(file, position = null) {
+    const pos = position ?? _editorInstance?.getPosition() ?? { lineNumber: 1, column: 1 };
+    const cursor = document.getElementById('statusCursor');
+    if (cursor) cursor.textContent = `Ln ${pos.lineNumber}, Col ${pos.column}`;
+    const lang = document.getElementById('statusLang');
+    if (lang)
+      lang.textContent =
+        file?.languageOverrideLabel ??
+        (file ? helpers.ext(file.name).toUpperCase() || 'Plain' : 'Plain');
+    const encoding = document.getElementById('statusEncoding');
+    if (encoding) encoding.textContent = file?.encoding ?? 'UTF-8';
+    const eol = document.getElementById('statusEol');
+    if (eol) eol.textContent = file?.eol ?? 'LF';
+    const indent = document.getElementById('statusIndent');
+    if (indent)
+      indent.textContent =
+        file?.insertSpaces === false
+          ? `Tab Size ${file?.indentSize ?? 2}`
+          : `Spaces: ${file?.indentSize ?? 2}`;
+  }
+
   async function _ensureReady() {
     if (_ready) return;
     const container = document.getElementById('monacoEditor');
@@ -135,14 +232,17 @@ const editor = (() => {
     });
 
     _editorInstance.onDidChangeCursorPosition((e) => {
-      const el = document.getElementById('statusCursor');
-      if (el) el.textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+      _syncStatusDetails(state.getActive(), e.position);
       Breadcrumb.update(e.position);
     });
     _editorInstance.onDidChangeModelContent(() => {
       const id = state.activeFileId;
       if (!id) return;
+      const file = state.getFile(id);
+      if (file?.largePreview) return;
       state.updateContent(id, _editorInstance.getValue());
+      _applyFileProfile(state.getFile(id));
+      _syncStatusDetails(state.getFile(id));
       tabs.render();
       Breadcrumb.update(
         _editorInstance.getPosition() ?? {
@@ -180,17 +280,36 @@ const editor = (() => {
       return;
     }
     _editorInstance?.updateOptions({
-      readOnly: false,
+      readOnly: !!file.largePreview,
     });
-    EditorModels.saveViewState(state.activeFileId, _editorInstance);
+    EditorModels.saveViewState(
+      EditorModels.fileIdForModel(_editorInstance?.getModel?.()),
+      _editorInstance,
+    );
     const model = EditorModels.getOrCreate(_monaco, file);
     if (model.getValue() !== file.content) model.setValue(file.content);
+    if (file.languageOverride) _monaco.editor.setModelLanguage(model, file.languageOverride);
+    model.updateOptions({
+      tabSize: file.indentSize ?? 2,
+      insertSpaces: file.insertSpaces !== false,
+    });
     _editorInstance.setModel(model);
     EditorModels.restoreViewState(file.id, _editorInstance);
     _editorInstance.focus();
     timeline.refreshSize();
-    const langEl = document.getElementById('statusLang');
-    if (langEl) langEl.textContent = LangMap.extOf(file.name).toUpperCase() || 'Plain';
+    _applyFileProfile(file);
+    _syncStatusDetails(file);
+    StatusBarControls.refresh?.();
+    EditorModels.trimCold({
+      activeId: file.id,
+      isDirty: (id) => state.isUnsaved(id),
+      canRelease: (id) => {
+        const item = state.getFile(id);
+        return !!item?.path && !item.preview && !item.path.startsWith('pinboard:');
+      },
+      releasePayload: (id) => state.releasePayload(id),
+    });
+    if (file.largePreview) toast.show('Huge file opened as a read-only preview', 'info', 3000);
     Breadcrumb.closePicker();
     Breadcrumb.update(
       _editorInstance.getPosition() ?? {
@@ -206,6 +325,7 @@ const editor = (() => {
     pane.innerHTML = '';
     const langEl = document.getElementById('statusLang');
     if (langEl) langEl.textContent = LangMap.extOf(file.name).toUpperCase() + ' Preview';
+    _syncStatusDetails(file);
     switch (file.previewType) {
       case 'image':
         Preview.renderImage(pane, file);
@@ -232,7 +352,7 @@ const editor = (() => {
       toast.show('No preview available for this file type', 'warn');
       return;
     }
-    const existingId = [...state.files].find((f) => f.preview && f.path === sourceFile.path)?.id;
+    const existingId = state.findPreviewByPath(sourceFile.path)?.id;
     if (existingId) {
       state.setActive(existingId);
       tabs.render();
@@ -241,22 +361,17 @@ const editor = (() => {
     }
     const id = helpers.uid();
     const isBinary = pt === 'image' || pt === 'video';
-    let binaryData = null;
-    if (isBinary) {
-      try {
-        binaryData = await window.__TAURI__.core.invoke('read_binary_file', {
-          path: sourceFile.path,
-        });
-      } catch (e) {
-        toast.show('Could not read file: ' + (e.message ?? e), 'fail');
-        return;
-      }
-    }
-    state.addFile(id, sourceFile.name + ' (Preview)', sourceFile.path, sourceFile.content ?? '', {
-      preview: true,
-      previewType: pt,
-      binaryData,
-    });
+    if (!isBinary && sourceFile.content === null) await fileManager.ensureContent(sourceFile.id);
+    state.addFile(
+      id,
+      sourceFile.name + ' (Preview)',
+      sourceFile.path,
+      isBinary ? '' : (sourceFile.content ?? ''),
+      {
+        preview: true,
+        previewType: pt,
+      },
+    );
     state.setActive(id);
     tabs.render();
     eventBus.emit('ui:render-editor');
@@ -277,21 +392,8 @@ const editor = (() => {
     }
     const pt = LangMap.previewType(active.name);
     if (pt === 'image') {
-      if (!active.binaryData) {
-        window.__TAURI__.core
-          .invoke('read_binary_file', {
-            path: active.path,
-          })
-          .then((binaryData) => {
-            active.binaryData = binaryData;
-            active.previewType = 'image';
-            _showPreviewFile(active);
-          })
-          .catch((err) => toast.show('Could not read image: ' + (err.message ?? err), 'fail'));
-      } else {
-        active.previewType = 'image';
-        _showPreviewFile(active);
-      }
+      active.previewType = 'image';
+      _showPreviewFile(active);
       return;
     }
     if (pt === 'svg') {
@@ -313,21 +415,8 @@ const editor = (() => {
       return;
     }
     if (pt === 'video') {
-      if (!active.binaryData) {
-        window.__TAURI__.core
-          .invoke('read_binary_file', {
-            path: active.path,
-          })
-          .then((binaryData) => {
-            active.binaryData = binaryData;
-            active.previewType = 'video';
-            _showPreviewFile(active);
-          })
-          .catch((err) => toast.show('Could not read video: ' + (err.message ?? err), 'fail'));
-      } else {
-        active.previewType = 'video';
-        _showPreviewFile(active);
-      }
+      active.previewType = 'video';
+      _showPreviewFile(active);
       return;
     }
     if (!_ready) {
@@ -354,9 +443,18 @@ const editor = (() => {
       };
     if (key === 'lineNumbers') opts.lineNumbers = value ? 'on' : 'off';
     _editorInstance.updateOptions(opts);
+    _applyFileProfile(state.getActive());
   }
   function destroyTab(id) {
     EditorModels.destroyTab(id);
+  }
+  function destroyAllTabs() {
+    EditorModels.destroyAll?.();
+    const model = _diffEditor?.getModel?.();
+    model?.original?.dispose?.();
+    model?.modified?.dispose?.();
+    _diffEditor?.setModel?.(null);
+    _diffTabId = null;
   }
   function focus() {
     _editorInstance?.focus();
@@ -469,11 +567,123 @@ const editor = (() => {
     _editorInstance?.layout();
   }
 
+  function getSelectionText() {
+    if (!_editorInstance) return '';
+    const selection = _editorInstance.getSelection();
+    const model = _editorInstance.getModel();
+    if (!selection || !model || selection.isEmpty()) return '';
+    return model.getValueInRange(selection);
+  }
+  function clearRuntimeMarkers() {
+    if (!_editorInstance) return;
+    _runtimeDecorations = _editorInstance.deltaDecorations(_runtimeDecorations, []);
+    _inlineHintDecorations = _editorInstance.deltaDecorations(_inlineHintDecorations, []);
+    clearTimeout(_inlineHintTimer);
+    _inlineHintTimer = null;
+  }
+  function markRuntimeError(line, message = 'Runtime error') {
+    if (!_editorInstance || !_monaco) return;
+    const model = _editorInstance.getModel();
+    if (!model) return;
+    const lineNumber = Math.max(1, Math.min(Number(line) || 1, model.getLineCount()));
+    _runtimeDecorations = _editorInstance.deltaDecorations(_runtimeDecorations, [
+      {
+        range: new _monaco.Range(lineNumber, 1, lineNumber, model.getLineMaxColumn(lineNumber)),
+        options: {
+          isWholeLine: true,
+          className: 'runtime-error-line',
+          glyphMarginClassName: 'runtime-error-glyph',
+          hoverMessage: { value: message },
+        },
+      },
+    ]);
+    _editorInstance.revealLineInCenterIfOutsideViewport(lineNumber);
+  }
+  function showInlineHint(text, tone = 'ok') {
+    if (!_editorInstance || !_monaco || !text) return;
+    const model = _editorInstance.getModel();
+    const position = _editorInstance.getPosition();
+    if (!model || !position) return;
+    const lineNumber = Math.max(1, Math.min(position.lineNumber, model.getLineCount()));
+    const column = model.getLineMaxColumn(lineNumber);
+    _inlineHintDecorations = _editorInstance.deltaDecorations(_inlineHintDecorations, [
+      {
+        range: new _monaco.Range(lineNumber, column, lineNumber, column),
+        options: {
+          after: {
+            contentText: '  ' + text,
+            inlineClassName: `runtime-inline-hint runtime-inline-hint--${tone}`,
+          },
+        },
+      },
+    ]);
+    clearTimeout(_inlineHintTimer);
+    _inlineHintTimer = setTimeout(() => {
+      _inlineHintDecorations = _editorInstance.deltaDecorations(_inlineHintDecorations, []);
+    }, 6000);
+  }
+  function getInstance() {
+    return _editorInstance;
+  }
+  function goToLineColumn(line, column = 1) {
+    if (!_editorInstance) return;
+    const model = _editorInstance.getModel();
+    if (!model) return;
+    const lineNumber = Math.max(1, Math.min(Number(line) || 1, model.getLineCount()));
+    const col = Math.max(1, Math.min(Number(column) || 1, model.getLineMaxColumn(lineNumber)));
+    _editorInstance.setPosition({ lineNumber, column: col });
+    _editorInstance.revealLineInCenterIfOutsideViewport(lineNumber);
+    _editorInstance.focus();
+    _syncStatusDetails(state.getActive(), { lineNumber, column: col });
+  }
+  function setLanguageMode(languageId, label) {
+    const file = state.getActive();
+    const model = _editorInstance?.getModel();
+    if (!file || !model || !_monaco) return;
+    state.setMeta(file.id, { languageOverride: languageId, languageOverrideLabel: label });
+    _monaco.editor.setModelLanguage(model, languageId);
+    _syncStatusDetails(state.getActive());
+  }
+  function setEol(kind) {
+    const file = state.getActive();
+    const model = _editorInstance?.getModel();
+    if (!file || !model || !_monaco) return;
+    model.pushEOL(
+      kind === 'CRLF' ? _monaco.editor.EndOfLineSequence.CRLF : _monaco.editor.EndOfLineSequence.LF,
+    );
+    state.setMeta(file.id, { eol: kind });
+    _syncStatusDetails(state.getActive());
+  }
+  function setIndentation(indentSize, insertSpaces) {
+    const file = state.getActive();
+    const model = _editorInstance?.getModel();
+    if (!file || !model) return;
+    model.updateOptions({ tabSize: indentSize, insertSpaces });
+    state.setMeta(file.id, { indentSize, insertSpaces });
+    _syncStatusDetails(state.getActive());
+  }
+  function setEncoding(encoding) {
+    const file = state.getActive();
+    if (!file) return;
+    state.setMeta(file.id, { encoding });
+    _syncStatusDetails(state.getActive());
+  }
+  function getInfo() {
+    const file = state.getActive();
+    const model = _editorInstance?.getModel();
+    return {
+      file,
+      lineCount: model?.getLineCount?.() ?? 0,
+      position: _editorInstance?.getPosition?.() ?? null,
+    };
+  }
+
   return {
     render,
     focus,
     relayout,
     destroyTab,
+    destroyAllTabs,
     applyTheme,
     updateSettings,
     jumpToLine,
@@ -484,5 +694,16 @@ const editor = (() => {
     hideDiff,
     isDiffTab,
     restoreTimelineContent,
+    getSelectionText,
+    clearRuntimeMarkers,
+    markRuntimeError,
+    showInlineHint,
+    getInstance,
+    goToLineColumn,
+    setLanguageMode,
+    setEol,
+    setIndentation,
+    setEncoding,
+    getInfo,
   };
 })();

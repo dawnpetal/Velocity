@@ -475,27 +475,6 @@
   text-align: right;
 }
 
-.filter-input {
-  flex: 1;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  color: var(--text1);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  padding: 4px 6px;
-  outline: none;
-  transition: border-color var(--fast);
-}
-
-.filter-input:focus {
-  border-color: var(--accent);
-}
-
-.filter-input::placeholder {
-  color: var(--text3);
-}
-
 .search-results {
   flex: 1;
   overflow-y: auto;
@@ -948,7 +927,7 @@
   pointer-events: none;
 }
 
-.theme-card:hover {
+.theme-card:hover:not(.active) {
   background: var(--bg3);
   border-color: var(--border-strong);
   transform: translateY(-1px);
@@ -1150,7 +1129,7 @@
 .settings-select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 2%, transparent);
 }
 
 .range-slider {
@@ -1875,7 +1854,7 @@
 .pb-search-input:focus {
   border-color: var(--accent);
   background: var(--bg0);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 2%, transparent);
 }
 
 .pb-search-clear {
@@ -2260,4 +2239,796 @@
 .pb-add-btn:hover {
   filter: brightness(1.1);
   border: none !important;
+}
+
+.workspace-view--datatree {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg0);
+  color: var(--text1);
+}
+
+.dt-shell {
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg0);
+}
+
+.dt-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 14px 0 16px;
+  background: color-mix(in srgb, var(--bg1) 88%, var(--bg0));
+}
+
+.dt-title-block {
+  min-width: 0;
+}
+
+.dt-title-block h2,
+.dt-title-block p {
+  margin: 0;
+}
+
+.dt-title-block h2 {
+  color: var(--text0);
+  font: 750 13px var(--font-ui);
+  letter-spacing: -0.01em;
+}
+
+.dt-title-block p {
+  margin-top: 2px;
+  color: var(--text2);
+  font: 11.5px var(--font-ui);
+}
+
+.dt-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.dt-snapshot-select,
+.dt-btn,
+.dt-icon-action {
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg2) 82%, transparent);
+  color: var(--text1);
+  font: 650 11.5px var(--font-ui);
+}
+
+.dt-snapshot-select {
+  width: min(230px, 28vw);
+  padding: 0 9px;
+}
+
+.dt-btn,
+.dt-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+}
+
+.dt-icon-action {
+  color: var(--text2);
+}
+
+.dt-snapshot-select:hover,
+.dt-btn:hover,
+.dt-icon-action:hover {
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--bg3) 72%, transparent);
+  color: var(--text0);
+}
+
+.dt-btn-primary {
+  border-color: color-mix(in srgb, var(--accent) 56%, var(--border));
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg2));
+  color: var(--text0);
+}
+
+.dt-content {
+  display: grid;
+  grid-template-columns: clamp(320px, 23vw, 410px) minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dt-side {
+  display: grid;
+  grid-template-rows: minmax(300px, 1fr) minmax(190px, 34%);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--bg1);
+}
+
+.dt-tree-pane,
+.dt-details,
+.dt-preview-pane {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dt-tree-pane {
+  display: grid;
+  grid-template-rows: 44px minmax(0, 1fr);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+}
+
+.dt-tree-toolbar,
+.dt-preview-head,
+.dt-preview-tools,
+.dt-details-head,
+.dt-inspector-head {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+}
+
+.dt-tree-toolbar,
+.dt-preview-head,
+.dt-details-head,
+.dt-inspector-head {
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.dt-tree-toolbar {
+  height: 44px;
+}
+
+.dt-tree-toolbar > div,
+.dt-preview-head > div,
+.dt-details-head > div {
+  min-width: 0;
+}
+
+.dt-tree-title,
+.dt-details-head span,
+.dt-inspector-head span,
+.dt-kv-section > span,
+.dt-detail-section span,
+.dt-detail-grid span,
+.dt-asset-meta span {
+  color: var(--text2);
+  font: 750 10.5px var(--font-ui);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.dt-tree-toolbar small,
+.dt-preview-head small,
+.dt-details-head small,
+.dt-inspector-head small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text2);
+  font: 10.5px var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 142px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 7px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--bg2) 78%, transparent);
+  color: var(--text2);
+}
+
+.dt-search:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-strong));
+  background: var(--bg2);
+}
+
+.dt-search svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.dt-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text0);
+  font: 12px var(--font-ui);
+}
+
+.dt-tree-list,
+.dt-details,
+.dt-inspector-panel pre {
+  min-height: 0;
+  overflow: auto;
+}
+
+.dt-tree-list {
+  padding: 6px 8px 10px;
+}
+
+.dt-tree-row {
+  display: grid;
+  grid-template-columns: 14px 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 27px;
+  border: 0;
+  border-radius: 5px;
+  padding: 0 8px 0 calc(6px + (var(--depth) * 14px));
+  background: transparent;
+  color: var(--text1);
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+.dt-tree-row:hover {
+  background: color-mix(in srgb, var(--text0) 5%, transparent);
+}
+
+.dt-tree-row.active {
+  background: color-mix(in srgb, var(--text0) 8%, var(--accent) 9%);
+  color: var(--text0);
+}
+
+@keyframes dt-row-flash {
+  0% {
+    background: color-mix(in srgb, var(--accent) 32%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--text0) 8%, var(--accent) 9%);
+  }
+}
+
+.dt-tree-row--flash {
+  animation: dt-row-flash 0.6s ease-out forwards;
+}
+
+.dt-disclosure {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 18px;
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.dt-disclosure.open {
+  transform: rotate(90deg);
+}
+
+.dt-disclosure.empty {
+  opacity: 0;
+}
+
+.dt-node-icon,
+.dt-render-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.dt-node-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.dt-render-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.dt-node-icon.has-icon,
+.dt-render-icon.has-icon {
+  background: transparent;
+}
+
+.dt-node-icon img,
+.dt-render-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dt-node-icon.official,
+.dt-render-icon.official {
+  background-repeat: no-repeat;
+}
+
+.dt-node-name,
+.dt-node-class {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-node-name {
+  color: inherit;
+  font: 600 12px var(--font-ui);
+}
+
+.dt-node-class {
+  color: color-mix(in srgb, var(--text2) 72%, transparent);
+  font: 10.5px var(--font-ui);
+}
+
+.dt-tree-row.active .dt-node-class {
+  color: color-mix(in srgb, var(--text0) 58%, transparent);
+}
+
+.dt-empty,
+.dt-empty-small,
+.dt-overflow-row {
+  color: var(--text2);
+  font: 12px/1.5 var(--font-ui);
+}
+
+.dt-empty {
+  padding: 16px 10px;
+}
+
+.dt-empty-small {
+  padding: 8px 10px;
+}
+
+.dt-overflow-row {
+  margin: 6px 0 0;
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.dt-details {
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--bg1) 92%, var(--bg0));
+}
+
+.dt-details-head {
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.dt-details-head small {
+  max-width: 100%;
+}
+
+.dt-detail-section,
+.dt-kv-section {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dt-detail-section {
+  padding: 10px 12px;
+}
+
+.dt-detail-section code,
+.dt-kv-row code,
+.dt-asset-meta code,
+.dt-inspector-panel pre {
+  color: var(--text1);
+  font: 11px/1.55 var(--font-mono);
+  user-select: text;
+  -webkit-user-select: text;
+  word-break: break-word;
+}
+
+.dt-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dt-detail-grid div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 12px;
+  border-right: 1px solid var(--border);
+}
+
+.dt-detail-grid div:last-child {
+  border-right: 0;
+}
+
+.dt-detail-grid strong,
+.dt-asset-meta strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text0);
+  font: 650 12px var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-kv-section {
+  padding: 0;
+}
+
+.dt-kv-section > span {
+  display: block;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg2) 48%, transparent);
+}
+
+.dt-kv-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.4fr) minmax(0, 1fr);
+  min-height: 28px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+}
+
+.dt-kv-row span {
+  min-width: 0;
+  overflow: hidden;
+  padding: 7px 12px;
+  color: var(--text2);
+  font: 11.5px var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-kv-row code {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  padding: 7px 12px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 9px 12px;
+}
+
+.dt-tags span {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  color: var(--text1);
+  background: color-mix(in srgb, var(--bg2) 68%, transparent);
+  font: 10.5px var(--font-ui);
+}
+
+.dt-preview-pane {
+  display: grid;
+  grid-template-rows: 44px 36px minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg0);
+}
+
+.dt-preview-head {
+  height: 44px;
+}
+
+.dt-preview-head span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text0);
+  font: 750 13px var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-preview-head strong {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--text2);
+  background: color-mix(in srgb, var(--bg2) 62%, transparent);
+  font: 750 10px var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dt-preview-tools {
+  justify-content: flex-start;
+  gap: 4px;
+  height: 36px;
+  padding: 5px 10px;
+}
+
+.dt-preview-tools button {
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 11px;
+  background: transparent;
+  color: var(--text2);
+  font: 650 11.5px var(--font-ui);
+}
+
+.dt-preview-tools button:hover {
+  color: var(--text0);
+  background: color-mix(in srgb, var(--text0) 5%, transparent);
+}
+
+.dt-preview-tools button.active {
+  border-color: color-mix(in srgb, var(--border-strong) 60%, transparent);
+  background: color-mix(in srgb, var(--bg3) 72%, transparent);
+  color: var(--text0);
+}
+
+.dt-preview-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.dt-preview-empty,
+.dt-asset-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  height: 100%;
+  padding: 28px;
+  text-align: center;
+  color: var(--text2);
+}
+
+.dt-preview-empty span,
+.dt-asset-empty span {
+  color: var(--text0);
+  font: 750 13px var(--font-ui);
+}
+
+.dt-preview-empty p,
+.dt-preview-copy p,
+.dt-asset-empty p {
+  max-width: 520px;
+  margin: 0 auto;
+  color: var(--text2);
+  font: 12px/1.5 var(--font-ui);
+}
+
+.dt-workbench,
+.dt-inspector-panel {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dt-workbench--viewport {
+  display: block;
+}
+
+.dt-render-frame,
+.dt-inspector-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg1) 88%, var(--bg0));
+}
+
+.dt-render-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.dt-render-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dt-render-object {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border-strong));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg2) 82%, transparent);
+  transform: translate(-50%, -50%);
+}
+
+.dt-preview-copy {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  text-align: center;
+}
+
+.dt-preview-copy span {
+  color: var(--text0);
+  font: 750 13px var(--font-ui);
+}
+
+.dt-inspector-panel {
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+}
+
+.dt-inspector-head {
+  height: 36px;
+}
+
+.dt-inspector-panel pre {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  padding: 14px;
+}
+
+.dt-asset-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.54fr) minmax(260px, 0.46fr);
+  gap: 12px;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.dt-asset-image-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--text0) 4%, transparent) 25%,
+      transparent 25% 75%,
+      color-mix(in srgb, var(--text0) 4%, transparent) 75%
+    ),
+    linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--text0) 4%, transparent) 25%,
+      transparent 25% 75%,
+      color-mix(in srgb, var(--text0) 4%, transparent) 75%
+    ),
+    var(--bg0);
+  background-position:
+    0 0,
+    12px 12px,
+    0 0;
+  background-size:
+    24px 24px,
+    24px 24px,
+    auto;
+}
+
+.dt-asset-image-frame.empty {
+  color: var(--text2);
+  font: 650 12px var(--font-ui);
+}
+
+.dt-asset-image-frame > span {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--bg1) 82%, transparent);
+  color: var(--text1);
+  font: 750 10px var(--font-ui);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dt-asset-image {
+  max-width: min(70%, 420px);
+  max-height: min(70%, 420px);
+  object-fit: contain;
+}
+
+.dt-asset-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dt-asset-meta > div,
+.dt-asset-open {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--bg2) 62%, transparent);
+}
+
+.dt-asset-meta > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.dt-asset-meta code {
+  display: block;
+  max-height: 112px;
+  overflow: auto;
+}
+
+.dt-asset-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  color: var(--text0);
+  font: 650 12px var(--font-ui);
+  text-decoration: none;
+}
+
+.dt-asset-open:hover {
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--bg3) 72%, transparent);
+}
+
+@media (max-width: 1180px) {
+  .dt-content {
+    grid-template-columns: minmax(306px, 34vw) minmax(0, 1fr);
+  }
+
+  .dt-asset-card {
+    grid-template-columns: 1fr;
+  }
 }

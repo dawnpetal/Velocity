@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use serde_json::Value;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::app::AppContext;
@@ -41,6 +42,17 @@ pub async fn get_client_bridge_port(
     ctx.ClientBridge
         .ensure_started(app)
         .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn queue_client_bridge_task(
+    client_key: String,
+    task: Value,
+    ctx: State<'_, AppContext>,
+) -> Result<(), String> {
+    ctx.ClientBridge
+        .queue_task(client_key, task)
         .map_err(|e| e.to_string())
 }
 

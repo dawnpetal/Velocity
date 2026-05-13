@@ -151,6 +151,9 @@ const Breadcrumb = (() => {
       });
       bar.appendChild(seg);
     });
+    requestAnimationFrame(() => {
+      bar.scrollLeft = bar.scrollWidth;
+    });
   }
   function closePicker() {
     if (_pickerEl) {

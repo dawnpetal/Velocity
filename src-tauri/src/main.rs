@@ -15,7 +15,7 @@ use anyhow::Result;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, LogicalPosition, Manager, Runtime,
+    AppHandle, Emitter, LogicalPosition, Manager, Runtime,
 };
 
 use app::AppContext;
@@ -162,7 +162,28 @@ fn main() {
             if let Ok(scripts) = ctx.Script.get() {
                 let _ = ctx.Script.register_shortcuts(app.handle(), &scripts);
             }
-            let _ = ctx.MultiInstance.install_autoexec_script();
+            let app_handle = app.handle().clone();
+            let client_bridge = Arc::clone(&ctx.ClientBridge);
+            let multi_instance = Arc::clone(&ctx.MultiInstance);
+            tauri::async_runtime::spawn(async move {
+                let emit_handle = app_handle.clone();
+                match client_bridge.ensure_started(app_handle).await {
+                    Ok(port) => {
+                        let _ = multi_instance.install_autoexec_script(port);
+                    }
+                    Err(err) => {
+                        let message = err.to_string();
+                        let _ = emit_handle.emit(
+                            "client-bridge:error",
+                            serde_json::json!({
+                                "port": managers::client_bridge::CLIENT_BRIDGE_PORT,
+                                "message": message,
+                            }),
+                        );
+                        eprintln!("client bridge warning: {message}");
+                    }
+                }
+            });
 
             commands::executor::start_autoexec_watcher(app.handle().clone(), executor_for_watcher);
 
@@ -182,8 +203,9 @@ fn main() {
             commands::accounts::accounts_is_launching,
             commands::io::get_app_paths,
             commands::io::read_text_file,
+            commands::io::read_text_file_preview,
+            commands::io::read_text_file_from,
             commands::io::write_text_file,
-            commands::io::read_binary_file,
             commands::io::read_dir,
             commands::io::create_dir,
             commands::io::stat_path,
@@ -196,10 +218,14 @@ fn main() {
             commands::io::open_external,
             commands::io::write_clipboard,
             commands::io::exit_app,
+            commands::window::close_window,
+            commands::window::minimize_window,
+            commands::window::toggle_maximize_window,
             commands::executor::inject_script,
             commands::executor::inject_script_with_client_bridge,
             commands::executor::get_active_port,
             commands::executor::get_client_bridge_port,
+            commands::executor::queue_client_bridge_task,
             commands::executor::clear_port_cache,
             commands::executor::switch_executor,
             commands::executor::focus_roblox,
@@ -211,7 +237,12 @@ fn main() {
             commands::auth::validate_key,
             commands::auth::get_key_cache,
             commands::auth::record_inject_cmd,
+            commands::datatree::datatree_load_snapshot,
+            commands::datatree::datatree_node_value,
+            commands::datatree::datatree_render_snapshot,
+            commands::datatree::datatree_import_dialog,
             commands::network::http_fetch,
+            commands::network::http_fetch_binary,
             commands::search::search_with_highlights,
             commands::icon_theme::icon_theme_load,
             commands::icon_theme::icon_theme_get_active,

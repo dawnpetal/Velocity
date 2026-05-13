@@ -1,5 +1,9 @@
 const ExplorerOps = (() => {
   function startRename(node) {
+    if (autoexec.isProtectedRootNode(node)) {
+      toast.show('Autoexecute folder is protected', 'info', 1500);
+      return;
+    }
     const row = document
       .getElementById('fileTree')
       .querySelector(`.tree-row[data-id="${node.id}"]`);
@@ -47,6 +51,10 @@ const ExplorerOps = (() => {
   }
 
   async function startCreate(parentNode, type) {
+    if (type === 'folder' && autoexec.isInsideProtectedArea(parentNode.path)) {
+      toast.show('Autoexecute only accepts Lua files', 'info', 1500);
+      return;
+    }
     if (!parentNode.open) {
       parentNode.open = true;
       ExplorerTree.render();
@@ -162,6 +170,10 @@ const ExplorerOps = (() => {
   }
 
   async function confirmDelete(node) {
+    if (autoexec.isProtectedRootNode(node)) {
+      toast.show('Autoexecute folder is protected', 'info', 1500);
+      return;
+    }
     const confirmed = await modal.confirm(
       'Delete ' + (node.type === 'folder' ? 'Folder' : 'File'),
       `Permanently delete <strong>${helpers.escapeHtml(node.name)}</strong>? This cannot be undone.`,
@@ -172,6 +184,11 @@ const ExplorerOps = (() => {
   }
 
   async function confirmDeleteMulti(nodes) {
+    nodes = nodes.filter((node) => !autoexec.isProtectedRootNode(node));
+    if (!nodes.length) {
+      toast.show('Autoexecute folder is protected', 'info', 1500);
+      return;
+    }
     const preview = nodes
       .slice(0, 5)
       .map((n) => `<strong>${helpers.escapeHtml(n.name)}</strong>`)

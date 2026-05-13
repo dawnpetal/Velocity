@@ -31,8 +31,21 @@ const ctxMenu = (() => {
     _capture(e);
     _menu(async (items, item, sep) => {
       if (node.type === 'folder') {
+        const protectedAutoexec = autoexec.isProtectedRootNode(node);
+        const protectedAutoexecArea = autoexec.isInsideProtectedArea(node.path);
+        if (protectedAutoexec) {
+          await autoexec.init();
+          items.push(
+            await item(autoexec.isEnabled() ? 'Disable Autoexecute' : 'Enable Autoexecute', () =>
+              autoexec.toggleEnabled(),
+            ),
+          );
+          items.push(await sep());
+        }
         items.push(await item('New File', () => ExplorerTree.startCreate(node, 'file')));
-        items.push(await item('New Folder', () => ExplorerTree.startCreate(node, 'folder')));
+        if (!protectedAutoexecArea) {
+          items.push(await item('New Folder', () => ExplorerTree.startCreate(node, 'folder')));
+        }
         items.push(await sep());
       }
       if (node.type === 'file') {
@@ -48,11 +61,15 @@ const ctxMenu = (() => {
         items.push(await item('Pin to Pinboard', () => pinboard.pinFile(node)));
         items.push(await sep());
       }
-      items.push(await item('Rename', () => ExplorerTree.startRename(node)));
+      if (!autoexec.isProtectedRootNode(node)) {
+        items.push(await item('Rename', () => ExplorerTree.startRename(node)));
+      }
       items.push(await item('Copy Path', () => ExplorerTree.copyPath(node)));
       items.push(await item(REVEAL_LABEL, () => ExplorerTree.revealInFinder(node)));
-      items.push(await sep());
-      items.push(await item('Delete', () => ExplorerTree.confirmDelete(node)));
+      if (!autoexec.isProtectedRootNode(node)) {
+        items.push(await sep());
+        items.push(await item('Delete', () => ExplorerTree.confirmDelete(node)));
+      }
     });
   }
 
@@ -114,6 +131,20 @@ const ctxMenu = (() => {
     });
   }
 
+  function showItems(e, entries) {
+    _capture(e);
+    _menu(async (items, item, sep) => {
+      for (const entry of entries) {
+        if (!entry) continue;
+        if (entry.separator) {
+          items.push(await sep());
+          continue;
+        }
+        items.push(await item(entry.label, entry.action));
+      }
+    });
+  }
+
   function showForTab(e, fileId) {
     _capture(e);
     const file = state.getFile(fileId);
@@ -160,5 +191,5 @@ const ctxMenu = (() => {
     true,
   );
 
-  return { show, showForNodes, showEmpty, showForRoot, showAddFolder, showForTab, hide };
+  return { show, showForNodes, showEmpty, showForRoot, showAddFolder, showForTab, showItems, hide };
 })();

@@ -1,4 +1,6 @@
 const fileManager = (() => {
+  const HUGE_FILE_LIMIT = 20 * 1024 * 1024;
+  const HUGE_PREVIEW_BYTES = 5 * 1024 * 1024;
   async function loadFolder(dirPath) {
     const tree = await window.__TAURI__.core.invoke('build_file_tree', { dirPath });
     _registerTree(tree);
@@ -14,7 +16,7 @@ const fileManager = (() => {
 
   function _registerTree(node) {
     if (node.type === 'file') {
-      state.addFile(node.id, node.name, node.path, null);
+      state.addFile(node.id, node.name, node.path, null, { size: node.size ?? null });
     } else {
       for (const child of node.children ?? []) {
         _registerTree(child);
@@ -26,10 +28,26 @@ const fileManager = (() => {
     const file = state.getFile(id);
     if (!file || file.content !== null) return;
     try {
-      state.setContent(
-        id,
-        await window.__TAURI__.core.invoke('read_text_file', { path: file.path }),
-      );
+      let size = file.size;
+      if (size == null) {
+        const stat = await window.__TAURI__.core.invoke('stat_path', { path: file.path });
+        size = stat?.size ?? null;
+        state.setMeta(id, { size });
+      }
+      if (size != null && size > HUGE_FILE_LIMIT) {
+        const preview = await window.__TAURI__.core.invoke('read_text_file_preview', {
+          path: file.path,
+          maxBytes: HUGE_PREVIEW_BYTES,
+        });
+        state.setContent(id, preview.content ?? '', {
+          size: preview.size ?? size,
+          largePreview: true,
+          truncated: !!preview.truncated,
+        });
+        return;
+      }
+      const content = await window.__TAURI__.core.invoke('read_text_file', { path: file.path });
+      state.setContent(id, content, { largePreview: false, truncated: false });
     } catch {
       state.setContent(id, '');
     }
@@ -38,12 +56,17 @@ const fileManager = (() => {
   async function save(id) {
     const file = state.getFile(id);
     if (!file) return false;
+    if (file.largePreview) {
+      toast.show('Huge file preview is read-only', 'warn');
+      return false;
+    }
     await window.__TAURI__.core.invoke('write_text_file', {
       path: file.path,
       content: file.content,
     });
     state.markSaved(id);
     eventBus.emit('file:saved', { id, file });
+    if (autoexec.containsScript?.(file.path)) autoexec.sync().catch(() => {});
     return true;
   }
 
@@ -61,8 +84,8 @@ const fileManager = (() => {
     const path = `${dirPath}/${safeName}`;
     await window.__TAURI__.core.invoke('write_text_file', { path, content: '' });
     const id = helpers.uid();
-    state.addFile(id, safeName, path, '');
-    return { id, path };
+    state.addFile(id, safeName, path, '', { size: 0 });
+    return { id, name: safeName, path };
   }
 
   async function createFolder(dirPath, name) {

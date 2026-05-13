@@ -9,6 +9,7 @@ const VirtualList = (() => {
     let _rendered = new Map();
     let _inner = null;
     let _rafId = null;
+    let _resizeObserver = null;
     let _lastStart = -1;
     let _lastEnd = -1;
 
@@ -27,6 +28,7 @@ const VirtualList = (() => {
         _flush();
       });
       ro.observe(container);
+      _resizeObserver = ro;
     }
 
     function _onScroll() {
@@ -116,9 +118,21 @@ const VirtualList = (() => {
       return _rendered.get(idx) ?? null;
     }
 
+    function destroy() {
+      if (_rafId) cancelAnimationFrame(_rafId);
+      _rafId = null;
+      container.removeEventListener('scroll', _onScroll);
+      _resizeObserver?.disconnect();
+      _resizeObserver = null;
+      for (const [, el] of _rendered) el.remove();
+      _rendered.clear();
+      _inner?.remove();
+      _inner = null;
+    }
+
     _setup();
 
-    return { update, invalidateRow, scrollToIndex, getRenderedEl };
+    return { update, invalidateRow, scrollToIndex, getRenderedEl, destroy };
   }
 
   return { create, ROW_HEIGHT };

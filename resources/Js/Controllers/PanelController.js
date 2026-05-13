@@ -1,40 +1,60 @@
 const panelController = (() => {
-  function togglePanel() {
-    const panel = document.getElementById('bottomPanel');
-    const visible = panel.classList.toggle('visible');
+  const PANEL_BODIES = {
+    console: 'consoleOutput',
+    roblox: 'robloxOutput',
+  };
+  const PANEL_CONTROLS = {
+    console: 'stdControls',
+    roblox: 'rbxControls',
+  };
+  function _panelEl() {
+    return document.getElementById('bottomPanel');
+  }
+  function _setPanelVisible(visible) {
+    const panel = _panelEl();
+    if (!panel) return;
+    panel.classList.toggle('visible', visible);
     panel.classList.toggle('hidden', !visible);
     uiState.setPanelVisible(visible);
-    eventBus.emit('ui:panel-toggled', {
-      visible,
+    eventBus.emit('ui:panel-toggled', { visible });
+  }
+  function togglePanel() {
+    const panel = _panelEl();
+    _setPanelVisible(!panel?.classList.contains('visible'));
+  }
+  function selectPanel(name = 'console') {
+    const target = PANEL_BODIES[name] ? name : 'console';
+    document.querySelectorAll('.panel-tab').forEach((tab) => {
+      const active = tab.dataset.panel === target;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
     });
+    for (const [panelName, bodyId] of Object.entries(PANEL_BODIES)) {
+      const body = document.getElementById(bodyId);
+      if (!body) continue;
+      const active = panelName === target;
+      body.classList.toggle('panel-body--hidden', !active);
+      body.classList.toggle('selectable', active && panelName === 'roblox');
+    }
+    for (const [panelName, controlId] of Object.entries(PANEL_CONTROLS)) {
+      document
+        .getElementById(controlId)
+        ?.classList.toggle('panel-ctrl-group--hidden', panelName !== target);
+    }
+  }
+  function showPanel(name = 'console') {
+    selectPanel(name);
+    _setPanelVisible(true);
   }
   function _setupPanelTabs() {
     document.querySelectorAll('.panel-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.panel-tab').forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        const name = tab.dataset.panel;
-        const consoleOut = document.getElementById('consoleOutput');
-        const robloxOut = document.getElementById('robloxOutput');
-        const rbxCtrl = document.getElementById('rbxControls');
-        const stdCtrl = document.getElementById('stdControls');
-        if (consoleOut) consoleOut.style.display = name === 'console' ? '' : 'none';
-        if (robloxOut) {
-          robloxOut.classList.toggle('panel-body--hidden', name !== 'roblox');
-          robloxOut.classList.toggle('selectable', name === 'roblox');
-        }
-        if (rbxCtrl) rbxCtrl.classList.toggle('panel-ctrl-group--hidden', name !== 'roblox');
-        if (stdCtrl) stdCtrl.classList.toggle('panel-ctrl-group--hidden', name !== 'console');
-      });
+      tab.addEventListener('click', () => selectPanel(tab.dataset.panel));
     });
   }
   function _setupPanelControls() {
-    document.getElementById('btnClosePanel')?.addEventListener('click', () => {
-      const panel = document.getElementById('bottomPanel');
-      panel.classList.remove('visible');
-      panel.classList.add('hidden');
-      uiState.setPanelVisible(false);
-    });
+    document
+      .getElementById('btnClosePanel')
+      ?.addEventListener('click', () => _setPanelVisible(false));
     document.getElementById('btnClearConsole')?.addEventListener('click', () => {
       const o = document.getElementById('consoleOutput');
       if (o) o.innerHTML = '';
@@ -57,7 +77,7 @@ const panelController = (() => {
       targetEl: document.querySelector('.sidebar'),
       axis: 'x',
       prop: 'width',
-      min: 150,
+      min: 200,
       max: 480,
       compute: (clientX) => clientX - 46,
       onCommit: (val) => uiState.setSidebarWidth(val),
@@ -118,6 +138,10 @@ const panelController = (() => {
     eventBus.emit('ui:sidebar-toggled', { hidden, locked, mode });
   }
   function toggleSidebar() {
+    const activeView = document.querySelector('.activity-btn.active')?.dataset.view;
+    if (activeView && activeView !== 'explorer' && activeView !== 'search') {
+      return;
+    }
     const mode = _sidebarMode();
     setSidebarMode(mode === 'open' ? 'closed' : mode === 'closed' ? 'locked' : 'open');
   }
@@ -151,6 +175,7 @@ const panelController = (() => {
     _setupPanelControls();
     _setupResizers();
     _setupLayoutButtons();
+    selectPanel(document.querySelector('.panel-tab.active')?.dataset.panel ?? 'console');
     _syncLayoutButtons();
     eventBus.on('ui:panel-toggled', _syncLayoutButtons);
     eventBus.on('ui:sidebar-toggled', _syncLayoutButtons);
@@ -158,6 +183,8 @@ const panelController = (() => {
   return {
     init,
     togglePanel,
+    showPanel,
+    selectPanel,
     toggleSidebar,
     setSidebarMode,
   };

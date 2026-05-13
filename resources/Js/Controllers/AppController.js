@@ -3,6 +3,15 @@ const appController = (() => {
   let _commandPaletteEl = null;
   let _commandItems = [];
   let _commandIndex = 0;
+  let _commandQuery = '';
+  let _commandSymbolCacheKey = '';
+  let _commandSymbolCache = [];
+  const _relayoutEditor = scheduler.delay(() => editor.relayout(), 80);
+  const _renderCommandCenterSoon = scheduler.frame(() => _renderCommandCenter(_commandQuery));
+
+  function _scheduleEditorRelayout() {
+    _relayoutEditor();
+  }
 
   function _initBridge() {
     eventBus.on('ui:render-editor', () => editorController.renderEditor());
@@ -15,16 +24,18 @@ const appController = (() => {
       if (el) el.textContent = folderPath ? helpers.basename(folderPath) : 'No folder open';
     });
 
-    eventBus.on('ui:panel-toggled', ({ visible }) => {
-      setTimeout(() => editor.relayout(), 160);
-    });
+    eventBus.on('ui:panel-toggled', () => _scheduleEditorRelayout());
 
-    eventBus.on('ui:sidebar-toggled', ({ hidden }) => {
-      setTimeout(() => editor.relayout(), 160);
-    });
+    eventBus.on('ui:sidebar-toggled', () => _scheduleEditorRelayout());
     eventBus.on('ui:open-file', ({ id } = {}) => id && editorController.openFile(id));
     eventBus.on('ui:open-workspace', () => workspaceController.openFolderDialog());
     eventBus.on('ui:file-saved', ({ id } = {}) => id && editorController.onFileSaved(id));
+    eventBus.on('file:closed', ({ id, wasUnsaved } = {}) => {
+      if (!id) return;
+      editor.destroyTab(id);
+      if (!wasUnsaved) state.releasePayload(id);
+    });
+    eventBus.on('workspace:cleared', () => editor.destroyAllTabs?.());
     eventBus.on('ui:activity-pulse', ({ view } = {}) => {
       const btn = document.querySelector(`.activity-btn[data-view="${view}"]`);
       if (!btn) return;
@@ -34,10 +45,49 @@ const appController = (() => {
     });
   }
 
+  function _suppressNativeSpellcheck() {
+    const disable = (el) => {
+      if (!el?.matches?.('input, textarea, [contenteditable="true"], .inputarea')) return;
+      el.setAttribute('spellcheck', 'false');
+      el.setAttribute('autocomplete', 'off');
+      el.setAttribute('autocorrect', 'off');
+      el.setAttribute('autocapitalize', 'off');
+    };
+    document
+      .querySelectorAll('input, textarea, [contenteditable="true"], .inputarea')
+      .forEach(disable);
+    document.addEventListener('focusin', (event) => disable(event.target));
+  }
+
+  function _setupWindowFocusState() {
+    const setActive = (active) => {
+      document.documentElement.dataset.windowActive = active ? 'true' : 'false';
+    };
+    setActive(document.hasFocus());
+    window.addEventListener('focus', () => setActive(true));
+    window.addEventListener('blur', () => setActive(false));
+  }
+
   function _setupTitlebar() {
     document
       .getElementById('btnExecute')
       ?.addEventListener('click', () => editorController.executeScript());
+    const invoke = window.__TAURI__?.core?.invoke;
+    document
+      .getElementById('btnWindowClose')
+      ?.addEventListener('click', () => invoke?.('close_window'));
+    document
+      .getElementById('btnWindowMinimize')
+      ?.addEventListener('click', () => invoke?.('minimize_window'));
+    document
+      .getElementById('btnWindowMaximize')
+      ?.addEventListener('click', () => invoke?.('toggle_maximize_window'));
+    document.getElementById('btnUndo')?.addEventListener('click', () => {
+      editor.getInstance?.()?.trigger?.('titlebar', 'undo');
+    });
+    document.getElementById('btnRedo')?.addEventListener('click', () => {
+      editor.getInstance?.()?.trigger?.('titlebar', 'redo');
+    });
     _setupCommandCenter();
     const titlebar = document.getElementById('titlebar');
     if (titlebar) {
@@ -52,10 +102,14 @@ const appController = (() => {
   function _setupCommandCenter() {
     const input = document.getElementById('titlebarCommand');
     if (!input) return;
-    input.addEventListener('focus', () => _renderCommandCenter(input.value));
+    input.addEventListener('focus', () => {
+      _commandQuery = input.value;
+      _renderCommandCenterSoon();
+    });
     input.addEventListener('input', () => {
       _commandIndex = 0;
-      _renderCommandCenter(input.value);
+      _commandQuery = input.value;
+      _renderCommandCenterSoon();
     });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -83,6 +137,19 @@ const appController = (() => {
     if (_commandPaletteEl) return _commandPaletteEl;
     _commandPaletteEl = document.createElement('div');
     _commandPaletteEl.className = 'command-palette';
+    _commandPaletteEl.addEventListener('mousemove', (event) => {
+      const button = event.target?.closest?.('.command-item');
+      if (!button || !_commandPaletteEl.contains(button)) return;
+      const index = Number(button.dataset.index);
+      if (!Number.isFinite(index) || index === _commandIndex) return;
+      _commandIndex = index;
+      _syncCommandSelection();
+    });
+    _commandPaletteEl.addEventListener('click', (event) => {
+      const button = event.target?.closest?.('.command-item');
+      if (!button || !_commandPaletteEl.contains(button)) return;
+      _runCommandItem(_commandItems[Number(button.dataset.index)]);
+    });
     _commandPaletteEl.setAttribute('role', 'listbox');
     document.body.appendChild(_commandPaletteEl);
     return _commandPaletteEl;
@@ -98,16 +165,45 @@ const appController = (() => {
         run: () => workspaceController.openFolderDialog(),
       },
       {
+        label: 'Add folder to workspace',
+        hint: 'Workspace',
+        run: () => workspaceController.addFolderToWorkspace(),
+      },
+      {
         label: 'New file',
         hint: 'Editor',
         key: '⌘N',
         run: () => editorController.newUntitledFile(),
       },
       {
+        label: 'New folder',
+        hint: 'Explorer',
+        run: () => {
+          if (state.fileTree) ExplorerTree.startCreate(state.fileTree, 'folder');
+        },
+      },
+      {
         label: 'Save file',
         hint: active?.name ?? 'No file open',
         key: '⌘S',
         run: async () => active && fileManager.save(active.id),
+      },
+      {
+        label: 'Format document',
+        hint: active?.name ?? 'Editor',
+        run: () => editor.getInstance?.()?.trigger?.('command', 'editor.action.formatDocument'),
+      },
+      {
+        label: 'Toggle comment',
+        hint: active?.name ?? 'Editor',
+        key: '⌘/',
+        run: () => editor.getInstance?.()?.trigger?.('command', 'editor.action.commentLine'),
+      },
+      {
+        label: 'Go to line',
+        hint: 'Editor',
+        key: '⌃G',
+        run: () => editor.getInstance?.()?.trigger?.('command', 'editor.action.gotoLine'),
       },
       {
         label: 'Execute script',
@@ -120,6 +216,12 @@ const appController = (() => {
         hint: active?.name ?? 'No file open',
         key: '⌘W',
         run: () => active && tabs.closeTab(active.id),
+      },
+      {
+        label: 'Copy active file path',
+        hint: active?.path ? helpers.basename(active.path) : 'No file open',
+        run: () =>
+          active?.path && window.__TAURI__.core.invoke('write_clipboard', { text: active.path }),
       },
       {
         label: 'Cycle sidebar state',
@@ -142,6 +244,14 @@ const appController = (() => {
         },
       },
       {
+        label: 'Clear Roblox console',
+        hint: 'Panel',
+        run: () => {
+          const o = document.getElementById('robloxOutput');
+          if (o) o.innerHTML = '';
+        },
+      },
+      {
         label: 'Refresh file tree',
         hint: 'Workspace',
         key: '⌘⇧R',
@@ -149,9 +259,23 @@ const appController = (() => {
       },
       { label: 'Explorer', hint: 'View', key: '⌘⇧E', run: () => _switchView('explorer') },
       { label: 'Search files', hint: 'View', key: '⌘⇧F', run: () => _switchView('search') },
+      {
+        label: 'Reveal active file',
+        hint: 'Explorer',
+        run: () => active && ExplorerTree.revealFile(active.id),
+      },
       { label: 'Refresh outline', hint: 'Explorer', run: () => outline.refresh() },
       { label: 'Cloud scripts', hint: 'View', run: () => _switchView('cloud') },
-      { label: 'Autoexecute', hint: 'View', run: () => _switchView('autoexec') },
+      { label: 'DataTree', hint: 'View', key: '⌘⇧D', run: () => _switchView('datatree') },
+      {
+        label: 'Import DataTree',
+        hint: 'RBXLX / RBXMX',
+        run: () => {
+          _switchView('datatree');
+          dataTree.openImportDialog?.();
+        },
+      },
+      { label: 'Toggle Autoexecute', hint: 'Explorer', run: () => autoexec.toggleEnabled() },
       { label: 'Accounts', hint: 'View', run: () => _switchView('accounts') },
       { label: 'Pinboard', hint: 'View', run: () => _switchView('pinboard') },
       { label: 'Settings', hint: 'View', run: () => _switchView('settings') },
@@ -166,6 +290,28 @@ const appController = (() => {
       { label: 'Stop Roblox console', hint: 'Console', run: () => console_.stopMonitoring() },
       { label: 'Check for updates', hint: 'VelocityUI', run: () => updateChecker.checkManual() },
     ];
+  }
+
+  function _commandSymbolItems(query) {
+    const model = editor.getInstance?.()?.getModel?.();
+    if (!model || typeof LuaIntelligence === 'undefined') return [];
+    const q = query.replace(/^[@#]/, '').trim().toLowerCase();
+    if (!q || (!query.startsWith('@') && q.length < 2)) return [];
+    const version = model.getAlternativeVersionId?.() ?? model.getVersionId?.() ?? 0;
+    const cacheKey = `${model.uri?.toString?.() ?? 'model'}:${version}`;
+    if (cacheKey !== _commandSymbolCacheKey) {
+      _commandSymbolCacheKey = cacheKey;
+      _commandSymbolCache = LuaIntelligence.analyze(model, true).symbols || [];
+    }
+    return _commandSymbolCache
+      .filter((sym) => `${sym.name} ${sym.kind} ${sym.detail || ''}`.toLowerCase().includes(q))
+      .slice(0, 10)
+      .map((sym) => ({
+        label: sym.name,
+        hint: `${sym.kind} · line ${sym.line}`,
+        key: '@',
+        run: () => editor.goToLineColumn?.(sym.line, sym.column || 1),
+      }));
   }
 
   function _commandFileItems(query) {
@@ -193,6 +339,7 @@ const appController = (() => {
       : actions.filter((item) =>
           `${item.label} ${item.hint} ${item.key ?? ''}`.toLowerCase().includes(q),
         );
+    const symbolMatches = q ? _commandSymbolItems(q) : [];
     const fileMatches = q
       ? _commandFileItems(q)
       : state.openTabIds
@@ -205,7 +352,7 @@ const appController = (() => {
             hint: 'Open tab',
             run: () => editorController.openFile(file.id),
           }));
-    const items = [...commandMatches, ...fileMatches].slice(0, 12);
+    const items = [...commandMatches, ...symbolMatches, ...fileMatches].slice(0, 12);
     if (q && !items.length) {
       items.push({
         label: `Search for "${query.trim()}"`,
@@ -245,15 +392,6 @@ const appController = (() => {
     `,
       )
       .join('');
-    palette.querySelectorAll('.command-item').forEach((button) => {
-      button.addEventListener('mouseenter', () => {
-        _commandIndex = Number(button.dataset.index);
-        _syncCommandSelection();
-      });
-      button.addEventListener('click', () =>
-        _runCommandItem(_commandItems[Number(button.dataset.index)]),
-      );
-    });
     palette.classList.add('open');
   }
 
@@ -264,9 +402,10 @@ const appController = (() => {
   }
 
   function _syncCommandSelection() {
-    _commandPaletteEl?.querySelectorAll('.command-item').forEach((button, i) => {
-      button.classList.toggle('active', i === _commandIndex);
-    });
+    const palette = _commandPaletteEl;
+    if (!palette) return;
+    palette.querySelector('.command-item.active')?.classList.remove('active');
+    palette.querySelector(`.command-item[data-index="${_commandIndex}"]`)?.classList.add('active');
   }
 
   async function _runCommandItem(item) {
@@ -281,13 +420,14 @@ const appController = (() => {
   }
 
   function _hideCommandCenter() {
+    _renderCommandCenterSoon.cancel?.();
     _commandPaletteEl?.classList.remove('open');
   }
 
   const STANDARD_VIEWS = new Set(['explorer', 'search']);
   const EXCLUSIVE_PANELS = {
     cloud: 'cloudView',
-    autoexec: 'autoexecView',
+    datatree: 'dataTreeView',
     accounts: 'accountsView',
     pinboard: 'pinboardView',
     settings: 'settingsPanel',
@@ -313,17 +453,18 @@ const appController = (() => {
       const el = document.getElementById(elId);
       if (el) el.style.display = view === panelView ? 'flex' : 'none';
     }
-    if (prevView === 'autoexec' && view !== 'autoexec') autoexec.hide();
-    if (view === 'autoexec') autoexec.show();
+    if (prevView === 'datatree' && view !== 'datatree') dataTree.hide?.();
     if (prevView === 'accounts' && view !== 'accounts') accountsPanel.hide();
     if (view === 'accounts') accountsPanel.show();
     if (view === 'pinboard') pinboard.show();
+    if (view === 'datatree') dataTree.show();
     if (view === 'cloud' && !_cloudInited) {
       cloud.init();
       _cloudInited = true;
     }
     if (view === 'settings') {
       themeManager.renderGrid();
+      themeManager.renderCustomEditor?.();
       iconThemeManager.renderList();
       _initSettingsNav();
       menuScriptsPanel.show();
@@ -368,7 +509,6 @@ const appController = (() => {
     if (sidebar.dataset.guideLocked && hidden) return;
     sidebar.classList.toggle('hidden', hidden);
     uiState.setSidebarHidden?.(hidden);
-    setTimeout(() => editor.relayout(), 160);
     eventBus.emit('ui:sidebar-toggled', { hidden });
   }
 
@@ -517,6 +657,12 @@ const appController = (() => {
       });
     }
     if (uiState.sbBottomHeight && sbBottom) sbBottom.style.height = uiState.sbBottomHeight + 'px';
+    outline.syncChrome?.();
+    timeline.syncChrome?.();
+    if (sbBottom && !sbBottom.querySelector('.sb-section:not(.is-collapsed)')) {
+      sbBottom.style.height = '';
+      delete sbBottom.dataset.userResized;
+    }
     if (uiState.panelVisible && panel) {
       panel.classList.add('visible');
       panel.classList.remove('hidden');
@@ -572,7 +718,7 @@ const appController = (() => {
       allowInEditor: true,
       handler: async () => {
         const currentView = document.querySelector('.activity-btn.active')?.dataset.view;
-        if (currentView === 'autoexec' || currentView === 'guide') return;
+        if (currentView === 'guide') return;
         const active = state.getActive();
         if (!active) return;
         if (pinboard.isSnippetFile(active.id)) {
@@ -643,6 +789,12 @@ const appController = (() => {
       handler: () => _switchView('search'),
     });
     keyboardManager.registerShortcut({
+      keys: 'Cmd+Shift+D',
+      scope: ['global'],
+      allowInEditor: true,
+      handler: () => _switchView('datatree'),
+    });
+    keyboardManager.registerShortcut({
       keys: 'Cmd+Shift+O',
       scope: ['global'],
       handler: () => workspaceController.openFolderDialog(),
@@ -686,8 +838,10 @@ const appController = (() => {
   }
 
   function _handleClientBridgeEvent(payload) {
+    dataTree.handleBridgeEvent?.(payload);
     const body = payload?.body ?? {};
     const kind = body.kind ?? 'message';
+    if (kind === 'poll') return;
     if (kind === 'hello') {
       const name = body.display_name || body.username || 'client';
       console_.log(`[Client] ${name} connected on bridge :${payload.bridgePort}`, 'info');
@@ -695,6 +849,33 @@ const appController = (() => {
     }
     if (kind === 'executed') {
       console_.log('[Client] Script acknowledged', 'ok');
+      return;
+    }
+    if (kind === 'task:started') {
+      console_.log(`[Client] Task started: ${body.task_kind || 'execute'}`, 'info');
+      return;
+    }
+    if (kind === 'task:finished') {
+      console_.log(`[Client] Task finished: ${body.task_kind || 'execute'}`, 'ok');
+      return;
+    }
+    if (kind === 'task:error') {
+      console_.log(`[Client] Task failed: ${body.message || 'unknown error'}`, 'fail');
+      return;
+    }
+    if (kind === 'datatree:start') {
+      console_.log('[DataTree] Capture started', 'info');
+      return;
+    }
+    if (kind === 'datatree:done') {
+      console_.log(
+        `[DataTree] Captured ${(body.node_count || body.nodes?.length || 0).toLocaleString()} instances`,
+        'ok',
+      );
+      return;
+    }
+    if (kind === 'datatree:error') {
+      console_.log(`[DataTree] ${body.message || 'Capture failed'}`, 'fail');
       return;
     }
     if (kind === 'error') {
@@ -728,14 +909,24 @@ const appController = (() => {
     window.__TAURI__.event.listen('client-bridge:event', (event) =>
       _handleClientBridgeEvent(event.payload),
     );
+    window.__TAURI__.event.listen('client-bridge:error', (event) => {
+      const message = event.payload?.message || 'VelocityUI bridge is unavailable';
+      toast.show(message, 'fail', 5200);
+      console_.log(`[Bridge] ${message}`, 'fail');
+      dataTree.handleBridgeError?.(event.payload);
+    });
+    _suppressNativeSpellcheck();
     _initBridge();
     await paths.init();
+    await autoexec.init();
     themeManager.load();
+    _setupWindowFocusState();
     _setupTitlebar();
     _setupActivityBar();
     keyboardManager.init();
     _setupGlobalShortcuts();
     _setupSettings();
+    StatusBarControls.init();
     themeManager.renderGrid();
     search.init();
     timeline.init();

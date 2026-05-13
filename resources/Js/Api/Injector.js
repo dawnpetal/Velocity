@@ -11,7 +11,18 @@ const injector = (() => {
   async function getClientBridgePort() {
     return await window.__TAURI__.core.invoke('get_client_bridge_port');
   }
+  async function queueClientBridgeTask(clientKey, task) {
+    await window.__TAURI__.core.invoke('queue_client_bridge_task', { clientKey, task });
+  }
   function reset() {}
   async function discover() {}
-  return { discover, execute, executeWithClientBridge, getPort, getClientBridgePort, reset };
+  return {
+    discover,
+    execute,
+    executeWithClientBridge,
+    getPort,
+    getClientBridgePort,
+    queueClientBridgeTask,
+    reset,
+  };
 })();

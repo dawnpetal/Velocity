@@ -85,7 +85,7 @@ const guide = (() => {
       label: 'Activity Bar',
       selector: '#activityBar',
       padding: 3,
-      text: 'Each icon here puts the app in a different mode. Folder is Explorer. Magnifier is Search. Arrow-lines is Autoexecute. Star is Pinboard. Scroll is Cloud Scripts. Gear is Settings. The question mark reopens this tour.',
+      text: 'Each icon here puts the app in a different mode. Folder is Explorer. Magnifier is Search. Star is Pinboard. Scroll is Cloud Scripts. Gear is Settings. The question mark reopens this tour.',
     },
     {
       view: 'explorer',
@@ -213,29 +213,22 @@ const guide = (() => {
     },
     {
       checkpoint: 'Autoexecute',
-      view: 'autoexec',
-      label: 'Autoexecute — Overview',
-      selector: '#autoexecView',
-      padding: 0,
+      view: 'explorer',
+      label: 'Autoexecute — Folder',
+      selector: '#fileTree',
+      padding: 3,
       text: () => {
         const line = _getCharacterLine(_currentChar.name, 'Autoexecute');
         if (line) return line.text;
-        return "Autoexecute runs scripts automatically every time Roblox launches. The scripts live in the active executor autoexecute folder on your machine. The left panel is your list of scripts, the right panel is an editor for whichever one you've got selected.";
+        return 'Autoexecute now lives in the protected Autoexecute folder inside Explorer. Put Lua files there, right-click the folder to enable or disable startup execution, and open any script like a normal workspace file.';
       },
     },
     {
-      view: 'autoexec',
-      label: 'Autoexecute — Enable Toggle',
-      selector: '#autoexecView',
-      padding: 0,
-      text: "The toggle at the top turns the whole feature on or off. When it's off, nothing runs on startup. Individual scripts have their own toggles too, so you can disable one without deleting it.",
-    },
-    {
-      view: 'autoexec',
+      view: 'explorer',
       label: 'Autoexecute — Managing Scripts',
-      selector: '#autoexecView',
-      padding: 0,
-      text: 'Click the plus to create a new script. Click any script in the list to open it in the editor. Hover a script to see rename and delete buttons. These are plain .lua files, you can also drop them directly into the active executor autoexecute folder in Finder.',
+      selector: '#fileTree',
+      padding: 3,
+      text: 'The Autoexecute folder itself is protected, but the files inside are normal .lua files. Create, edit, rename, delete, or execute them from Explorer just like the rest of your workspace.',
     },
     {
       checkpoint: 'Pinboard',

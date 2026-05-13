@@ -56,9 +56,19 @@ const ExplorerTree = (() => {
   function clearSelection() {
     _setSelection([]);
   }
+  function _orderedChildren(node) {
+    const children = [...(node.children ?? [])];
+    return children.sort((a, b) => {
+      const aa = autoexec.isProtectedRootNode(a);
+      const bb = autoexec.isProtectedRootNode(b);
+      if (aa !== bb) return aa ? 1 : -1;
+      return 0;
+    });
+  }
+
   function _getFileCount(node) {
     if (node.type === 'file') return 1;
-    return (node.children ?? []).reduce((n, c) => n + _getFileCount(c), 0);
+    return _orderedChildren(node).reduce((n, c) => n + _getFileCount(c), 0);
   }
   function _setSelection(ids) {
     _selection = new Set(ids);
@@ -77,12 +87,12 @@ const ExplorerTree = (() => {
     function walk(node) {
       parts.push(node.id + (node.type === 'folder' ? (node.open ? 'O' : 'C') : 'F'));
       if (node.type === 'folder' && node.open) {
-        for (const c of node.children) walk(c);
+        for (const c of _orderedChildren(node)) walk(c);
       }
     }
     for (const root of state.roots) {
       parts.push('R' + root.id + (root.open ? 'O' : 'C'));
-      if (root.open) for (const c of root.children) walk(c);
+      if (root.open) for (const c of _orderedChildren(root)) walk(c);
     }
     return parts.join('|');
   }
@@ -92,6 +102,22 @@ const ExplorerTree = (() => {
     container.querySelectorAll('.tree-row').forEach((row) => {
       row.classList.toggle('selected', _selection.has(row.dataset.id));
       row.classList.toggle('active', row.dataset.id === state.activeFileId);
+      const node = findNodeInRoots(row.dataset.id);
+      const isAutoexecRoot = autoexec.isProtectedRootNode(node);
+      row.classList.toggle('autoexec-root', isAutoexecRoot);
+      const meta = row.querySelector('.tree-meta');
+      if (!meta) return;
+      let badge = meta.querySelector('.tree-autoexec-badge');
+      if (isAutoexecRoot) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'tree-autoexec-badge';
+          meta.appendChild(badge);
+        }
+        badge.textContent = autoexec.isEnabled() ? 'on' : 'off';
+      } else {
+        badge?.remove();
+      }
     });
   }
   function _patchUnsaved() {
@@ -123,12 +149,19 @@ const ExplorerTree = (() => {
       }
     });
   }
+  function _destroyVirtualList() {
+    _vlist?.destroy?.();
+    _vlist = null;
+    _nodeContainer = null;
+  }
+
   function render() {
     const root = rootEl();
     if (!root) return;
     _ensureRootContextMenu();
     if (!state.roots.length) {
       _structureKey = '';
+      _destroyVirtualList();
       root.innerHTML = `
         <div class="empty-explorer">
           <div class="empty-explorer-icon">${SVG.folder}</div>
@@ -153,10 +186,9 @@ const ExplorerTree = (() => {
       return;
     }
     _structureKey = newKey;
+    _destroyVirtualList();
     root.innerHTML = '';
     _flatOrder = [];
-    _vlist = null;
-    _nodeContainer = null;
 
     const headerFrag = document.createDocumentFragment();
     for (const rootNode of state.roots) _renderRootHeader(rootNode, headerFrag);
@@ -192,12 +224,12 @@ const ExplorerTree = (() => {
 
   function _buildFlatOrder(rootNode, out) {
     if (!rootNode.open) return;
-    for (const child of rootNode.children) _buildFlatOrderNode(child, 0, out);
+    for (const child of _orderedChildren(rootNode)) _buildFlatOrderNode(child, 0, out);
   }
   function _buildFlatOrderNode(node, depth, out) {
     out.push({ node, depth });
     if (node.type === 'folder' && node.open) {
-      for (const child of node.children) _buildFlatOrderNode(child, depth + 1, out);
+      for (const child of _orderedChildren(node)) _buildFlatOrderNode(child, depth + 1, out);
     }
   }
   function _renderRootHeader(rootNode, container) {
@@ -242,8 +274,8 @@ const ExplorerTree = (() => {
     container.appendChild(header);
   }
   function _toggleFolderInPlace(row, node, depth) {
-    const arrowEl = row.querySelector('.tree-arrow');
-    const iconEl = row.querySelector('.tree-icon > span');
+    const arrowEl = row?.querySelector('.tree-arrow');
+    const iconEl = row?.querySelector('.tree-icon > span');
     if (arrowEl) arrowEl.classList.toggle('open', node.open);
     if (iconEl) helpers.updateIconEl(iconEl, node.name, true, node.open);
 
@@ -269,6 +301,7 @@ const ExplorerTree = (() => {
     row.dataset.type = node.type;
     row.classList.toggle('selected', _selection.has(node.id));
     row.classList.toggle('active', node.id === state.activeFileId);
+    row.classList.toggle('autoexec-root', autoexec.isProtectedRootNode(node));
     const indent = document.createElement('div');
     indent.className = 'tree-indent';
     for (let i = 0; i < depth; i++) {
@@ -295,7 +328,12 @@ const ExplorerTree = (() => {
       dot.className = 'tree-unsaved-dot';
       metaEl.appendChild(dot);
     }
-    if (node.type === 'folder' && node.children?.length > 0) {
+    if (autoexec.isProtectedRootNode(node)) {
+      const badge = document.createElement('span');
+      badge.className = 'tree-autoexec-badge';
+      badge.textContent = autoexec.isEnabled() ? 'on' : 'off';
+      metaEl.appendChild(badge);
+    } else if (node.type === 'folder' && node.children?.length > 0) {
       const badge = document.createElement('span');
       badge.className = 'tree-folder-count';
       badge.textContent = node.children.length;
@@ -351,8 +389,91 @@ const ExplorerTree = (() => {
     if (node.type === 'folder') ExplorerDnd.attachFolderDrag(row, node);
     return row;
   }
+  function _selectByIndex(idx) {
+    if (!_flatOrder.length) return;
+    const next = Math.max(0, Math.min(idx, _flatOrder.length - 1));
+    const item = _flatOrder[next];
+    if (!item?.node) return;
+    _setSelection([item.node.id]);
+    _lastClickedId = item.node.id;
+    _vlist?.scrollToIndex(next);
+  }
+  function _selectedIndex() {
+    const id = [..._selection][0] ?? state.activeFileId;
+    const idx = _flatOrder.findIndex((item) => item.node.id === id);
+    return idx === -1 ? 0 : idx;
+  }
+  function _parentIndexOf(idx) {
+    const depth = _flatOrder[idx]?.depth ?? 0;
+    if (depth <= 0) return -1;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (_flatOrder[i].depth < depth) return i;
+    }
+    return -1;
+  }
+  function _handleTreeKeydown(e) {
+    if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Enter'].includes(e.key)) return;
+    if (!_flatOrder.length) return;
+    e.preventDefault();
+    const idx = _selectedIndex();
+    const item = _flatOrder[idx];
+    const node = item?.node;
+    if (!node) return;
+    if (e.key === 'ArrowDown') {
+      _selectByIndex(idx + 1);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      _selectByIndex(idx - 1);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      if (node.type === 'folder' && !node.open) {
+        node.open = true;
+        _toggleFolderInPlace(
+          document.querySelector(`.tree-row[data-id="${node.id}"]`),
+          node,
+          item.depth,
+        );
+      } else if (node.type === 'folder' && node.children?.length) {
+        _selectByIndex(idx + 1);
+      } else if (node.type === 'file') {
+        eventBus.emit('ui:open-file', { id: node.id });
+      }
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      if (node.type === 'folder' && node.open) {
+        node.open = false;
+        _toggleFolderInPlace(
+          document.querySelector(`.tree-row[data-id="${node.id}"]`),
+          node,
+          item.depth,
+        );
+      } else {
+        const parent = _parentIndexOf(idx);
+        if (parent !== -1) _selectByIndex(parent);
+      }
+      return;
+    }
+    if (node.type === 'folder') {
+      node.open = !node.open;
+      _toggleFolderInPlace(
+        document.querySelector(`.tree-row[data-id="${node.id}"]`),
+        node,
+        item.depth,
+      );
+    } else {
+      eventBus.emit('ui:open-file', { id: node.id });
+    }
+  }
+
   function init() {
     const root = rootEl();
+    if (root) {
+      root.tabIndex = 0;
+      root.addEventListener('keydown', _handleTreeKeydown);
+    }
     root?.addEventListener('click', (e) => {
       if (!e.target.closest('.tree-row') && !e.target.closest('.tree-root-header')) {
         _setSelection([]);

@@ -1,5 +1,7 @@
 const state = (() => {
   let _files = new Map();
+  let _pathIndex = new Map();
+  let _previewIndex = new Map();
   let _tabs = [];
   let _activeId = null;
   let _unsaved = new Set();
@@ -11,25 +13,58 @@ const state = (() => {
   }
   function addFile(id, name, path, content = null, opts = {}) {
     if (_files.has(id)) return;
+    if (path) (opts.preview ? _previewIndex : _pathIndex).set(path, id);
     _files.set(id, {
       id,
       name,
       path,
       content,
       _lines: null,
+      size: opts.size ?? null,
+      encoding: opts.encoding ?? 'UTF-8',
+      eol: opts.eol ?? 'LF',
+      indentSize: opts.indentSize ?? 2,
+      insertSpaces: opts.insertSpaces ?? true,
+      languageOverride: opts.languageOverride ?? null,
+      largePreview: opts.largePreview ?? false,
+      truncated: opts.truncated ?? false,
       preview: opts.preview ?? false,
       previewType: opts.previewType ?? null,
       binaryData: opts.binaryData ?? null,
     });
   }
-  function setContent(id, content) {
+  function setContent(id, content, meta = {}) {
     const f = _files.get(id);
     if (!f) return;
     f.content = content;
     f._lines = null;
+    Object.assign(f, meta);
+  }
+  function setMeta(id, meta = {}) {
+    const f = _files.get(id);
+    if (!f) return;
+    const pathChanged = Object.prototype.hasOwnProperty.call(meta, 'path') && meta.path !== f.path;
+    const previewChanged =
+      Object.prototype.hasOwnProperty.call(meta, 'preview') && !!meta.preview !== !!f.preview;
+    if (pathChanged || previewChanged) {
+      const oldIndex = f.preview ? _previewIndex : _pathIndex;
+      if (f.path && oldIndex.get(f.path) === id) oldIndex.delete(f.path);
+      const nextPath = pathChanged ? meta.path : f.path;
+      const nextIndex = (previewChanged ? meta.preview : f.preview) ? _previewIndex : _pathIndex;
+      if (nextPath) nextIndex.set(nextPath, id);
+    }
+    Object.assign(f, meta);
   }
   function getFile(id) {
     return _files.get(id) ?? null;
+  }
+  function findByPath(path) {
+    const id = path ? _pathIndex.get(path) : null;
+    return id ? (_files.get(id) ?? null) : null;
+  }
+  function findPreviewByPath(path) {
+    const id = path ? _previewIndex.get(path) : null;
+    return id ? (_files.get(id) ?? null) : null;
   }
   function getActive() {
     return _activeId ? (_files.get(_activeId) ?? null) : null;
@@ -45,9 +80,17 @@ const state = (() => {
     }
     if (!_tabs.includes(id)) {
       if (_previewId && _previewId !== id && !_unsaved.has(_previewId) && !opts.keepTabs) {
-        const idx = _tabs.indexOf(_previewId);
+        const removedId = _previewId;
+        const removedFile = _files.get(removedId) ?? null;
+        const idx = _tabs.indexOf(removedId);
         if (idx !== -1) _tabs.splice(idx, 1);
-        _unsaved.delete(_previewId);
+        _unsaved.delete(removedId);
+        _emit('file:closed', {
+          id: removedId,
+          file: removedFile,
+          wasUnsaved: false,
+          transient: true,
+        });
       }
       if (!opts.permanent) _previewId = id;
       _tabs.push(id);
@@ -63,6 +106,8 @@ const state = (() => {
     if (!f) return;
     f.content = content;
     f._lines = null;
+    f._lineCount = null;
+    f.size = new Blob([content ?? '']).size;
     _unsaved.add(id);
     if (_previewId === id) _previewId = null;
     _emit('file:changed', {
@@ -82,9 +127,30 @@ const state = (() => {
     return _unsaved.has(id);
   }
   function removeFile(id) {
+    const f = _files.get(id);
+    const index = f?.preview ? _previewIndex : _pathIndex;
+    if (f?.path && index.get(f.path) === id) index.delete(f.path);
     _files.delete(id);
   }
+  function releasePayload(id) {
+    const f = _files.get(id);
+    if (!f) return;
+    if (f.preview) {
+      if (f.path && _previewIndex.get(f.path) === id) _previewIndex.delete(f.path);
+      _files.delete(id);
+      return;
+    }
+    f.content = null;
+    f.binaryData = null;
+    f._lines = null;
+    f._lineCount = null;
+    f.previewType = null;
+    f.largePreview = false;
+    f.truncated = false;
+  }
   function closeTab(id) {
+    const file = _files.get(id) ?? null;
+    const wasUnsaved = _unsaved.has(id);
     _tabs = _tabs.filter((t) => t !== id);
     _unsaved.delete(id);
     if (_previewId === id) _previewId = null;
@@ -97,6 +163,8 @@ const state = (() => {
     }
     _emit('file:closed', {
       id,
+      file,
+      wasUnsaved,
     });
   }
   function addRoot(node) {
@@ -107,14 +175,17 @@ const state = (() => {
     _roots = _roots.filter((r) => r.path !== path);
   }
   function clear() {
+    const closedIds = [..._files.keys()];
     _files.clear();
+    _pathIndex.clear();
+    _previewIndex.clear();
     _tabs = [];
     _activeId = null;
     _unsaved.clear();
     _roots = [];
     _workDir = null;
     _previewId = null;
-    _emit('workspace:cleared', {});
+    _emit('workspace:cleared', { ids: closedIds });
   }
   return {
     get files() {
@@ -152,14 +223,18 @@ const state = (() => {
     },
     addFile,
     getFile,
+    findByPath,
+    findPreviewByPath,
     getActive,
     setActive,
     updateContent,
     setContent,
+    setMeta,
     getLines,
     markSaved,
     isUnsaved,
     removeFile,
+    releasePayload,
     closeTab,
     addRoot,
     removeRoot,

@@ -1,11 +1,12 @@
-use tauri::State;
+use serde_json::json;
+use tauri::{AppHandle, State};
 
 use crate::app::AppContext;
 use crate::models::RobloxClient;
 
 #[tauri::command]
 pub fn multiinstance_get_clients(ctx: State<'_, AppContext>) -> Result<Vec<RobloxClient>, String> {
-    ctx.MultiInstance.get_clients().map_err(|e| e.to_string())
+    ctx.ClientBridge.clients().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -14,8 +15,16 @@ pub fn multiinstance_send_script(
     script: String,
     ctx: State<'_, AppContext>,
 ) -> Result<(), String> {
-    ctx.MultiInstance
-        .send_script(user_id, script)
+    ctx.ClientBridge
+        .queue_task(
+            user_id,
+            json!({
+                "kind": "execute",
+                "id": uuid::Uuid::new_v4().to_string(),
+                "script": script,
+                "timestamp": chrono::Utc::now().timestamp(),
+            }),
+        )
         .map_err(|e| e.to_string())
 }
 
@@ -25,14 +34,34 @@ pub fn multiinstance_send_script_many(
     script: String,
     ctx: State<'_, AppContext>,
 ) -> Result<(), String> {
-    ctx.MultiInstance
-        .send_script_to_many(user_ids, script)
-        .map_err(|e| e.to_string())
+    let now = chrono::Utc::now().timestamp();
+    for user_id in user_ids {
+        ctx.ClientBridge
+            .queue_task(
+                user_id,
+                json!({
+                    "kind": "execute",
+                    "id": uuid::Uuid::new_v4().to_string(),
+                    "script": script,
+                    "timestamp": now,
+                }),
+            )
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
-pub fn multiinstance_install_autoexec(ctx: State<'_, AppContext>) -> Result<String, String> {
+pub async fn multiinstance_install_autoexec(
+    app: AppHandle,
+    ctx: State<'_, AppContext>,
+) -> Result<String, String> {
+    let port = ctx
+        .ClientBridge
+        .ensure_started(app)
+        .await
+        .map_err(|e| e.to_string())?;
     ctx.MultiInstance
-        .install_autoexec_script()
+        .install_autoexec_script(port)
         .map_err(|e| e.to_string())
 }

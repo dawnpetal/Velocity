@@ -2,6 +2,7 @@ const pinboard = (() => {
   let _snippets = [];
   let _filter = '';
   let _sortMode = 'manual';
+  let _rendered = false;
   const _activeEditorIds = new Map();
   const SORT_MODES = ['manual', 'name', 'runs', 'recent'];
   const SEARCH_DEBOUNCE_MS = 100;
@@ -15,6 +16,8 @@ const pinboard = (() => {
     close:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   };
+  const _rerenderListSoon = scheduler.frame(() => _rerenderList());
+
   function _context() {
     return {
       snippets: _snippets,
@@ -196,7 +199,7 @@ const pinboard = (() => {
       'input',
       helpers.debounce(() => {
         _filter = searchInput.value;
-        _rerenderList();
+        _rerenderListSoon();
       }, SEARCH_DEBOUNCE_MS),
     );
     searchRow.append(searchIcon, searchInput);
@@ -238,6 +241,7 @@ const pinboard = (() => {
     if (!container) return;
     container.innerHTML = '';
     container.appendChild(_buildToolbar());
+    _rendered = true;
     const visible = _visibleSnippets();
     if (!_snippets.length) {
       container.appendChild(PinboardCard.buildEmpty(_addNew));
@@ -284,12 +288,29 @@ const pinboard = (() => {
     });
   }
   function show() {
-    render();
     const container = _container();
-    if (container) container.scrollTop = 0;
+    if (!_rendered || !container?.querySelector('.pb-toolbar')) {
+      render();
+      if (container) container.scrollTop = 0;
+    }
   }
   function pinFile(node) {
     PinboardOps.pinFile(node, _context());
+  }
+  function pinCode(label, code, tags = []) {
+    const snippet = {
+      id: helpers.uid(),
+      label: label || 'Snippet',
+      tags,
+      code: code || '',
+      runCount: 0,
+      lastRun: null,
+      createdAt: Date.now(),
+    };
+    _snippets.unshift(snippet);
+    _save().catch(() => {});
+    render();
+    return snippet;
   }
   function handleEditorSave(fileId) {
     return PinboardOps.handleEditorSave(fileId, _context());
@@ -305,6 +326,7 @@ const pinboard = (() => {
     show,
     render,
     pinFile,
+    pinCode,
     handleEditorSave,
     handleTabClose,
     isSnippetFile,

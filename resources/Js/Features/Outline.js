@@ -154,13 +154,7 @@ const outline = (() => {
     if (empty) empty.style.display = 'none';
     list.style.display = '';
 
-    if (count) {
-      const byKind = {};
-      for (const e of entries) byKind[e.kind] = (byKind[e.kind] ?? 0) + 1;
-      count.textContent = Object.entries(byKind)
-        .map(([k, n]) => `${n} ${k}${n !== 1 ? 's' : ''}`)
-        .join(' · ');
-    }
+    if (count) count.textContent = String(entries.length);
 
     const groups = {};
     for (const e of entries) {
@@ -250,19 +244,20 @@ const outline = (() => {
     const arrow = document.getElementById('outlineArrow');
     if (header && body) {
       const section = header.closest('.sb-section');
-      let expanded = true;
-      section?.classList.remove('is-collapsed');
-      const toggle = () => {
-        expanded = !expanded;
+      let expanded = !uiState.outlineCollapsed;
+      const sync = () => {
         body.hidden = !expanded;
         section?.classList.toggle('is-collapsed', !expanded);
         arrow?.classList.toggle('open', expanded);
         header.setAttribute('aria-expanded', String(expanded));
+      };
+      const toggle = () => {
+        expanded = !expanded;
+        uiState.setOutlineCollapsed(!expanded);
+        sync();
         const panel = document.getElementById('sidebarBottom');
         if (panel) {
-          if (expanded && !panel.dataset.userResized) {
-            panel.style.height = '360px';
-          }
+          if (expanded && !panel.dataset.userResized) panel.style.height = '360px';
           const allCollapsed = !panel.querySelector('.sb-section:not(.is-collapsed)');
           if (allCollapsed) {
             panel.style.height = '';
@@ -270,6 +265,11 @@ const outline = (() => {
           }
         }
       };
+      header._syncOutlineChrome = () => {
+        expanded = !uiState.outlineCollapsed;
+        sync();
+      };
+      sync();
       header.addEventListener('click', toggle);
       header.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -284,5 +284,9 @@ const outline = (() => {
     });
   }
 
-  return { init, refresh };
+  function syncChrome() {
+    document.getElementById('outlineHeader')?._syncOutlineChrome?.();
+  }
+
+  return { init, refresh, syncChrome };
 })();

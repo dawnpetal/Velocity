@@ -5,6 +5,10 @@ const workspaceController = (() => {
   let _deltaQueue = [];
   let _deltaTimer = null;
 
+  function suppressWatcher(ms = 1200) {
+    _watchSuppressUntil = Math.max(_watchSuppressUntil, Date.now() + ms);
+  }
+
   async function _startWatcher(dir) {
     if (!dir) return;
     if (_watcherId !== null) {
@@ -35,7 +39,7 @@ const workspaceController = (() => {
   async function _applyUpdate(path) {
     const node = _nodeForPath(path);
     if (!node) return;
-    const file = state.files.find((f) => f.path === path);
+    const file = state.findByPath(path);
     if (file && file.content !== null) {
       state.setContent(file.id, null);
       eventBus.emit('file:externalChange', { id: file.id, path });
@@ -66,6 +70,9 @@ const workspaceController = (() => {
     const events = payload.events ?? [payload];
     for (const e of events) {
       if (!e.path) continue;
+      if (autoexec.containsScript?.(e.path) || autoexec.isProtectedPath?.(e.path)) {
+        autoexec.sync().catch(() => {});
+      }
       _deltaQueue.push({ action: e.action, path: e.path });
     }
 
@@ -93,6 +100,7 @@ const workspaceController = (() => {
   async function openFolder(folderPath) {
     state.clear();
     state.workDir = folderPath;
+    await autoexec.ensureWorkspaceFolder(folderPath);
     try {
       await fileManager.loadFolder(folderPath);
     } catch {
@@ -114,7 +122,7 @@ const workspaceController = (() => {
       };
       state.roots.forEach(restore);
     }
-    const activeMatch = saved?.activeFile && state.files.find((f) => f.path === saved.activeFile);
+    const activeMatch = saved?.activeFile && state.findByPath(saved.activeFile);
     state.setActive(activeMatch?.id ?? state.files[0]?.id ?? null);
     ExplorerTree.render();
     tabs.render();
@@ -226,6 +234,7 @@ const workspaceController = (() => {
       state.clear();
       for (const p of rootPaths) {
         try {
+          await autoexec.ensureWorkspaceFolder(p);
           await fileManager.loadFolder(p);
         } catch {}
       }
@@ -241,7 +250,7 @@ const workspaceController = (() => {
       const restoredTabPaths = new Set(openTabPaths);
       if (activePath) restoredTabPaths.add(activePath);
       for (const path of restoredTabPaths) {
-        const match = state.files.find((f) => f.path === path);
+        const match = state.findByPath(path);
         if (match) {
           state.setActive(match.id, {
             keepTabs: true,
@@ -250,7 +259,7 @@ const workspaceController = (() => {
         }
       }
       if (activePath) {
-        const match = state.files.find((f) => f.path === activePath);
+        const match = state.findByPath(activePath);
         if (match) {
           state.setActive(match.id, {
             keepTabs: true,
@@ -261,9 +270,7 @@ const workspaceController = (() => {
       ExplorerTree.render();
       tabs.render();
       editorController.renderEditor();
-      timeline.setFile(
-        activePath ? (state.files.find((f) => f.path === activePath) ?? null) : null,
-      );
+      timeline.setFile(activePath ? state.findByPath(activePath) : null);
       eventBus.emit('tree:refreshed', {});
     } finally {
       _refreshing = false;
@@ -277,6 +284,7 @@ const workspaceController = (() => {
     addFolderToWorkspace,
     resetDefault,
     refreshTree,
+    suppressWatcher,
     onWatchEvent,
     shutdown,
   };

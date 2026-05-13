@@ -1,6 +1,18 @@
 const tabs = (() => {
   const SVG_CLOSE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
   const stripEl = () => document.getElementById('tabStrip');
+
+  function _tabIconEl(filename) {
+    const icon = document.createElement('span');
+    _updateTabIcon(icon, filename);
+    return icon;
+  }
+
+  function _updateTabIcon(icon, filename) {
+    icon.className = `tab-icon ${helpers.fileIconClass(filename, false, false)}`;
+    icon.innerHTML = '';
+  }
+
   function render() {
     const strip = stripEl();
     if (!strip) return;
@@ -30,7 +42,7 @@ const tabs = (() => {
         (isDeleted ? ' deleted' : '');
       tab.querySelector('.tab-label').textContent = file.name;
       const existingIcon = tab.querySelector('.tab-icon');
-      if (existingIcon) helpers.updateIconEl(existingIcon, file.name, false, false);
+      if (existingIcon) _updateTabIcon(existingIcon, file.name);
       if (isActive)
         requestAnimationFrame(() =>
           tab.scrollIntoView({
@@ -44,8 +56,7 @@ const tabs = (() => {
     const tab = document.createElement('div');
     tab.className = 'tab';
     tab.dataset.id = id;
-    const icon = helpers.fileIconEl(file.name, false, false);
-    icon.className = 'tab-icon';
+    const icon = _tabIconEl(file.name);
     const label = document.createElement('span');
     label.className = 'tab-label';
     label.textContent = file.name;
@@ -94,10 +105,12 @@ const tabs = (() => {
           ['Save', 'Discard'],
         );
         if (choice === 'Save') pinboard.handleEditorSave(id);
+        else state.markSaved(id);
       }
       pinboard.handleTabClose(id);
       editor.destroyTab(id);
       state.closeTab(id);
+      state.removeFile(id);
       render();
       eventBus.emit('ui:render-editor');
       return;
@@ -109,6 +122,7 @@ const tabs = (() => {
         ['Save', 'Discard'],
       );
       if (choice === 'Save') await fileManager.save(id).catch(console.error);
+      else state.markSaved(id);
     }
     editor.destroyTab(id);
     state.closeTab(id);

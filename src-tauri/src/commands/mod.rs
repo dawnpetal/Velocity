@@ -1,5 +1,6 @@
 pub mod accounts;
 pub mod auth;
+pub mod datatree;
 pub mod executor;
 pub mod file_system;
 pub mod icon_theme;

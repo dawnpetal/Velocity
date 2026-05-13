@@ -32,6 +32,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 flate2 = "1"
 semver = "1"
 keyring = { version = "3", features = ["apple-native"] }
+quick-xml = "0.38.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.4"

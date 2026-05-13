@@ -3,8 +3,28 @@ const console_ = (() => {
   const robloxOutputEl = () => document.getElementById('robloxOutput');
   const panelEl = () => document.getElementById('bottomPanel');
   const MAX_LINES = 500;
+  const _pendingOutput = new Map();
+  let _outputFlushRaf = 0;
   function _trimOutput(output) {
     while (output.childElementCount > MAX_LINES) output.firstChild.remove();
+  }
+  function _queueOutput(output, nodes) {
+    if (!output) return;
+    const list = _pendingOutput.get(output) ?? [];
+    list.push(...nodes);
+    _pendingOutput.set(output, list);
+    if (_outputFlushRaf) return;
+    _outputFlushRaf = requestAnimationFrame(() => {
+      _outputFlushRaf = 0;
+      for (const [target, queuedNodes] of _pendingOutput) {
+        const fragment = document.createDocumentFragment();
+        queuedNodes.forEach((node) => fragment.appendChild(node));
+        target.appendChild(fragment);
+        _trimOutput(target);
+        target.scrollTop = target.scrollHeight;
+      }
+      _pendingOutput.clear();
+    });
   }
   function _showPanel() {
     const panel = panelEl();
@@ -56,9 +76,7 @@ const console_ = (() => {
     const line = document.createElement('div');
     line.className = `log-line ${type}`;
     line.innerHTML = `<span class="log-ts">${helpers.timestamp()}</span><span class="log-text">${helpers.escapeHtml(String(text))}</span>`;
-    output.appendChild(line);
-    _trimOutput(output);
-    output.scrollTop = output.scrollHeight;
+    _queueOutput(output, [line]);
   }
   function _appendRobloxLine({ time, type, channel, message }) {
     const output = robloxOutputEl();
@@ -75,9 +93,7 @@ const console_ = (() => {
     msg.className = 'log-text';
     msg.innerHTML = _parseRichText(message);
     line.append(ts, tag, msg);
-    output.appendChild(line);
-    _trimOutput(output);
-    output.scrollTop = output.scrollHeight;
+    _queueOutput(output, [line]);
     _showPanel();
   }
   function _appendOutputError(type, headerText, stackLines) {
@@ -86,14 +102,14 @@ const console_ = (() => {
     const header = document.createElement('div');
     header.className = `log-line ${type}`;
     header.innerHTML = `<span class="log-ts">${helpers.timestamp()}</span><span class="log-text">${helpers.escapeHtml(headerText)}</span>`;
-    output.appendChild(header);
+    const rows = [header];
     for (const sl of stackLines) {
       const row = document.createElement('div');
       row.className = 'log-line log-stack';
       row.innerHTML = `<span class="log-ts"></span><span class="log-text">${helpers.escapeHtml(sl)}</span>`;
-      output.appendChild(row);
+      rows.push(row);
     }
-    output.scrollTop = output.scrollHeight;
+    _queueOutput(output, rows);
     _showPanel();
   }
   function log(text, type = 'info') {
@@ -112,6 +128,19 @@ const console_ = (() => {
       if (now - ts > 10000) _seenErrors.delete(key);
     }
   }
+  async function _fileSize(path) {
+    try {
+      const stat = await window.__TAURI__.core.invoke('stat_path', { path });
+      return stat?.size ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async function _readFrom(path, offset, maxBytes = 512 * 1024) {
+    return window.__TAURI__.core.invoke('read_text_file_from', { path, offset, maxBytes });
+  }
+
   async function startErrorWatch() {
     clearTimeout(_errorScanTimer);
     _errorScanTimer = null;
@@ -122,27 +151,15 @@ const console_ = (() => {
       } catch {}
     }
     if (!watchPath) return;
-    let base = _lastLogSize;
-    if (!base) {
-      try {
-        const initial = await window.__TAURI__.core.invoke('read_text_file', {
-          path: watchPath,
-        });
-        base = initial.length;
-      } catch {}
-    }
+    let base = _lastLogSize || (await _fileSize(watchPath));
     const POLL_MS = 300;
     const deadline = Date.now() + 3000;
     async function poll() {
       try {
-        const content = await window.__TAURI__.core.invoke('read_text_file', {
-          path: watchPath,
-        });
-        const newText = content.slice(base);
-        if (newText) {
-          base += newText.length;
-          _scanForErrors(newText);
-        }
+        const chunk = await _readFrom(watchPath, base);
+        if ((chunk.size ?? 0) < base) base = 0;
+        if (chunk.content) _scanForErrors(chunk.content);
+        base = chunk.nextOffset ?? chunk.size ?? base;
       } catch {}
       if (Date.now() < deadline) _errorScanTimer = setTimeout(poll, POLL_MS);
     }
@@ -239,26 +256,20 @@ const console_ = (() => {
       _updateControls();
       return;
     }
-    try {
-      const initial = await window.__TAURI__.core.invoke('read_text_file', {
-        path: _logPath,
-      });
-      _lastLogSize = initial.length;
-    } catch {
-      _lastLogSize = 0;
-    }
+    _lastLogSize = await _fileSize(_logPath);
     robloxLog(`[VelocityUI] Watching: ${_logPath.split('/').pop()}`, 'info');
     toast.show('Monitoring started', 'ok', 2000);
     _updateControls();
     _pollTimer = setInterval(async () => {
       try {
-        const content = await window.__TAURI__.core.invoke('read_text_file', {
-          path: _logPath,
-        });
-        if (content.length <= _lastLogSize) return;
-        const newContent = content.slice(_lastLogSize);
-        _lastLogSize = content.length;
-        newContent
+        const chunk = await _readFrom(_logPath, _lastLogSize);
+        if ((chunk.size ?? 0) < _lastLogSize) _lastLogSize = 0;
+        if (!chunk.content) {
+          _lastLogSize = chunk.nextOffset ?? chunk.size ?? _lastLogSize;
+          return;
+        }
+        _lastLogSize = chunk.nextOffset ?? chunk.size ?? _lastLogSize;
+        chunk.content
           .split('\n')
           .filter((l) => l.trim())
           .forEach((line) => {
@@ -270,7 +281,7 @@ const console_ = (() => {
         toast.show('Log monitoring stopped unexpectedly', 'fail', 4000);
         stopMonitoring();
       }
-    }, 500);
+    }, 1200);
   }
   function stopMonitoring() {
     clearInterval(_pollTimer);
